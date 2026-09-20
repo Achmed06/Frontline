@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.67
+## Current v0.68
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -248,3 +248,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - shots and melee attacks now begin with a brief source flash before the existing projectile/impact feedback
 - unit motion state resets completely between matches so rematches cannot inherit stale animation state
 - all motion remains cosmetic and preserves deterministic combat logic
+
+
+## v0.68 changes
+
+- holding a unit card over the battlefield now previews that unit's real attack radius before deployment
+- ranged units expose their larger tactical reach while melee units retain a compact placement footprint
+- long-range previews add subtle radial ticks for fast visual recognition
+- invalid placement keeps the same preview geometry but switches to the existing error color
+- ability targeting still uses its existing effect-radius preview
+- deployment range visualization is renderer-only and does not alter card ranges or targeting
