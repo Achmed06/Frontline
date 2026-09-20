@@ -104,3 +104,64 @@ test("headquarters patrols only appear for mastered units after the training gro
   assert.equal(withTraining.includes("hq-patrol-1"), true);
   assert.equal(withTraining.includes("hq-patrol-4"), true);
 });
+
+
+test("second-tier headquarters projects require their predecessor even when metrics are already high", () => {
+  const metrics = { wins: 24, mastery: 30, lessons: 4, stars: 72 };
+  const empty = normalizeLearning(null);
+
+  assert.equal(buildBaseProject(empty, "supplyhub", metrics), empty);
+  assert.equal(buildBaseProject(empty, "barracks", metrics), empty);
+  assert.equal(buildBaseProject(empty, "watchtower", metrics), empty);
+  assert.equal(buildBaseProject(empty, "dronepad", metrics), empty);
+  assert.equal(buildBaseProject(empty, "monument", metrics), empty);
+
+  const depot = buildBaseProject(empty, "depot", metrics);
+  const supplyhub = buildBaseProject(depot, "supplyhub", metrics);
+  assert.equal(baseProjectBuilt(supplyhub, "supplyhub"), true);
+
+  const training = buildBaseProject(supplyhub, "training", metrics);
+  const barracks = buildBaseProject(training, "barracks", metrics);
+  assert.equal(baseProjectBuilt(barracks, "barracks"), true);
+
+  const relay = buildBaseProject(barracks, "relay", metrics);
+  const watchtower = buildBaseProject(relay, "watchtower", metrics);
+  assert.equal(baseProjectBuilt(watchtower, "watchtower"), true);
+
+  const workshop = buildBaseProject(watchtower, "workshop", metrics);
+  const dronepad = buildBaseProject(workshop, "dronepad", metrics);
+  assert.equal(baseProjectBuilt(dronepad, "dronepad"), true);
+
+  const honor = buildBaseProject(dronepad, "honor", metrics);
+  const monument = buildBaseProject(honor, "monument", metrics);
+  assert.equal(baseProjectBuilt(monument, "monument"), true);
+
+  assert.deepEqual(
+    normalizeLearning(JSON.parse(JSON.stringify(monument))),
+    monument,
+  );
+});
+
+test("second-tier projects add visible structures to headquarters art only after construction", () => {
+  const base = headquartersSvg(6, "#a3efd0", [
+    "depot",
+    "training",
+    "relay",
+    "workshop",
+    "honor",
+  ]);
+  const expanded = headquartersSvg(6, "#a3efd0", [
+    "depot",
+    "training",
+    "relay",
+    "workshop",
+    "honor",
+    "supplyhub",
+    "barracks",
+    "watchtower",
+    "dronepad",
+    "monument",
+  ]);
+  assert.ok(expanded.length > base.length + 500);
+  assert.notEqual(expanded, base);
+});
