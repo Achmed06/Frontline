@@ -14,11 +14,11 @@ import {
   completedLessons,
   styleUnlocked,
   advanceLearning,
-  matchLearning,
   headquartersSvg,
   type BaseStyle,
 } from "./headquarters";
 import { readLearning, saveLearning } from "./storage";
+import { battleCoachHint, type BattleCoachFocus } from "./battle-coach";
 import { COMMANDERS, type CommanderId } from "./commanders";
 import { readCommander, saveCommander } from "./storage";
 import {
@@ -492,21 +492,26 @@ function updateRecord() {
     ? `${stats.matches} lokale Matches · ${stats.wins} Siege`
     : "LOKAL SPIELEN. DIREKT LOSLEGEN.";
 }
+function setCoachFocus(focus: BattleCoachFocus | null) {
+  el("cards").classList.toggle("coach-focus", focus === "cards");
+  el("arena").parentElement?.classList.toggle("coach-focus", focus === "arena");
+  el("commander").classList.toggle("coach-focus", focus === "commander");
+}
 function updateHud(force = false) {
   if (!force && (!active || paused || ended)) return;
   const now = performance.now();
   if (!force && now - lastHud < 100) return;
   lastHud = now;
   const s = match.state;
-  const lessonGains = matchLearning(s);
-  const lesson = LESSONS.find(
-    (item) =>
-      learningProgress.counts[item.id] + lessonGains[item.id] < item.goal,
-  );
-  el("learning-hud").hidden = !active || ended || !lesson;
-  if (lesson)
-    el("learning-hud").textContent =
-      `${lesson.label} · ${Math.min(lesson.goal, learningProgress.counts[lesson.id] + lessonGains[lesson.id])}/${lesson.goal}`;
+  const coach = battleCoachHint(learningProgress, s, selected);
+  el("learning-hud").hidden = !active || ended || !coach;
+  if (coach) {
+    el("learning-hud").innerHTML =
+      `<small>${coach.kicker}</small><b>${coach.title}</b><span>${coach.detail}</span><i>${coach.current}/${coach.goal}</i>`;
+    setCoachFocus(coach.focus);
+  } else {
+    setCoachFocus(null);
+  }
   if (s.time >= bannerUntil || ended || !active)
     el("battle-banner").hidden = true;
   if (active && !ended && s.phase !== "ended") {
