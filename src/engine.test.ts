@@ -424,7 +424,7 @@ test("every six-unit combination is legal and bot fallback never escapes its dec
       match.state.units.every((unit) => deck.includes(unit.cardId as CardId)),
     );
   }
-  assert.equal(count, 210);
+  assert.equal(count, 924);
 });
 
 test("Sentinel uses existing ranged combat and cannot deploy past the front", () => {
