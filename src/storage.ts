@@ -4,6 +4,7 @@ import { normalizeLearning, type LearningProgress } from "./headquarters";
 import { isCommanderId, type CommanderId } from "./commanders";
 import { normalizeSeries, type SeriesRun } from "./series";
 import { MISSIONS, normalizeProgress, type CampaignProgress } from "./campaign";
+import { normalizeDailyHistory, type DailyRecord } from "./daily-front";
 import {
   DEFAULT_DECK,
   isValidDeck,
@@ -258,4 +259,17 @@ export function saveDeckSlots(slots: readonly DeckSlot[]): boolean {
   return (
     setting("deck-slots-v1", JSON.stringify(normalizeDeckSlots(slots))) !== null
   );
+}
+
+
+export function readDailyHistory(): DailyRecord[] {
+  try {
+    return normalizeDailyHistory(JSON.parse(setting("daily-v1") ?? "[]"));
+  } catch {
+    return [];
+  }
+}
+export function saveDailyHistory(history: readonly DailyRecord[]): boolean {
+  const normalized = normalizeDailyHistory(history);
+  return setting("daily-v1", JSON.stringify(normalized)) !== null;
 }
