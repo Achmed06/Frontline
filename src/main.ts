@@ -631,18 +631,29 @@ function updateHud(force = false) {
     el("battle-banner").hidden = true;
   if (live && s.phase !== "ended") {
     const critical = s.cores.player.hp <= s.cores.player.maxHp * 0.25;
+    const overtime = s.phase === "overtime";
     const lastPush = s.time >= MATCH_DURATION - 30;
     const notice =
       critical && !battleNotices.has("critical")
         ? "critical"
-        : lastPush && !battleNotices.has("lastPush")
-          ? "lastPush"
-          : null;
+        : overtime && !battleNotices.has("overtime")
+          ? "overtime"
+          : lastPush && !battleNotices.has("lastPush")
+            ? "lastPush"
+            : null;
     if (notice) {
       battleNotices.add(notice);
       announceBattle(
-        notice === "critical" ? "DEIN CORE BRAUCHT SCHUTZ" : "NOCH 30 SEKUNDEN",
-        notice === "critical" ? "BASIS IN GEFAHR" : "JETZT ENTSCHEIDET’S",
+        notice === "critical"
+          ? "DEIN CORE BRAUCHT SCHUTZ"
+          : notice === "overtime"
+            ? "VERLÄNGERUNG"
+            : "NOCH 30 SEKUNDEN",
+        notice === "critical"
+          ? "BASIS IN GEFAHR"
+          : notice === "overtime"
+            ? "NÄCHSTER VORTEIL ENTSCHEIDET"
+            : "JETZT ENTSCHEIDET’S",
         notice === "critical",
       );
     }
@@ -684,6 +695,7 @@ function updateHud(force = false) {
     }
   }
   el("timer").classList.toggle("urgent", remaining <= 30);
+  el("timer").classList.toggle("overtime", s.phase === "overtime");
   for (const team of ["player", "enemy"] as const) {
     const percent = Math.ceil(
       Math.max(0, s.cores[team].hp / s.cores[team].maxHp) * 100,
