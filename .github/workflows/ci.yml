@@ -48,7 +48,15 @@ jobs:
             exit 1
           fi
 
-          "$CHROME"             --headless             --no-sandbox             --disable-gpu             --virtual-time-budget=3500             --dump-dom             http://127.0.0.1:4173/             > /tmp/frontline-dom.html
+          set +e
+          timeout 20s "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3500 --dump-dom http://127.0.0.1:4173/ > /tmp/frontline-dom.html
+          CHROME_EXIT=$?
+          set -e
+
+          if [ "$CHROME_EXIT" -ne 0 ] && [ "$CHROME_EXIT" -ne 124 ]; then
+            echo "Headless Chrome exited unexpectedly with code $CHROME_EXIT."
+            exit "$CHROME_EXIT"
+          fi
 
           grep -q "<canvas" /tmp/frontline-dom.html || {
             echo "Frontline did not create a Phaser canvas."
