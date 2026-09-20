@@ -1,6 +1,10 @@
-# New manual-only build. The repository root must be this frontline directory.
+# iPhone test build. Unsigned IPA is produced for sideload signing; signed export remains optional.
 name: iPhone test build
 on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/ios-test.yml"
   workflow_dispatch:
     inputs:
       signed_ipa:
@@ -38,8 +42,25 @@ jobs:
           xcodebuild -project ios/App/App.xcodeproj -scheme App
           -configuration Release -destination 'generic/platform=iOS'
           -derivedDataPath releases/native-check CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        run: |
+          APP="releases/native-check/Build/Products/Release-iphoneos/App.app"
+          test -d "$APP"
+          rm -rf releases/unsigned
+          mkdir -p releases/unsigned/Payload
+          cp -R "$APP" releases/unsigned/Payload/
+          cd releases/unsigned
+          /usr/bin/zip -qry Frontline-unsigned.ipa Payload
+          test -s Frontline-unsigned.ipa
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frontline-unsigned-${{ github.run_number }}
+          path: releases/unsigned/Frontline-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
   signed-ipa:
-    if: ${{ inputs.signed_ipa }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.signed_ipa }}
     needs: native-build
     runs-on: macos-15
     timeout-minutes: 30
