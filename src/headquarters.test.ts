@@ -1,0 +1,45 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { Match } from "./engine";
+import {
+  normalizeLearning,
+  advanceLearning,
+  completedLessons,
+  baseStage,
+  styleUnlocked,
+} from "./headquarters";
+test("permanent learning rewards require finished matches, survive saves, and never double grant", () => {
+  const m = new Match({ botEnabled: false });
+  const empty = normalizeLearning(null);
+  Object.assign(m.state.stats, { deployed: 3, captured: 1, abilities: 1 });
+  assert.equal(advanceLearning(empty, m.state, "a"), empty);
+  m.state.phase = "ended";
+  m.state.winner = "enemy";
+  const first = advanceLearning(empty, m.state, "a");
+  assert.equal(completedLessons(first), 3);
+  assert.equal(styleUnlocked("aurora", first, 0), false);
+  assert.equal(advanceLearning(first, m.state, "a"), first);
+  m.state.winner = "player";
+  const complete = advanceLearning(first, m.state, "b");
+  assert.equal(styleUnlocked("aurora", complete, 0), true);
+  complete.style = "aurora";
+  assert.deepEqual(
+    normalizeLearning(JSON.parse(JSON.stringify(complete))),
+    complete,
+  );
+  assert.equal(baseStage(0), 0);
+  assert.equal(baseStage(1), 1);
+  assert.equal(baseStage(6), 3);
+  assert.equal(baseStage(18), 5);
+  assert.equal(baseStage(23), 5);
+  assert.equal(baseStage(24), 6);
+  assert.equal(styleUnlocked("ember", complete, 5), false);
+  assert.equal(styleUnlocked("ember", complete, 6), true);
+  assert.deepEqual(
+    normalizeLearning({
+      counts: { deploy: -1, capture: Infinity },
+      style: "bad",
+    }),
+    empty,
+  );
+});

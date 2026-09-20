@@ -1,0 +1,42 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { Match } from "./engine";
+import { newSeries, normalizeSeries } from "./series";
+import { DEFAULT_DECK } from "./engine";
+test("NOVA buffs only living allies without healing, spending energy or stacking Rally", () => {
+  const m = new Match({ playerCommander: "nova", botEnabled: false });
+  assert.equal(m.activateCommander().ok, false);
+  assert.equal(m.state.commanderCooldown, 0);
+  m.play("player", "vanguard", 210, 480);
+  m.play("enemy", "vanguard", 210, 80);
+  const ally = m.state.units[0],
+    enemy = m.state.units[1];
+  ally.hp = 50;
+  const energy = m.state.energy.player;
+  assert.equal(m.activateCommander().ok, true);
+  assert.equal(ally.hp, 50);
+  assert.equal(ally.rallyTime, 6);
+  assert.equal(enemy.rallyTime, 0);
+  assert.equal(m.state.energy.player, energy);
+  assert.equal(m.state.commanderCooldown, 32);
+  assert.equal(m.activateCommander().ok, false);
+  m.state.commanderCooldown = 0;
+  assert.equal(m.activateCommander().ok, false);
+  m.state.energy.player = 10;
+  assert.equal(m.play("player", "rally", ally.x, ally.y).ok, true);
+  assert.equal(ally.rallyTime, 6);
+  ally.hp = 0;
+  assert.equal(m.activateCommander().ok, false);
+});
+test("NOVA effects expire through simulation and the choice survives series saves", () => {
+  const m = new Match({ playerCommander: "nova", botEnabled: false });
+  m.play("player", "vanguard", 210, 480);
+  const ally = m.state.units[0];
+  m.activateCommander();
+  m.update(6.1);
+  assert.equal(ally.rallyTime, 0);
+  assert.ok(m.state.commanderCooldown > 25 && m.state.commanderCooldown < 27);
+  assert.equal(m.commanders.enemy, "nova");
+  const run = newSeries(DEFAULT_DECK, "nova");
+  assert.deepEqual(normalizeSeries(JSON.parse(JSON.stringify(run))), run);
+});
