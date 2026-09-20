@@ -25,17 +25,14 @@ export function renderDraft(
   function render() {
     const complete = picks.length === 8;
     const offers = draftOffers(picks);
-    container.innerHTML = `
-    <div class="deck-heading"><div class="eyebrow">DRAFT · LOKAL GEGEN BOT</div><button id="draft-close" class="icon-btn" aria-label="Draft verlassen">×</button></div>
-    <h2>${complete ? "Deine Auswahl steht." : picks.length < 6 ? "Wähle deine Truppe." : "Wähle deine Taktik."}</h2>
-    <p>Sechs Einheiten, zwei Fähigkeiten. Pro Runde wählst du eine von drei Karten. Der Bot erhält dasselbe Deck und deinen gewählten Kommandanten.</p>
-    <div class="draft-progress"><b>${picks.length}/8 GEWÄHLT</b><span>${complete ? "BEREIT" : picks.length < 6 ? `EINHEIT ${picks.length + 1}/6` : `TAKTIK ${picks.length - 5}/2`}</span></div>
-    <div class="draft-picked">${picks
-      .map((id) => {
-        const card = CARDS.find((c) => c.id === id)!;
-        return `<div title="${card.name}">${unitSvg(id)}<small>${card.name}</small></div>`;
-      })
-      .join("") || "<p>Dein Deck entsteht hier.</p>"}</div>${
+    container.innerHTML = `<div class="deck-heading"><div class="eyebrow">DRAFT · LOKAL GEGEN BOT</div><button id="draft-close" class="icon-btn" aria-label="Draft verlassen">×</button></div><h2>${complete ? "Deine Auswahl steht." : picks.length < 6 ? "Wähle deine Truppe." : "Wähle deine Taktik."}</h2><p>Sechs Einheiten, zwei Fähigkeiten. Pro Runde wählst du eine von drei Karten. Der Bot erhält dasselbe Deck und deinen gewählten Kommandanten.</p><div class="draft-progress"><b>${picks.length}/8 GEWÄHLT</b><span>${complete ? "BEREIT" : picks.length < 6 ? `EINHEIT ${picks.length + 1}/6` : `TAKTIK ${picks.length - 5}/2`}</span></div><div class="draft-picked">${
+      picks
+        .map((id) => {
+          const card = CARDS.find((c) => c.id === id)!;
+          return `<div title="${card.name}">${unitSvg(id)}<small>${card.name}</small></div>`;
+        })
+        .join("") || "<p>Dein Deck entsteht hier.</p>"
+    }</div>${
       complete
         ? `<p>Core-Angriff · Taktiker · bis zu 3 Minuten plus mögliche Verlängerung. Meisterung und Lernaufträge zählen. Dein gespeichertes Einsatzdeck bleibt erhalten.</p><button id="draft-start" class="primary">DRAFT-GEFECHT STARTEN ↗</button>`
         : `<div class="draft-offers">${offers
@@ -43,7 +40,9 @@ export function renderDraft(
               const card = CARDS.find((c) => c.id === id)!;
               return `<button data-draft-card="${id}"><span class="draft-art">${unitSvg(id)}<b>ϟ ${card.cost}</b></span><strong>${card.name}</strong><small>${card.role}</small><p>${card.description}</p><span class="draft-pick-label">WÄHLEN +</span></button>`;
             })
-            .join("")}</div><p class="draft-tip">Achte auf Energiebedarf und ergänzende Rollen. Die nicht gewählten Karten können später wieder angeboten werden.</p>`
+            .join(
+              "",
+            )}</div><p class="draft-tip">Achte auf Energiebedarf und ergänzende Rollen. Die nicht gewählten Karten können später wieder angeboten werden.</p>`
     }`;
     container.querySelector<HTMLButtonElement>("#draft-close")!.onclick =
       onClose;

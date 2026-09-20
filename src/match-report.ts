@@ -26,6 +26,8 @@ export function resultComparison(record: MatchRecord): string {
   const mission = MISSIONS.find((item) => item.id === record.missionId);
   return `${mission ? `<div class="eyebrow">KAMPAGNE · ${mission.name}</div>` : ""}<div class="report-score" aria-label="Endstand"><div class="report-meta"><span>${duration(record.duration)} MIN · ${COMMANDERS[record.commander ?? "atlas"].name}</span><span>${record.control ? "SIGNALKRIEG · " : "BOT · "}${difficultyNames[record.difficulty]}</span></div><div class="report-columns"><span>DU</span><span></span><span>BOT</span><strong>${record.core.player}%</strong><span>CORE</span><strong>${record.core.enemy}%</strong>${record.control ? `<b>${record.control.player}s</b><span>KONTROLLE / ${record.control.target}s</span><b>${record.control.enemy}s</b>` : ""}<b>${record.points.player}</b><span>PUNKTE</span><b>${record.points.enemy}</b></div></div>`;
 }
+
+/** Only receives validated local records. Cards come from the existing registry. */
 export function renderMatchHistory(
   container: HTMLElement,
   records: readonly MatchRecord[],

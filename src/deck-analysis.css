@@ -1,0 +1,6 @@
+.deck-analysis { margin: 12px 0; padding: 12px; border: 1px solid #5b88bd; border-radius: 10px; background: #183456; color: #e6f2ff; }
+.deck-analysis > b { font-size: 12px; color: #ffe578; }
+.deck-analysis .analysis-counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 9px 0; }
+.deck-analysis .analysis-counts span { padding: 5px 7px; border-radius: 5px; background: #284d72; font-size: 11px; }
+.deck-analysis p { margin: 7px 0; font-size: 11px; line-height: 1.5; color: #d1e6f9; }
+.deck-analysis > small { font-size: 10px; color: #a8c3e1; }

@@ -1,0 +1,667 @@
+import { ARENA_THEMES, type ArenaThemeId } from "./arena-themes";
+import Phaser from "phaser";
+import { Match, CARDS } from "./engine";
+import { unitSvg } from "./art";
+
+const MINT = 0x41ffc1,
+  CORAL = 0xff684f,
+  NEUTRAL = 0xffda85;
+export type SceneBridge = {
+  authoritative?: boolean;
+  theme: () => ArenaThemeId;
+  match: () => Match;
+  running: () => boolean;
+  selected: () => string | null;
+  deploy: (x: number, y: number) => void;
+  tick: () => void;
+};
+export class ArenaScene extends Phaser.Scene {
+  private g!: Phaser.GameObjects.Graphics;
+  private fx!: Phaser.GameObjects.Graphics;
+  private sprites = new Map<number, Phaser.GameObjects.Image>();
+  private labels: Phaser.GameObjects.Text[] = [];
+  private pointer: { x: number; y: number } | null = null;
+  private aim: {
+    pointerId: number;
+    cardId: string | null;
+    match: Match;
+  } | null = null;
+  private ghost!: Phaser.GameObjects.Image;
+  private aimLabel!: Phaser.GameObjects.Text;
+  private clock = 0;
+  private lastMatch: Match | null = null;
+  private wasRunning = false;
+  constructor(private bridge: SceneBridge) {
+    super("arena");
+  }
+  preload() {
+    for (const card of CARDS.filter((c) => c.kind === "unit"))
+      for (const team of ["player", "enemy"] as const) {
+        // Phaser 3's XHRLoader decodes inline SVG payloads with atob.
+        const bytes = new TextEncoder().encode(unitSvg(card.id, team));
+        const data = btoa(String.fromCharCode(...bytes));
+        this.load.svg(
+          `${card.id}-${team}`,
+          `data:image/svg+xml;base64,${data}`,
+          { width: 96, height: 96 },
+        );
+      }
+  }
+  create() {
+    this.g = this.add.graphics();
+    this.fx = this.add.graphics().setDepth(5);
+    this.ghost = this.add
+      .image(0, 0, "vanguard-player")
+      .setDepth(6)
+      .setVisible(false);
+    this.aimLabel = this.add
+      .text(210, 65, "", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#83ffcf",
+        backgroundColor: "#101e21",
+        padding: { x: 8, y: 6 },
+        wordWrap: { width: 270 },
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(7)
+      .setVisible(false);
+    for (let i = 0; i < 9; i++)
+      this.labels.push(
+        this.add
+          .text(0, 0, `${"ABC"[i % 3]}${Math.floor(i / 3) + 1}`, {
+            fontFamily: "monospace",
+            fontSize: "9px",
+            color: "#9cb0ad",
+          })
+          .setOrigin(0.5)
+          .setDepth(3),
+      );
+    this.add.text(27, 26, "SEKTOR 07", {
+      fontFamily: "monospace",
+      fontSize: "8px",
+      color: "#6e8581",
+      letterSpacing: 2,
+    });
+    this.add
+      .text(393, 535, "ATLAS // 01", {
+        fontFamily: "monospace",
+        fontSize: "8px",
+        color: "#6e8581",
+      })
+      .setOrigin(1, 0);
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (
+        !this.bridge.running() ||
+        this.aim ||
+        (!p.wasTouch && !p.leftButtonDown())
+      )
+        return;
+      this.aim = {
+        pointerId: p.id,
+        cardId: this.bridge.selected(),
+        match: this.bridge.match(),
+      };
+      this.pointer = { x: p.x, y: p.y };
+    });
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
+      if (this.aim && this.aim.pointerId !== p.id) return;
+      this.pointer = { x: p.x, y: p.y };
+    });
+    this.input.on("pointerup", (p: Phaser.Input.Pointer) => {
+      const aim = this.aim;
+      if (!aim || aim.pointerId !== p.id) return;
+      this.cancelAim();
+      // Phaser routes native touchcancel through pointerup as well.
+      if (
+        p.event.type === "touchcancel" ||
+        !this.bridge.running() ||
+        aim.match !== this.bridge.match() ||
+        aim.cardId !== this.bridge.selected()
+      )
+        return;
+      this.bridge.deploy(p.x, p.y);
+    });
+    this.input.on("pointerupoutside", () => this.cancelAim());
+    this.input.on("gameout", () => this.cancelAim());
+  }
+  private cancelAim() {
+    this.aim = null;
+    this.pointer = null;
+    this.ghost.setVisible(false);
+    this.aimLabel.setVisible(false);
+  }
+
+  update(_time: number, delta: number) {
+    const running = this.bridge.running(),
+      match = this.bridge.match();
+    if (
+      !running ||
+      (this.aim &&
+        (this.aim.match !== match ||
+          this.aim.cardId !== this.bridge.selected()))
+    )
+      this.cancelAim();
+    if (match !== this.lastMatch) {
+      this.scale.getParentBounds();
+      this.scale.refresh();
+      for (const sprite of this.sprites.values()) sprite.destroy();
+      this.sprites.clear();
+    }
+    if (running) {
+      this.clock += Math.min(delta, 100) / 1000;
+      if (!this.bridge.authoritative) match.update(Math.min(delta, 100) / 1000);
+    }
+    // Lobby and pause screens do not need continuously rebuilt graphics.
+    if (running || match !== this.lastMatch || this.wasRunning) this.draw();
+    this.lastMatch = match;
+    this.wasRunning = running;
+    this.bridge.tick();
+  }
+  private polygon(
+    g: Phaser.GameObjects.Graphics,
+    pts: number[][],
+    fill: number,
+    alpha = 1,
+    line?: number,
+  ) {
+    g.fillStyle(fill, alpha);
+    g.fillPoints(
+      pts.map(([x, y]) => ({ x, y })),
+      true,
+    );
+    if (line !== undefined) {
+      g.lineStyle(1, line, 0.6);
+      g.strokePoints(
+        pts.map(([x, y]) => ({ x, y })),
+        true,
+      );
+    }
+  }
+  private hex(x: number, y: number, r: number) {
+    return Array.from({ length: 6 }, (_, i) => [
+      x + Math.cos((i * Math.PI) / 3 - Math.PI / 6) * r,
+      y + Math.sin((i * Math.PI) / 3 - Math.PI / 6) * r,
+    ]);
+  }
+  private draw() {
+    const m = this.bridge.match(),
+      s = m.state,
+      g = this.g,
+      fx = this.fx;
+    g.clear();
+    fx.clear();
+    const themeId = this.bridge.theme();
+    const theme = ARENA_THEMES[themeId];
+    g.fillStyle(theme.water);
+    g.fillRect(0, 0, 420, 560);
+    // Fine survey grid and faint terrain contours around an angular platform.
+    g.lineStyle(1, 0x69d9ec, 0.035);
+    for (let x = 0; x < 420; x += 20) g.lineBetween(x, 0, x, 560);
+    for (let y = 0; y < 560; y += 20) g.lineBetween(0, y, 420, y);
+    for (let k = 0; k < 5; k++) {
+      g.lineStyle(1, theme.accent, 0.16);
+      g.strokeEllipse(20 - k * 15, 270, 110 + k * 25, 250 + k * 45);
+      g.strokeEllipse(420 + k * 12, 300, 90 + k * 25, 300 + k * 45);
+    }
+    const boundary = [
+      [28, 62],
+      [80, 20],
+      [340, 20],
+      [392, 62],
+      [403, 228],
+      [386, 292],
+      [403, 489],
+      [350, 543],
+      [70, 543],
+      [17, 489],
+      [34, 292],
+      [17, 228],
+    ];
+    this.polygon(
+      g,
+      boundary.map(([x, y]) => [x, y + 6]),
+      0x060e12,
+      1,
+    );
+    this.polygon(g, boundary, theme.ground, 1, theme.edge);
+    // Six small edge landmarks, with no collision or gameplay footprint.
+    for (let i = 0; i < 6; i++) {
+      const x = i % 2 === 0 ? 12 : 408;
+      const y = 95 + Math.floor(i / 2) * 170;
+      if (themeId === "frost") {
+        this.polygon(
+          g,
+          [
+            [x - 8, y + 14],
+            [x - 5, y - 12],
+            [x + 4, y - 22],
+            [x + 9, y + 8],
+          ],
+          0x9eddf2,
+          1,
+          theme.edge,
+        );
+        g.lineStyle(2, 0xe7ffff, 0.8);
+        g.lineBetween(x + 4, y - 20, x, y + 10);
+      } else if (themeId === "ember") {
+        g.lineStyle(3, theme.accent, 0.8);
+        g.lineBetween(x - 6, y - 18, x + 5, y);
+        g.lineBetween(x + 5, y, x - 5, y + 20);
+      } else if (themeId === "nexus") {
+        this.polygon(g, this.hex(x, y, 11), 0x413269, 1, theme.accent);
+        g.fillStyle(theme.accent, 0.8);
+        g.fillCircle(x, y, 4);
+      } else {
+        g.fillStyle(0x398d6b, 1);
+        g.fillCircle(x, y, 9);
+        g.fillStyle(0x86d58b, 1);
+        g.fillCircle(x - 2, y - 4, 6);
+      }
+    }
+    // Nine territory plates communicate the map rather than fixed lanes.
+    for (let row = 0; row < 3; row++)
+      for (let col = 0; col < 3; col++) {
+        const p = s.points[row * 3 + col],
+          x = col * 125 + 85,
+          y = row * 130 + 150;
+        const color =
+          p.owner === "player"
+            ? 0x167b63
+            : p.owner === "enemy"
+              ? 0xa64f42
+              : theme.neutral;
+        this.polygon(
+          g,
+          [
+            [x - 58, y - 58],
+            [x + 39, y - 58],
+            [x + 58, y - 38],
+            [x + 58, y + 57],
+            [x - 39, y + 57],
+            [x - 58, y + 37],
+          ],
+          color,
+          p.owner && !p.supplied ? 0.4 : 0.95,
+          p.owner === "player"
+            ? 0x46d6a8
+            : p.owner === "enemy"
+              ? 0xff9371
+              : 0xd6bd7b,
+        );
+        g.lineStyle(1, 0xf6dda0, 0.12);
+        for (let k = 0; k < 4; k++)
+          g.lineBetween(x - 40, y - 44 + k * 24, x + 42, y - 44 + k * 24);
+        g.fillStyle(0x101f24, 0.5);
+        g.fillRect(x - 51, y - 47, 3, 12);
+        g.fillRect(x + 47, y + 35, 3, 12);
+      }
+    // Continuous supply boundary, with a highlighted deploy zone when selecting a unit.
+    const frontShape = (team: "player" | "enemy") => [
+      [18, m.frontline(team, 85)],
+      [147.5, m.frontline(team, 85)],
+      [147.5, m.frontline(team, 210)],
+      [272.5, m.frontline(team, 210)],
+      [272.5, m.frontline(team, 335)],
+      [402, m.frontline(team, 335)],
+    ];
+    const front = frontShape("player"),
+      enemyFront = frontShape("enemy");
+    this.polygon(g, [...enemyFront, [402, 65], [18, 65]], CORAL, 0.045);
+    this.polygon(
+      g,
+      [...front, [402, 495], [18, 495]],
+      MINT,
+      this.bridge.selected() &&
+        CARDS.find((c) => c.id === this.bridge.selected())?.kind === "unit"
+        ? 0.12
+        : 0.045,
+    );
+    g.lineStyle(2, MINT, 0.65);
+    g.strokePoints(
+      front.map(([x, y]) => ({ x, y })),
+      false,
+    );
+    g.lineStyle(1.5, CORAL, 0.3);
+    g.strokePoints(
+      enemyFront.map(([x, y]) => ({ x, y })),
+      false,
+    );
+    // Supply links. Color only when a connected friendly pair owns the link.
+    for (let i = 0; i < 9; i++)
+      for (const j of [i % 3 < 2 ? i + 1 : -1, i < 6 ? i + 3 : -1]) {
+        if (j < 0) continue;
+        const a = s.points[i],
+          b = s.points[j];
+        const color =
+          j === i + 3 &&
+          a.supplied &&
+          b.supplied &&
+          a.owner &&
+          a.owner === b.owner
+            ? a.owner === "player"
+              ? MINT
+              : CORAL
+            : 0x78958d;
+        g.lineStyle(2, 0x142025, 0.9);
+        g.lineBetween(a.x, a.y, b.x, b.y);
+        g.lineStyle(1, color, 0.2);
+        g.lineBetween(a.x, a.y, b.x, b.y);
+      }
+    // Hand-placed rubble, ventilation strips and platform bolts.
+    for (const [x, y, angle] of [
+      [28, 106, 0.2],
+      [385, 215, -0.2],
+      [31, 372, 0.5],
+      [386, 449, 0.8],
+      [147, 217, 0.5],
+      [272, 347, -0.3],
+    ] as number[][]) {
+      this.polygon(
+        g,
+        [
+          [x - 10, y - 3],
+          [x - 5, y - 10],
+          [x + 8, y - 7],
+          [x + 12, y + 3],
+          [x + 3, y + 8],
+          [x - 8, y + 7],
+        ],
+        0x13252a,
+        0.9,
+        0x3c4b46,
+      );
+      g.lineStyle(1, 0x698176, 0.25);
+      g.lineBetween(x - 4, y - 5, x + 6, y - 4 + angle * 4);
+    }
+    for (const p of s.points) {
+      if (m.controlObjective?.pointIds.includes(p.id)) {
+        g.lineStyle(2, 0xf3dc82, 0.9);
+        g.strokeRoundedRect(p.x - 38, p.y - 38, 76, 76, 12);
+      }
+      const color =
+        p.owner === "player" ? MINT : p.owner === "enemy" ? CORAL : NEUTRAL;
+      g.fillStyle(0x07151a, 0.5);
+      g.fillEllipse(p.x, p.y + 8, 60, 29);
+      this.polygon(g, this.hex(p.x, p.y + 4, 27), 0x14253c, 1, 0x233f55);
+      this.polygon(g, this.hex(p.x, p.y, 25), 0x23445a, 1, color);
+      this.polygon(g, this.hex(p.x, p.y, 18), color, 0.36, color);
+      g.fillStyle(color, p.owner && !p.supplied ? 0.1 : 0.25);
+      g.fillRect(p.x - 4, p.y - 25, 8, 24);
+      g.fillStyle(0xffffff, 0.8);
+      g.fillCircle(p.x, p.y - 18, 2);
+      if (p.owner && !p.supplied) {
+        g.lineStyle(1, 0xd0ba87, 0.5);
+        g.lineBetween(p.x - 18, p.y + 18, p.x + 18, p.y - 18);
+      }
+      if (p.contested) {
+        g.lineStyle(3, 0xffdf6b, 0.9);
+        g.lineBetween(p.x - 10, p.y - 10, p.x + 10, p.y + 10);
+        g.lineBetween(p.x + 10, p.y - 10, p.x - 10, p.y + 10);
+        g.strokeCircle(p.x, p.y, 34);
+      }
+      const r = 8 + Math.sin(this.clock * 2 + p.id) * 0.6;
+      this.polygon(
+        g,
+        [
+          [p.x, p.y - r],
+          [p.x + r * 0.8, p.y],
+          [p.x, p.y + r],
+          [p.x - r * 0.8, p.y],
+        ],
+        color,
+        0.85,
+      );
+      g.lineStyle(2, color, 0.25);
+      g.strokeCircle(p.x, p.y, 30);
+      if (p.capture > 0.01) {
+        g.lineStyle(6, 0x102540, 0.9);
+        g.strokeCircle(p.x, p.y, 30);
+        g.lineStyle(4, p.captureTeam === "player" ? MINT : CORAL, 1);
+        g.beginPath();
+        g.arc(
+          p.x,
+          p.y,
+          30,
+          -Math.PI / 2,
+          -Math.PI / 2 + p.capture * Math.PI * 2,
+          false,
+        );
+        g.strokePath();
+      }
+      this.labels[p.id]
+        ?.setText(
+          `${"ABC"[p.id % 3]}${Math.floor(p.id / 3) + 1}${p.contested ? " · KAMPF" : p.capture > 0.01 ? ` · ${Math.floor(p.capture * 100)}%` : p.owner && !p.supplied ? " · GETRENNT" : ""}`,
+        )
+        .setPosition(p.x, p.y + 40)
+        .setColor(
+          p.contested || (p.owner && !p.supplied)
+            ? "#f4d896"
+            : p.owner === "player"
+              ? "#83ffcf"
+              : p.owner === "enemy"
+                ? "#ffc0a2"
+                : "#fff0bc",
+        );
+    }
+    this.drawCore(210, 35, "enemy", s.cores.enemy.hp / s.cores.enemy.maxHp);
+    this.drawCore(210, 525, "player", s.cores.player.hp / s.cores.player.maxHp);
+    const alive = new Set(s.units.map((u) => u.id));
+    for (const [id, sprite] of this.sprites)
+      if (!alive.has(id)) {
+        sprite.destroy();
+        this.sprites.delete(id);
+      }
+    for (const u of s.units) {
+      let sprite = this.sprites.get(u.id);
+      if (!sprite) {
+        sprite = this.add.image(u.x, u.y, `${u.cardId}-${u.team}`).setDepth(4);
+        this.sprites.set(u.id, sprite);
+      }
+      const size = u.cardId === "bulwark" ? 45 : u.cardId === "swarm" ? 28 : 36;
+      sprite
+        .setPosition(u.x, u.y - 3)
+        .setDisplaySize(size, size)
+        .setAlpha(u.hp > 0 ? 1 : 0);
+      g.fillStyle(0x06171b, 0.55);
+      g.fillEllipse(u.x, u.y + 6, size * 0.65, size * 0.25);
+      g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
+      g.strokeEllipse(u.x, u.y + 7, size * 0.75, size * 0.32);
+      if (u.shield > 0) {
+        fx.lineStyle(2, MINT, 0.5 + 0.2 * Math.sin(this.clock * 5));
+        fx.strokeCircle(u.x, u.y, 22);
+      }
+      if (u.rallyTime > 0) {
+        // Two gold chevrons make the tempo boost legible even without its initial pulse.
+        fx.lineStyle(2, 0xffdf6b, 0.9);
+        for (let i = 0; i < 2; i++) {
+          const y = u.y + 14 + i * 5;
+          fx.lineBetween(u.x - 5, y + 3, u.x, y);
+          fx.lineBetween(u.x, y, u.x + 5, y + 3);
+        }
+      }
+      if (u.slowTime > 0) {
+        fx.lineStyle(2, 0x94caff, 0.85);
+        fx.strokeEllipse(u.x, u.y + 12, 27, 9);
+      }
+      const healthWidth = u.cardId === "bulwark" ? 27 : 21;
+      fx.fillStyle(0x061519, 0.9);
+      fx.fillRoundedRect(
+        u.x - healthWidth / 2 - 1,
+        u.y - 23,
+        healthWidth + 2,
+        4,
+        2,
+      );
+      fx.fillStyle(u.team === "player" ? MINT : CORAL);
+      fx.fillRect(
+        u.x - healthWidth / 2,
+        u.y - 22,
+        healthWidth * Math.max(0, u.hp / u.maxHp),
+        2,
+      );
+    }
+    for (const e of s.effects) {
+      const progress = 1 - e.life / e.maxLife,
+        alpha = Math.max(0, e.life / e.maxLife);
+      const color = e.team === "player" ? MINT : CORAL;
+      if (e.targetX !== undefined && e.targetY !== undefined) {
+        fx.lineStyle(e.type === "heal" ? 2 : 1.5, color, alpha * 0.7);
+        const travel = Math.min(1, progress * 2);
+        fx.fillStyle(0xfff3b1, alpha);
+        fx.fillCircle(
+          e.x + (e.targetX - e.x) * travel,
+          e.y + (e.targetY - e.y) * travel,
+          3,
+        );
+        fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
+        fx.fillStyle(0xfdfad9, alpha);
+        fx.fillCircle(e.targetX, e.targetY, 2.5);
+      } else {
+        const radius =
+          e.radius ??
+          (e.type === "pulse" || e.type === "rally"
+            ? 75
+            : e.type === "capture"
+              ? 45
+              : e.type === "death"
+                ? 15
+                : 23);
+        const effectColor =
+          e.type === "stasis"
+            ? 0x88d5ff
+            : e.type === "repulsor"
+              ? 0xc29aff
+              : e.type === "heal" || e.type === "rally"
+                ? 0x66ffb0
+                : e.type === "pulse" || e.type === "blast"
+                  ? 0xffc368
+                  : color;
+        if (e.type === "pulse" || e.type === "blast" || e.type === "capture") {
+          fx.fillStyle(effectColor, alpha * 0.22);
+          fx.fillCircle(e.x, e.y, 5 + radius * progress);
+          fx.lineStyle(2, 0xfff2bf, alpha);
+          fx.strokeCircle(e.x, e.y, 3 + radius * progress * 0.65);
+        }
+        if (e.type === "heal") {
+          const lift = progress * 18;
+          fx.fillStyle(effectColor, alpha);
+          fx.fillRect(e.x - 2, e.y - 10 - lift, 4, 15);
+          fx.fillRect(e.x - 7, e.y - 5 - lift, 14, 4);
+        }
+        if (e.type === "repulsor" || e.type === "stasis") {
+          fx.lineStyle(2, effectColor, alpha);
+          for (let i = 0; i < 6; i++) {
+            const angle = (i * Math.PI) / 3;
+            const r = 8 + radius * progress;
+            fx.lineBetween(
+              e.x + Math.cos(angle) * r * 0.6,
+              e.y + Math.sin(angle) * r * 0.6,
+              e.x + Math.cos(angle) * r,
+              e.y + Math.sin(angle) * r,
+            );
+          }
+        }
+        fx.lineStyle(e.type === "pulse" ? 4 : 2, effectColor, alpha);
+        fx.strokeCircle(e.x, e.y, 5 + radius * progress);
+        if (e.type === "death") {
+          for (let i = 0; i < 5; i++) {
+            const a = i * 1.256 + e.id;
+            fx.fillStyle(color, alpha);
+            fx.fillRect(
+              e.x + Math.cos(a) * radius * progress,
+              e.y + Math.sin(a) * radius * progress,
+              3,
+              3,
+            );
+          }
+        }
+      }
+    }
+    this.ghost.setVisible(false);
+    this.aimLabel.setVisible(false);
+    const selected = this.bridge.selected();
+    if (selected && this.pointer && this.bridge.running()) {
+      const card = CARDS.find((c) => c.id === selected)!;
+      const { x, y } = this.pointer;
+      const validation = m.validatePlay("player", selected, x, y);
+      const valid = validation.ok;
+      if (this.aim) {
+        this.aimLabel
+          .setText(valid ? "LOSLASSEN ZUM EINSETZEN" : validation.message)
+          .setColor(valid ? "#83ffcf" : "#ff927c")
+          .setPosition(
+            Math.max(145, Math.min(275, x)),
+            y < 115 ? y + 70 : y - 65,
+          )
+          .setVisible(true);
+        if (card.kind === "unit")
+          this.ghost
+            .setTexture(`${card.id}-player`)
+            .setPosition(x, y - 3)
+            .setDisplaySize(
+              card.id === "bulwark" ? 45 : 36,
+              card.id === "bulwark" ? 45 : 36,
+            )
+            .setAlpha(0.55)
+            .setTint(valid ? MINT : CORAL)
+            .setVisible(true);
+      }
+      fx.lineStyle(1.5, valid ? MINT : CORAL, 0.65);
+      fx.strokeCircle(x, y, card.kind === "ability" ? (card.range ?? 65) : 19);
+      fx.lineBetween(x - 7, y, x + 7, y);
+      fx.lineBetween(x, y - 7, x, y + 7);
+    }
+  }
+  private drawCore(
+    x: number,
+    y: number,
+    team: "player" | "enemy",
+    fraction: number,
+  ) {
+    const g = this.g,
+      color = team === "player" ? MINT : CORAL;
+    g.fillStyle(0x07151b, 0.7);
+    g.fillEllipse(x, y + 9, 98, 26);
+    this.polygon(
+      g,
+      [
+        [x - 43, y - 12],
+        [x - 29, y - 24],
+        [x + 29, y - 24],
+        [x + 43, y - 12],
+        [x + 43, y + 11],
+        [x + 27, y + 24],
+        [x - 27, y + 24],
+        [x - 43, y + 11],
+      ],
+      0x182829,
+      1,
+      0x506257,
+    );
+    for (const dx of [-30, 30]) {
+      g.fillStyle(0x394947);
+      g.fillRect(x + dx - 5, y - 12, 10, 26);
+      g.fillStyle(color, 0.7);
+      g.fillRect(x + dx - 2, y - 7, 4, 11);
+    }
+    this.polygon(g, this.hex(x, y - 2, 22), 0x47635a, 1, color);
+    this.polygon(g, this.hex(x, y - 3, 15), 0x132627, 1, color);
+    this.polygon(
+      g,
+      [
+        [x, y - 13],
+        [x + 8, y - 3],
+        [x, y + 7],
+        [x - 8, y - 3],
+      ],
+      color,
+      0.65 + 0.25 * Math.sin(this.clock * 2),
+    );
+    g.fillStyle(0x061315);
+    g.fillRect(x - 27, y + 26, 54, 3);
+    g.fillStyle(color);
+    g.fillRect(x - 27, y + 26, 54 * Math.max(0, fraction), 3);
+  }
+}

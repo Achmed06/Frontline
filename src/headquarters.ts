@@ -1,10 +1,34 @@
 /** New permanent learning rewards; headquarters growth derives from campaign wins. */
 import type { MatchState } from "./engine";
 export const LESSONS = [
-  { id: "deploy", name: "Eine Front aufstellen", goal: 3, tip: "Setze drei Truppen ein. Kombiniere Nah- und Fernkampf.", label: "TRUPPEN EINSETZEN" },
-  { id: "capture", name: "Boden gewinnen", goal: 1, tip: "Halte einen neutralen oder gegnerischen Punkt, bis er dir gehört.", label: "PUNKT EROBERN" },
-  { id: "ability", name: "Den Moment nutzen", goal: 1, tip: "Nutze eine taktische Karte oder deine Kommandantenfähigkeit.", label: "FÄHIGKEIT NUTZEN" },
-  { id: "win", name: "Die Front sichern", goal: 1, tip: "Gewinne ein Gefecht. Schütze deinen Core und unterstütze den Vorstoß.", label: "GEFECHT GEWINNEN" },
+  {
+    id: "deploy",
+    name: "Eine Front aufstellen",
+    goal: 3,
+    tip: "Setze drei Truppen ein. Kombiniere Nah- und Fernkampf.",
+    label: "TRUPPEN EINSETZEN",
+  },
+  {
+    id: "capture",
+    name: "Boden gewinnen",
+    goal: 1,
+    tip: "Halte einen neutralen oder gegnerischen Punkt, bis er dir gehört.",
+    label: "PUNKT EROBERN",
+  },
+  {
+    id: "ability",
+    name: "Den Moment nutzen",
+    goal: 1,
+    tip: "Nutze eine taktische Karte oder deine Kommandantenfähigkeit.",
+    label: "FÄHIGKEIT NUTZEN",
+  },
+  {
+    id: "win",
+    name: "Die Front sichern",
+    goal: 1,
+    tip: "Gewinne ein Gefecht. Schütze deinen Core und unterstütze den Vorstoß.",
+    label: "GEFECHT GEWINNEN",
+  },
 ] as const;
 export type LessonId = (typeof LESSONS)[number]["id"];
 export type BaseStyle = "field" | "aurora" | "ember" | "supporter";
@@ -14,22 +38,75 @@ export type LearningProgress = {
   lastMatch: string;
 };
 export const BASE_STAGES = [
-  { wins: 0, name: "Feldlager", description: "Deine erste Stellung. Sichere einen Einsatz, um das Hauptquartier aufzubauen." },
-  { wins: 1, name: "Brückenkopf", description: "Die Kommandozentrale steht. Dein erster Sieg bleibt sichtbar." },
-  { wins: 3, name: "Versorgungsbasis", description: "Neue Lager und Landeflächen versorgen deine wachsende Front." },
-  { wins: 6, name: "Bastion", description: "Schutztürme sichern die Basis. Die Gestaltung Glut ist verfügbar." },
-  { wins: 12, name: "Signalzentrum", description: "Relaismasten verbinden dein Hauptquartier mit den Außenposten." },
-  { wins: 18, name: "Frontkommando", description: "Dein Frontkommando steht. Gewinne den Kommandokrieg für den letzten Ausbau." },
-  { wins: 24, name: "Kommandozitadelle", description: "Vier Kapitel gesichert. Goldene Signalbögen verbinden deine vollständig ausgebaute Kommandozitadelle." },
+  {
+    wins: 0,
+    name: "Feldlager",
+    description:
+      "Deine erste Stellung. Sichere einen Einsatz, um das Hauptquartier aufzubauen.",
+  },
+  {
+    wins: 1,
+    name: "Brückenkopf",
+    description:
+      "Die Kommandozentrale steht. Dein erster Sieg bleibt sichtbar.",
+  },
+  {
+    wins: 3,
+    name: "Versorgungsbasis",
+    description: "Neue Lager und Landeflächen versorgen deine wachsende Front.",
+  },
+  {
+    wins: 6,
+    name: "Bastion",
+    description:
+      "Schutztürme sichern die Basis. Die Gestaltung Glut ist verfügbar.",
+  },
+  {
+    wins: 12,
+    name: "Signalzentrum",
+    description:
+      "Relaismasten verbinden dein Hauptquartier mit den Außenposten.",
+  },
+  {
+    wins: 18,
+    name: "Frontkommando",
+    description:
+      "Dein Frontkommando steht. Gewinne den Kommandokrieg für den letzten Ausbau.",
+  },
+  {
+    wins: 24,
+    name: "Kommandozitadelle",
+    description:
+      "Vier Kapitel gesichert. Goldene Signalbögen verbinden deine vollständig ausgebaute Kommandozitadelle.",
+  },
 ] as const;
-export const BASE_STYLES: Record<BaseStyle,{ name: string; color: string; requirement: string }> = {
+export const BASE_STYLES: Record<
+  BaseStyle,
+  { name: string; color: string; requirement: string }
+> = {
   supporter: { name: "Kommandogold", color: "#ffe17d", requirement: "Unterstützerpaket · Apple-Testkauf" },
-  field: { name: "Feldgrün", color: "#a3efd0", requirement: "Von Beginn an verfügbar" },
-  aurora: { name: "Aurora", color: "#99d9ff", requirement: "Alle vier Lernaufträge abschließen" },
-  ember: { name: "Glut", color: "#ffc084", requirement: "Sechs verschiedene Kampagneneinsätze gewinnen" },
+  field: {
+    name: "Feldgrün",
+    color: "#a3efd0",
+    requirement: "Von Beginn an verfügbar",
+  },
+  aurora: {
+    name: "Aurora",
+    color: "#99d9ff",
+    requirement: "Alle vier Lernaufträge abschließen",
+  },
+  ember: {
+    name: "Glut",
+    color: "#ffc084",
+    requirement: "Sechs verschiedene Kampagneneinsätze gewinnen",
+  },
 };
 export function normalizeLearning(value: unknown): LearningProgress {
-  const result: LearningProgress = { counts: { deploy: 0, capture: 0, ability: 0, win: 0 }, style: "field", lastMatch: "" };
+  const result: LearningProgress = {
+    counts: { deploy: 0, capture: 0, ability: 0, win: 0 },
+    style: "field",
+    lastMatch: "",
+  };
   if (!value || typeof value !== "object") return result;
   const source = value as Partial<LearningProgress>;
   for (const lesson of LESSONS) {
@@ -37,20 +114,40 @@ export function normalizeLearning(value: unknown): LearningProgress {
     if (typeof count === "number" && Number.isFinite(count) && count >= 0)
       result.counts[lesson.id] = Math.min(lesson.goal, Math.floor(count));
   }
-  if (source.style === "field" || source.style === "aurora" || source.style === "ember" || source.style === "supporter")
+  if (
+    source.style === "field" ||
+    source.style === "aurora" ||
+    source.style === "ember" || source.style === "supporter"
+  )
     result.style = source.style;
-  if (typeof source.lastMatch === "string" && source.lastMatch.length < 160) result.lastMatch = source.lastMatch;
+  if (typeof source.lastMatch === "string" && source.lastMatch.length < 160)
+    result.lastMatch = source.lastMatch;
   return result;
 }
 export function completedLessons(progress: LearningProgress): number {
-  return LESSONS.filter((lesson) => progress.counts[lesson.id] >= lesson.goal).length;
+  return LESSONS.filter((lesson) => progress.counts[lesson.id] >= lesson.goal)
+    .length;
 }
-export function styleUnlocked(style: BaseStyle, progress: LearningProgress, campaignWins: number, supporterOwned = false): boolean {
+export function styleUnlocked(
+  style: BaseStyle,
+  progress: LearningProgress,
+  campaignWins: number,
+  supporterOwned = false,
+): boolean {
   if (style === "supporter") return supporterOwned;
-  return style === "field" || (style === "aurora" ? completedLessons(progress) === LESSONS.length : campaignWins >= 6);
+  return (
+    style === "field" ||
+    (style === "aurora"
+      ? completedLessons(progress) === LESSONS.length
+      : campaignWins >= 6)
+  );
 }
 export function baseStage(campaignWins: number): number {
-  return BASE_STAGES.reduce((stage, candidate, index) => campaignWins >= candidate.wins ? index : stage, 0);
+  return BASE_STAGES.reduce(
+    (stage, candidate, index) =>
+      campaignWins >= candidate.wins ? index : stage,
+    0,
+  );
 }
 export function matchLearning(state: MatchState): Record<LessonId, number> {
   return {
@@ -60,15 +157,25 @@ export function matchLearning(state: MatchState): Record<LessonId, number> {
     win: Number(state.phase === "ended" && state.winner === "player"),
   };
 }
-export function advanceLearning(progress: LearningProgress, state: MatchState, matchId: string): LearningProgress {
-  if (state.phase !== "ended" || !matchId || progress.lastMatch === matchId) return progress;
+export function advanceLearning(
+  progress: LearningProgress,
+  state: MatchState,
+  matchId: string,
+): LearningProgress {
+  if (state.phase !== "ended" || !matchId || progress.lastMatch === matchId)
+    return progress;
   const next = normalizeLearning(progress);
   const gains = matchLearning(state);
   for (const lesson of LESSONS)
-    next.counts[lesson.id] = Math.min(lesson.goal, next.counts[lesson.id] + gains[lesson.id]);
+    next.counts[lesson.id] = Math.min(
+      lesson.goal,
+      next.counts[lesson.id] + gains[lesson.id],
+    );
   next.lastMatch = matchId;
   return next;
 }
+
+/** Original vector base: later stages add structures, not combat bonuses. */
 export function headquartersSvg(stage: number, color: string): string {
   const building = (x: number, y: number, width: number, height: number) =>
     `<g transform="translate(${x} ${y})"><path d="M0 0 ${width} -12 ${width + 28} 4 28 17Z" fill="#c2e7ff"/><path d="M0 0 28 17 28 ${height + 17} 0 ${height}Z" fill="#2865a4"/><path d="M28 17 ${width + 28} 4 ${width + 28} ${height + 4} 28 ${height + 17}Z" fill="#438bd0"/><path d="M33 23 ${width + 23} 12" stroke="${color}" stroke-width="3"/><path d="M${width} 30v${Math.max(6, height - 8)}" stroke="#172f3b" stroke-width="9"/></g>`;

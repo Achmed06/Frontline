@@ -47,6 +47,7 @@ export function normalizeSeries(value: unknown): SeriesRun | null {
     (r.wins === SERIES_STAGES.length && r.losses === SERIES_LIVES)
   )
     return null;
+  // Older saves have no route and continue at the same stage with a free choice.
   const commander = r.commander === undefined ? "atlas" : r.commander;
   if (!isCommanderId(commander)) return null;
   const route = r.route ?? null;

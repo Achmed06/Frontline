@@ -11,6 +11,7 @@ export const BACKUP_LIMIT = 256 * 1024;
 const saveKeys = ['stats-v1', 'history-v1', 'campaign-v1', 'series-v1', 'learning-v1', 'mastery-v1', 'deck-slots-v1', 'deck-v1', 'commander-v1'] as const;
 type SaveKey = typeof saveKeys[number];
 export interface SaveBackup { format: 'frontline-local-save'; version: 1; createdAt: string; data: Record<SaveKey, unknown> }
+// Compare normalized values independently of JSON property order.
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
   if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + canonical((value as Record<string, unknown>)[key])).join(',') + '}';
@@ -33,6 +34,7 @@ export function parseBackup(text: string): SaveBackup {
   return { format: 'frontline-local-save', version: 1, createdAt: backup.createdAt, data: normalized };
 }
 export function createBackup(): string {
+  // Readers intentionally tolerate blocked storage during play. Exports must report it.
   try { for (const key of saveKeys) localStorage.getItem('frontline-' + key); }
   catch { throw Error('Lokaler Speicher nicht lesbar. Es wurde keine Sicherung erstellt.'); }
   const backup: SaveBackup = { format: 'frontline-local-save', version: 1, createdAt: new Date().toISOString(), data: {
@@ -44,7 +46,7 @@ export function createBackup(): string {
   return text;
 }
 export function restoreBackup(text: string, storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = localStorage): void {
-  const backup = parseBackup(text);
+  const backup = parseBackup(text); // Revalidate at commit, not only during preview.
   const before = saveKeys.map(key => storage.getItem('frontline-' + key));
   try {
     for (const key of saveKeys) storage.setItem('frontline-' + key, key === 'commander-v1' ? backup.data[key] as string : JSON.stringify(backup.data[key]));
