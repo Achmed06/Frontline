@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.52
+## Current v0.53
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -20,7 +20,7 @@ The repository now contains the complete Work 0.52 runtime used by the browser b
 ### Progression and modes
 
 - 24-mission campaign across multiple regions
-- Headquarters progression and unlockable base styles
+- Headquarters progression, unlockable base styles and manual cosmetic construction projects
 - Unit mastery
 - Saved deck slots and deck analysis
 - Einsatzserie runs
@@ -38,6 +38,7 @@ The repository now contains the complete Work 0.52 runtime used by the browser b
 - Automatic unsigned IPA artifact for sideload testing
 - Optional signed IPA workflow when Apple signing credentials are configured
 - Native app lifecycle handling and durable friend-duel reconnect state
+- Contextual first-battle coaching that highlights cards, arena or commander without blocking play
 
 ## Local development
 
@@ -91,3 +92,14 @@ Every main-branch build runs:
 5. browser preview smoke test
 
 Gameplay-source changes also trigger the latest iPhone test build; older in-progress iPhone builds are cancelled so only the newest commit consumes macOS runner time.
+
+
+## v0.53 changes
+
+- contextual first-battle coach built on the existing Feldtraining progression
+- coach automatically disappears after the permanent learning path is complete
+- five manual, cosmetic headquarters projects: Versorgungsdepot, Trainingsplatz, Signalrelais, Feldwerkstatt and Ehrenhof
+- project unlocks reuse campaign wins, campaign stars, learning tasks and unit mastery instead of adding another currency
+- built projects become visible in the headquarters illustration
+- ready-to-build projects are surfaced directly on the base card
+- no construction timer and no combat-stat bonuses
