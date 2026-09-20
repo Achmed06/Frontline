@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.65
+## Current v0.66
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -225,3 +225,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the match clock switches to a distinct amber overtime state
 - overtime clock emphasis respects reduced-motion preferences
 - no overtime behavior or tie-break rule was changed
+
+
+## v0.66 changes
+
+- headquarters construction now has a second tier of five dependent projects
+- Nachschubterminal extends the Versorgungsdepot after 10 campaign wins
+- Garnisonsflügel extends the Trainingsplatz after 12 total mastery points
+- Aufklärungsturm extends the Signalrelais after 12 campaign wins
+- Drohnenrampe extends the Feldwerkstatt after 42 campaign stars
+- Siegesmonument extends the Ehrenhof after 24 campaign wins
+- second-tier projects cannot be skipped by having enough progress; their predecessor must actually be built first
+- build cards show the missing predecessor directly when a construction chain is locked
+- all five new upgrades add visible structures to the headquarters artwork and remain cosmetic only
