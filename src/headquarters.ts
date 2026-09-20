@@ -39,6 +39,7 @@ export const BASE_PROJECTS = [
     description: "Kisten, Treibstoff und Nachschub machen aus dem Lager eine echte Einsatzbasis.",
     metric: "wins",
     goal: 3,
+    requires: null,
   },
   {
     id: "training",
@@ -46,6 +47,7 @@ export const BASE_PROJECTS = [
     description: "Deine gemeisterten Einheiten trainieren sichtbar in der Basis.",
     metric: "mastery",
     goal: 3,
+    requires: null,
   },
   {
     id: "relay",
@@ -53,6 +55,7 @@ export const BASE_PROJECTS = [
     description: "Ein eigener Funkmast verbindet Ausbildung, Feldzug und Kommando.",
     metric: "lessons",
     goal: 4,
+    requires: null,
   },
   {
     id: "workshop",
@@ -60,6 +63,7 @@ export const BASE_PROJECTS = [
     description: "Eine Werkstatt für Ausrüstung, Fahrzeuge und spätere kosmetische Projekte.",
     metric: "stars",
     goal: 24,
+    requires: null,
   },
   {
     id: "honor",
@@ -67,6 +71,47 @@ export const BASE_PROJECTS = [
     description: "Banner und Trophäen halten deinen Feldzug dauerhaft in der Basis fest.",
     metric: "wins",
     goal: 18,
+    requires: null,
+  },
+  {
+    id: "supplyhub",
+    name: "Nachschubterminal",
+    description: "Das Depot wächst um Kran, Containerfläche und einen festen Versorgungsknoten.",
+    metric: "wins",
+    goal: 10,
+    requires: "depot",
+  },
+  {
+    id: "barracks",
+    name: "Garnisonsflügel",
+    description: "Der Trainingsplatz erhält eigene Quartiere für deine erfahrensten Einheiten.",
+    metric: "mastery",
+    goal: 12,
+    requires: "training",
+  },
+  {
+    id: "watchtower",
+    name: "Aufklärungsturm",
+    description: "Das Signalrelais wird um eine erhöhte Beobachtungs- und Sensorplattform erweitert.",
+    metric: "wins",
+    goal: 12,
+    requires: "relay",
+  },
+  {
+    id: "dronepad",
+    name: "Drohnenrampe",
+    description: "Die Feldwerkstatt erhält eine kleine Startplattform für Aufklärungsdrohnen.",
+    metric: "stars",
+    goal: 42,
+    requires: "workshop",
+  },
+  {
+    id: "monument",
+    name: "Siegesmonument",
+    description: "Der Ehrenhof erhält ein dauerhaftes Monument für den vollständig gesicherten Feldzug.",
+    metric: "wins",
+    goal: 24,
+    requires: "honor",
   },
 ] as const;
 export type BaseProjectId = (typeof BASE_PROJECTS)[number]["id"];
@@ -212,8 +257,11 @@ export function buildBaseProject(
   projectId: BaseProjectId,
   metrics: BaseProjectMetrics,
 ): LearningProgress {
+  const project = BASE_PROJECTS.find((item) => item.id === projectId)!;
+  const prerequisite = project.requires as BaseProjectId | null;
   if (
     baseProjectBuilt(progress, projectId) ||
+    (prerequisite !== null && !baseProjectBuilt(progress, prerequisite)) ||
     !baseProjectProgress(projectId, metrics).ready
   )
     return progress;
@@ -317,6 +365,11 @@ export function headquartersSvg(
     ${projects.includes("relay") ? `<g transform="translate(315 78)" fill="none" stroke="${color}"><path d="M0 52 12 0l12 52M5 31h14M3 42h18" stroke-width="3"/><path d="M12 8c8 1 13 5 17 10M12 8C4 9-1 13-5 18" stroke-width="2" opacity=".8"/><circle cx="12" cy="3" r="3" fill="${color}"/></g>` : ""}
     ${projects.includes("workshop") ? `<g transform="translate(82 157)"><path d="m0 8 23-12 29 11-26 13z" fill="#7a90a3" stroke="#c8e9ff"/><path d="M26 20 52 7v16L26 36z" fill="#38556f"/><path d="M0 8 26 20v16L0 24z" fill="#46657b"/><path d="M9 18h9m13-2h11" stroke="#ffd475" stroke-width="3"/><path d="M42 -1v-12m0 0 10 5" stroke="${color}" stroke-width="3"/></g>` : ""}
     ${projects.includes("honor") ? `<g transform="translate(158 169)"><path d="M0 13 22 2l23 11-23 10z" fill="#213f58" stroke="#f5d279"/><path d="M10 8V-7m24 15V-7" stroke="#f5d279" stroke-width="2"/><path d="M10-7h10l-5 7-5-3zm24 0h10l-5 7-5-3z" fill="${color}"/><circle cx="22" cy="12" r="4" fill="#f5d279"/></g>` : ""}
+    ${projects.includes("supplyhub") ? `<g transform="translate(28 166)"><path d="M0 18h43" stroke="#e1c18a" stroke-width="3"/><path d="M9 18V-3h20M29-3v22" fill="none" stroke="${color}" stroke-width="3"/><path d="M29-3 40 4M36 4v9" stroke="#f4d28f" stroke-width="2"/><rect x="2" y="8" width="13" height="9" fill="#74513c" stroke="#d9ad72"/><rect x="17" y="10" width="12" height="7" fill="#526f78" stroke="#b9e3e8"/></g>` : ""}
+    ${projects.includes("barracks") ? `<g transform="translate(276 166)"><path d="m0 7 24-12 34 12-28 14z" fill="#86a8b8" stroke="#d8f4ff"/><path d="M30 21 58 7v16L30 38z" fill="#31526b"/><path d="M0 7 30 21v17L0 24z" fill="#41657a"/><path d="M8 17h8m5 4h7" stroke="${color}" stroke-width="2"/><path d="M43 5v19" stroke="#f2d588" stroke-width="3"/></g>` : ""}
+    ${projects.includes("watchtower") ? `<g transform="translate(327 47)" fill="none"><path d="M0 78 12 16l13 62M5 55h15M3 68h20" stroke="#8fb6c7" stroke-width="3"/><path d="M3 16h19l-3-9H6z" fill="#294b63" stroke="${color}" stroke-width="2"/><ellipse cx="12" cy="9" rx="14" ry="5" stroke="${color}" stroke-width="2"/><path d="M12 8V-7m0 0 9 5M12-7 3-2" stroke="#f4dc8a" stroke-width="2"/></g>` : ""}
+    ${projects.includes("dronepad") ? `<g transform="translate(106 185)"><ellipse cx="18" cy="5" rx="26" ry="9" fill="#1d4558" stroke="${color}" stroke-width="2"/><path d="M6 5h24M18-4v18" stroke="#d2f1f5" stroke-width="1.5"/><g transform="translate(18 -9)" stroke="#f5db8d" fill="#243f52"><rect x="-5" y="-3" width="10" height="6" rx="2"/><path d="M-5 0h-10m20 0h10M-12-3v6m24-6v6"/></g></g>` : ""}
+    ${projects.includes("monument") ? `<g transform="translate(212 168)"><path d="M0 20 17 12l18 8-18 8z" fill="#253d51" stroke="#f0d374"/><path d="M11 13 15-12h5l4 25" fill="#3e6072" stroke="#f0d374" stroke-width="2"/><path d="M17-17 22-9 17-4 12-9z" fill="${color}" stroke="#fff2b3"/><path d="M7 20h20" stroke="#f0d374" stroke-width="2"/></g>` : ""}
     ${projects.includes("training") ? garrison.slice(0, 4).map(patrol).join("") : ""}
   </svg>`;
 }
