@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.60
+## Current v0.61
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -177,3 +177,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - heavy hits receive a larger double-ring burst while normal hits stay restrained
 - lethal hits combine the impact with the existing death burst
 - hit feedback contains no floating damage numbers and does not alter combat simulation
+
+
+## v0.61 changes
+
+- cores now show escalating visual damage instead of relying only on the HP bar
+- first visible structural cracks appear at 60% Core health
+- critical cores below 30% add stronger fractures, warning lights and lightweight sparks
+- fresh Core hits produce a brief local flash and expanding impact ring
+- all Core damage states are renderer-only and preserve the existing win conditions and damage values
