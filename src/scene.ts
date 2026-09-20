@@ -565,10 +565,27 @@ export class ArenaScene extends Phaser.Scene {
         this.sprites.set(u.id, sprite);
       }
       const size = u.cardId === "bulwark" ? 45 : u.cardId === "swarm" ? 28 : 36;
+      const spawnEffect = s.effects.find(
+        (effect) =>
+          effect.type === "spawn" &&
+          effect.team === u.team &&
+          Math.abs(effect.x - u.x) < 0.5 &&
+          Math.abs(effect.y - u.y) < 0.5,
+      );
+      const spawnProgress = spawnEffect
+        ? 1 - spawnEffect.life / spawnEffect.maxLife
+        : 1;
+      const spawnScale = 0.72 + Math.min(1, spawnProgress * 1.5) * 0.28;
       sprite
-        .setPosition(u.x, u.y - 3)
-        .setDisplaySize(size, size)
-        .setAlpha(u.hp > 0 ? 1 : 0);
+        .setPosition(u.x, u.y - 3 - (1 - spawnProgress) * 8)
+        .setDisplaySize(size * spawnScale, size * spawnScale)
+        .setAlpha(
+          u.hp > 0
+            ? spawnEffect
+              ? Math.min(1, 0.25 + spawnProgress * 1.3)
+              : 1
+            : 0,
+        );
       g.fillStyle(0x06171b, 0.55);
       g.fillEllipse(u.x, u.y + 6, size * 0.65, size * 0.25);
       g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
@@ -667,6 +684,30 @@ export class ArenaScene extends Phaser.Scene {
           fx.fillCircle(e.x, e.y, 5 + radius * progress);
           fx.lineStyle(2, 0xfff2bf, alpha);
           fx.strokeCircle(e.x, e.y, 3 + radius * progress * 0.65);
+        }
+        if (e.type === "spawn") {
+          const beamHeight = 54 * (1 - Math.min(1, progress * 1.45));
+          const ring = 7 + 19 * progress;
+          fx.fillStyle(effectColor, alpha * 0.08);
+          fx.fillRect(e.x - 7, e.y - 8 - beamHeight, 14, beamHeight + 8);
+          fx.lineStyle(1.5, 0xffffff, alpha * 0.62);
+          fx.lineBetween(e.x - 4, e.y - 9 - beamHeight, e.x - 4, e.y + 2);
+          fx.lineBetween(e.x + 4, e.y - 9 - beamHeight, e.x + 4, e.y + 2);
+          fx.lineStyle(2.2, effectColor, alpha * 0.9);
+          fx.strokeEllipse(e.x, e.y + 6, ring * 1.5, ring * 0.48);
+          fx.fillStyle(effectColor, alpha * 0.18);
+          fx.fillEllipse(e.x, e.y + 6, ring * 1.25, ring * 0.38);
+          for (let i = 0; i < 4; i++) {
+            const angle = i * Math.PI / 2 + Math.PI / 4;
+            const inner = 13 + 8 * progress;
+            const outer = inner + 7;
+            fx.lineBetween(
+              e.x + Math.cos(angle) * inner,
+              e.y + 6 + Math.sin(angle) * inner * 0.36,
+              e.x + Math.cos(angle) * outer,
+              e.y + 6 + Math.sin(angle) * outer * 0.36,
+            );
+          }
         }
         if (e.type === "heal") {
           const lift = progress * 18;
