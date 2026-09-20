@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.58
+## Current v0.59
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -159,3 +159,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - up to four earned units can occupy the base artwork at once
 - subtle patrol movement makes the headquarters feel inhabited while respecting reduced-motion settings
 - no training-ground or patrol element alters combat values
+
+
+## v0.59 changes
+
+- newly deployed units now materialize through a short team-colored deployment beam
+- a ground signal and expanding deployment ring make the exact insertion point readable
+- units fade, descend and scale into the battlefield during the existing engine spawn effect
+- Swarm members receive their own deployment feedback because each spawned unit already has an independent engine effect
+- deployment presentation remains renderer-only and does not change attack timing, energy cost or unit statistics
