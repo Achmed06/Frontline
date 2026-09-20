@@ -151,6 +151,7 @@ let active = false,
   toastTimer = 0,
   matchReadyAt = 0,
   matchGoUntil = 0,
+  pauseBeganAt = 0,
   startBannerShown = false;
 const battleNotices = new Set<string>();
 let bannerUntil = 0;
@@ -376,6 +377,12 @@ function showModal(content: string) {
   el("modal-content").scrollTop = 0;
 }
 function resume() {
+  if (pauseBeganAt && match.state.time === 0 && matchReadyAt > pauseBeganAt) {
+    const shift = performance.now() - pauseBeganAt;
+    matchReadyAt += shift;
+    matchGoUntil += shift;
+  }
+  pauseBeganAt = 0;
   paused = false;
   el("modal").hidden = true;
   el("pause").focus();
@@ -384,6 +391,7 @@ function resume() {
 function pause() {
   if (!active || ended || paused) return;
   paused = true;
+  pauseBeganAt = performance.now();
   updateHud(true);
   showModal(
     `<div class="eyebrow">ATEMPAUSE</div><h2>Dein Plan.<br>Dein Tempo.</h2><p>${activeDaily ? `${activeDaily.title}: ${activeDaily.briefing}<br>${activeDaily.tip}<br><br>Tagesfronten haben ein festes Deck und Setup. Wiederholungen kosten nichts.` : activeMission ? `${activeMission.name}: ${objectiveDescription(activeMission)}<br>${activeMission.tip}<br><br>${activeSeries ? "Einsatzserie: Dein Deck bleibt fest. Die zweite Niederlage beendet den Durchlauf." : `Sternziele: Sieg · mindestens ${Math.round(activeMission.healthTarget * 100)}% Core · Sieg in ${activeMission.speedTarget}s.`}` : match.controlObjective ? "Signalkrieg: Markierte Punkte verbunden und ungestört halten. Am Zeitlimit zählt Kontrollzeit, dann Core-Leben und Gebiet. Core-Zerstörung gewinnt sofort." : "Das Gefecht ist angehalten."}</p><button class="primary" id="resume">WEITERSPIELEN <span>▷</span></button><button class="secondary" id="pause-help">Spielregeln ansehen</button><button class="text-btn" id="quit">Gefecht beenden</button>`,
@@ -424,6 +432,7 @@ function lobby() {
   el("deployment-countdown").hidden = true;
   matchReadyAt = 0;
   matchGoUntil = 0;
+  pauseBeganAt = 0;
   startBannerShown = false;
   el("continue-campaign").focus();
 }
