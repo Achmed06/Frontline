@@ -949,21 +949,115 @@ export class ArenaScene extends Phaser.Scene {
             );
           }
         }
-        if (e.type === "repulsor" || e.type === "stasis") {
-          fx.lineStyle(2, effectColor, alpha);
-          for (let i = 0; i < 6; i++) {
-            const angle = (i * Math.PI) / 3;
-            const r = 8 + radius * progress;
+        if (e.type === "pulse") {
+          const wave = 8 + radius * progress;
+          fx.fillStyle(effectColor, alpha * 0.08);
+          fx.fillCircle(e.x, e.y, wave);
+          fx.lineStyle(3.5, effectColor, alpha * 0.9);
+          fx.strokeCircle(e.x, e.y, wave);
+          fx.lineStyle(1.5, 0xffffff, alpha * 0.5);
+          fx.strokeCircle(e.x, e.y, Math.max(4, wave * 0.58));
+          for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4 + e.id * 0.13;
+            const inner = wave * 0.68;
+            const outer = wave * 0.94;
             fx.lineBetween(
-              e.x + Math.cos(angle) * r * 0.6,
-              e.y + Math.sin(angle) * r * 0.6,
-              e.x + Math.cos(angle) * r,
-              e.y + Math.sin(angle) * r,
+              e.x + Math.cos(angle) * inner,
+              e.y + Math.sin(angle) * inner,
+              e.x + Math.cos(angle) * outer,
+              e.y + Math.sin(angle) * outer,
             );
           }
         }
-        fx.lineStyle(e.type === "pulse" ? 4 : 2, effectColor, alpha);
-        fx.strokeCircle(e.x, e.y, 5 + radius * progress);
+        if (e.type === "rally") {
+          const wave = 12 + radius * progress;
+          fx.fillStyle(effectColor, alpha * 0.045);
+          fx.fillCircle(e.x, e.y, wave);
+          fx.lineStyle(2, effectColor, alpha * 0.92);
+          for (let i = 0; i < 6; i++) {
+            const angle = (i * Math.PI) / 3 - Math.PI / 2;
+            const cx = e.x + Math.cos(angle) * wave * 0.62;
+            const cy = e.y + Math.sin(angle) * wave * 0.62;
+            const tx = Math.cos(angle);
+            const ty = Math.sin(angle);
+            const px = -ty;
+            const py = tx;
+            const tipX = cx + tx * 8;
+            const tipY = cy + ty * 8;
+            fx.lineBetween(cx - tx * 5 + px * 4, cy - ty * 5 + py * 4, tipX, tipY);
+            fx.lineBetween(cx - tx * 5 - px * 4, cy - ty * 5 - py * 4, tipX, tipY);
+          }
+          fx.lineStyle(1.5, 0xd8ffe8, alpha * 0.6);
+          fx.strokeCircle(e.x, e.y, wave * 0.82);
+        }
+        if (e.type === "stasis") {
+          const wave = 10 + radius * progress;
+          fx.fillStyle(effectColor, alpha * 0.055);
+          this.polygon(fx, this.hex(e.x, e.y, wave), effectColor, alpha * 0.055, effectColor);
+          fx.lineStyle(2.2, effectColor, alpha * 0.92);
+          this.polygon(fx, this.hex(e.x, e.y, wave), 0x000000, 0, effectColor);
+          fx.lineStyle(1.2, 0xe6f7ff, alpha * 0.62);
+          for (let i = 0; i < 6; i++) {
+            const angle = (i * Math.PI) / 3 - Math.PI / 6;
+            const inner = wave * 0.35;
+            const outer = wave * 0.83;
+            fx.lineBetween(
+              e.x + Math.cos(angle) * inner,
+              e.y + Math.sin(angle) * inner,
+              e.x + Math.cos(angle) * outer,
+              e.y + Math.sin(angle) * outer,
+            );
+            const dotAngle = angle + this.clock * 0.7;
+            fx.fillStyle(0xe6f7ff, alpha * 0.72);
+            fx.fillCircle(
+              e.x + Math.cos(dotAngle) * wave * 0.72,
+              e.y + Math.sin(dotAngle) * wave * 0.72,
+              1.5,
+            );
+          }
+        }
+        if (e.type === "repulsor") {
+          const wave = 10 + radius * progress;
+          fx.fillStyle(effectColor, alpha * 0.04);
+          fx.fillCircle(e.x, e.y, wave);
+          fx.lineStyle(2.2, effectColor, alpha * 0.92);
+          fx.strokeCircle(e.x, e.y, wave);
+          for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            const tx = Math.cos(angle);
+            const ty = Math.sin(angle);
+            const px = -ty;
+            const py = tx;
+            const inner = wave * 0.5;
+            const outer = wave * 0.94;
+            const sx = e.x + tx * inner;
+            const sy = e.y + ty * inner;
+            const ex = e.x + tx * outer;
+            const ey = e.y + ty * outer;
+            fx.lineBetween(sx, sy, ex, ey);
+            fx.lineBetween(ex, ey, ex - tx * 6 + px * 3.5, ey - ty * 6 + py * 3.5);
+            fx.lineBetween(ex, ey, ex - tx * 6 - px * 3.5, ey - ty * 6 - py * 3.5);
+          }
+        }
+        if (e.type === "shield") {
+          const wave = 9 + radius * progress;
+          fx.fillStyle(effectColor, alpha * 0.045);
+          this.polygon(fx, this.hex(e.x, e.y, wave), effectColor, alpha * 0.045, effectColor);
+          fx.lineStyle(2, effectColor, alpha * 0.82);
+          this.polygon(fx, this.hex(e.x, e.y, wave), 0x000000, 0, effectColor);
+          fx.lineStyle(1, 0xffffff, alpha * 0.38);
+          this.polygon(fx, this.hex(e.x, e.y, Math.max(4, wave - 4)), 0x000000, 0, 0xffffff);
+        }
+        if (
+          e.type !== "pulse" &&
+          e.type !== "rally" &&
+          e.type !== "stasis" &&
+          e.type !== "repulsor" &&
+          e.type !== "shield"
+        ) {
+          fx.lineStyle(2, effectColor, alpha);
+          fx.strokeCircle(e.x, e.y, 5 + radius * progress);
+        }
         if (e.type === "death") {
           for (let i = 0; i < 5; i++) {
             const a = i * 1.256 + e.id;
