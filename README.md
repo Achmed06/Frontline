@@ -1,47 +1,93 @@
 # Frontline
 
-Mobile-first portrait PvP prototype built with Phaser, TypeScript and Vite.
+Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.5 loop
+## Current v0.52
 
-- Dedicated home screen with one functional Play entry
-- 3-minute matches with a 3-second pre-match countdown
-- Three clearly selectable deployment lanes
-- Moving frontline / territory pressure
-- Live frontline control meter
-- Core HP win condition
-- Five-second breakthrough win condition
-- Six unit archetypes with explicit counter relationships
-- Two abilities: Surge and Repulse
-- Ability cooldowns in addition to energy costs
-- Single-resource economy
-- Aegis commander comeback passive
-- Final-minute energy acceleration
-- Lane-by-lane pressure readout
-- 14-active-unit cap per side
-- Short per-lane deploy lock to prevent input spam
-- First-match 3-step onboarding
-- Counter-aware bot composition and lane response
-- Combat counter feedback
-- Post-match telemetry for deploys, kills, core damage and best territorial push
-- Functional Rematch and Home actions
-- Procedural prototype visuals with no third-party game assets
+The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
+
+### Core combat
+
+- 3-minute matches plus overtime where the mode allows it
+- 3x3 territory grid with connected frontline / deployment rules
+- Core destruction and control-objective win conditions
+- 12 unit cards and 4 tactical abilities
+- ATLAS and LYRA commanders with separate active abilities
+- Deterministic renderer-independent match engine
+- Rookie, standard and veteran bot difficulty
+- Campaign-specific decks, commanders, objectives and seeded scenarios
+
+### Progression and modes
+
+- 24-mission campaign across multiple regions
+- Headquarters progression and unlockable base styles
+- Unit mastery
+- Saved deck slots and deck analysis
+- Einsatzserie runs
+- Draft battles
+- Match history and post-match reports
+- Local save backup / transfer
+- Cosmetic store / supporter ownership integration
+- Friend duels with room codes, rematches, reconnect handling and server-authoritative simulation
+
+### Browser and iPhone
+
+- Responsive browser build and GitHub Pages deployment
+- Capacitor iOS project under `ios/`
+- Xcode 26.3 native compile validation in GitHub Actions
+- Automatic unsigned IPA artifact for sideload testing
+- Optional signed IPA workflow when Apple signing credentials are configured
+- Native app lifecycle handling and durable friend-duel reconnect state
 
 ## Local development
 
 ```bash
-npm install
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run test
+pnpm run dev
 ```
 
-Tap **Play**, then select a unit card and tap lane 1, 2 or 3 to deploy it. Ability cards cast immediately when both energy and cooldown permit.
+Production validation:
 
-## Browser preview
+```bash
+pnpm run test
+pnpm run build
+```
 
-A GitHub Pages deployment workflow is included. GitHub requires Pages to be enabled once in the repository settings:
+## iOS
 
-`Settings -> Pages -> Build and deployment -> Source -> GitHub Actions`
+Sync the current web runtime into the native project:
 
-After that, run the **Deploy Frontline Preview** workflow.
+```bash
+pnpm run ios:sync
+```
 
-The prototype remains focused on validating match flow, territory pressure, counters, readability and pacing before full art production, progression systems or online multiplayer.
+Open the native project on macOS:
+
+```bash
+pnpm run ios:open
+```
+
+The **iPhone test build** GitHub Actions workflow compiles the Release iPhone target without signing and uploads `Frontline-unsigned.ipa`. A signed export can be enabled separately with the `ios-testing` environment and Apple signing credentials.
+
+## Friend duel server
+
+The browser client uses `/api/duel` on the same origin. Native iPhone builds use `VITE_DUEL_SERVER_URL` when a duel server has been configured. Without that variable, solo modes remain available and the native duel screen explains that online duels are not configured.
+
+Server entry point:
+
+```bash
+pnpm start
+```
+
+## CI
+
+Every main-branch build runs:
+
+1. full Node test suite
+2. TypeScript typecheck
+3. Vite production build
+4. built-entry validation
+5. browser preview smoke test
+
+Gameplay-source changes also trigger the latest iPhone test build; older in-progress iPhone builds are cancelled so only the newest commit consumes macOS runner time.
