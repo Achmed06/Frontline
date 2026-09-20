@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.61
+## Current v0.62
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -186,3 +186,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - critical cores below 30% add stronger fractures, warning lights and lightweight sparks
 - fresh Core hits produce a brief local flash and expanding impact ring
 - all Core damage states are renderer-only and preserve the existing win conditions and damage values
+
+
+## v0.62 changes
+
+- capture points now have clearly different visual states for capturing, contested, disconnected and freshly secured
+- capture progress uses a stronger team-colored ring with a moving leading marker
+- contested points pulse with rotating warning ticks instead of only a static cross
+- disconnected owned points use a hatched cut-off treatment and warning ring
+- Signalkrieg relay points pulse with the owning team's color when supplied
+- freshly captured territory sends a visible hex shockwave and briefly brightens the corresponding frontline
+- losing a point that you previously held now triggers a FRONT VERLOREN callout with the sector coordinate
