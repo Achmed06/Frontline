@@ -29,6 +29,7 @@ export class ArenaScene extends Phaser.Scene {
   private ghost!: Phaser.GameObjects.Image;
   private aimLabel!: Phaser.GameObjects.Text;
   private clock = 0;
+  private reactedEffects = new Set<number>();
   private lastMatch: Match | null = null;
   private wasRunning = false;
   constructor(private bridge: SceneBridge) {
@@ -148,6 +149,7 @@ export class ArenaScene extends Phaser.Scene {
       this.scale.refresh();
       for (const sprite of this.sprites.values()) sprite.destroy();
       this.sprites.clear();
+      this.reactedEffects.clear();
     }
     if (running) {
       this.clock += Math.min(delta, 100) / 1000;
@@ -506,18 +508,37 @@ export class ArenaScene extends Phaser.Scene {
       const progress = 1 - e.life / e.maxLife,
         alpha = Math.max(0, e.life / e.maxLife);
       const color = e.team === "player" ? MINT : CORAL;
+      if (!this.reactedEffects.has(e.id)) {
+        this.reactedEffects.add(e.id);
+        if (e.type === "core-hit")
+          this.cameras.main.shake(90, 0.0024, true);
+      }
       if (e.targetX !== undefined && e.targetY !== undefined) {
-        fx.lineStyle(e.type === "heal" ? 2 : 1.5, color, alpha * 0.7);
-        const travel = Math.min(1, progress * 2);
-        fx.fillStyle(0xfff3b1, alpha);
-        fx.fillCircle(
-          e.x + (e.targetX - e.x) * travel,
-          e.y + (e.targetY - e.y) * travel,
-          3,
-        );
-        fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
-        fx.fillStyle(0xfdfad9, alpha);
-        fx.fillCircle(e.targetX, e.targetY, 2.5);
+        if (e.type === "heal") {
+          fx.lineStyle(2, color, alpha * 0.55);
+          fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
+          const pulse = 0.7 + 0.3 * Math.sin(progress * Math.PI * 5);
+          fx.fillStyle(0xd8ffe8, alpha * pulse);
+          fx.fillCircle(e.targetX, e.targetY, 3.2);
+        } else {
+          const travel = Math.min(1, progress * 2.35);
+          const tail = Math.max(0, travel - 0.2);
+          const x = e.x + (e.targetX - e.x) * travel;
+          const y = e.y + (e.targetY - e.y) * travel;
+          const tailX = e.x + (e.targetX - e.x) * tail;
+          const tailY = e.y + (e.targetY - e.y) * tail;
+          fx.lineStyle(2.2, color, alpha * 0.85);
+          fx.lineBetween(tailX, tailY, x, y);
+          fx.fillStyle(0xffffff, alpha);
+          fx.fillCircle(x, y, 2.6);
+          fx.fillStyle(color, alpha * 0.55);
+          fx.fillCircle(x, y, 4.5);
+          if (travel > 0.86) {
+            const impact = (travel - 0.86) / 0.14;
+            fx.lineStyle(1.4, color, alpha * (1 - impact));
+            fx.strokeCircle(e.targetX, e.targetY, 3 + impact * 9);
+          }
+        }
       } else {
         const radius =
           e.radius ??
@@ -549,6 +570,21 @@ export class ArenaScene extends Phaser.Scene {
           fx.fillStyle(effectColor, alpha);
           fx.fillRect(e.x - 2, e.y - 10 - lift, 4, 15);
           fx.fillRect(e.x - 7, e.y - 5 - lift, 14, 4);
+        }
+        if (e.type === "core-hit") {
+          const impactRadius = 8 + 22 * progress;
+          fx.fillStyle(effectColor, alpha * 0.22);
+          fx.fillCircle(e.x, e.y, impactRadius);
+          fx.lineStyle(2.2, 0xfff4cf, alpha);
+          for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            fx.lineBetween(
+              e.x + Math.cos(angle) * impactRadius * 0.45,
+              e.y + Math.sin(angle) * impactRadius * 0.45,
+              e.x + Math.cos(angle) * impactRadius,
+              e.y + Math.sin(angle) * impactRadius,
+            );
+          }
         }
         if (e.type === "repulsor" || e.type === "stasis") {
           fx.lineStyle(2, effectColor, alpha);
