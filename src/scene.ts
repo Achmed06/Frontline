@@ -187,6 +187,107 @@ export class ArenaScene extends Phaser.Scene {
       y + Math.sin((i * Math.PI) / 3 - Math.PI / 6) * r,
     ]);
   }
+  private drawThemeAtmosphere(
+    g: Phaser.GameObjects.Graphics,
+    themeId: ArenaThemeId,
+    accent: number,
+  ) {
+    const t = this.clock;
+    if (themeId === "coast") {
+      g.lineStyle(1, accent, 0.14);
+      for (let i = 0; i < 6; i++) {
+        const y = 72 + i * 88 + Math.sin(t * 1.4 + i) * 5;
+        const reach = 20 + ((i * 7) % 15);
+        g.lineBetween(0, y, reach, y + 2);
+        g.lineBetween(420 - reach, y - 3, 420, y);
+      }
+      g.fillStyle(0xd7fff1, 0.2);
+      for (let i = 0; i < 8; i++) {
+        const x = (i * 61 + t * (6 + (i % 3))) % 420;
+        const y = 38 + ((i * 83) % 485);
+        g.fillEllipse(x, y, 5, 1.5);
+      }
+    } else if (themeId === "frost") {
+      g.fillStyle(0xe8fbff, 0.32);
+      for (let i = 0; i < 15; i++) {
+        const x = (i * 79 + t * (2 + (i % 2))) % 420;
+        const y = (i * 47 + t * (8 + (i % 4))) % 560;
+        const r = 1 + (i % 3) * 0.45;
+        g.fillCircle(x, y, r);
+      }
+      g.lineStyle(1, accent, 0.12);
+      for (let i = 0; i < 4; i++) {
+        const y = 90 + i * 125;
+        g.lineBetween(3, y, 26, y - 12);
+        g.lineBetween(394, y + 16, 417, y + 4);
+      }
+    } else if (themeId === "ember") {
+      for (let i = 0; i < 12; i++) {
+        const drift = Math.sin(t * 1.6 + i) * 8;
+        const x = 9 + ((i * 97) % 402) + drift;
+        const y = 555 - ((i * 53 + t * (15 + (i % 4) * 3)) % 540);
+        g.fillStyle(i % 3 === 0 ? 0xffe09a : accent, 0.18 + (i % 3) * 0.07);
+        g.fillCircle(x, y, 1.3 + (i % 2));
+      }
+      g.lineStyle(2, accent, 0.11);
+      g.lineBetween(0, 180, 24, 194);
+      g.lineBetween(396, 365, 420, 349);
+      g.lineBetween(4, 470, 26, 452);
+    } else {
+      const scanY = (t * 28) % 560;
+      g.lineStyle(1, accent, 0.1);
+      g.lineBetween(0, scanY, 420, scanY);
+      g.lineStyle(1, accent, 0.13);
+      for (let i = 0; i < 7; i++) {
+        const x = 12 + ((i * 67) % 396);
+        const y = (i * 101 + t * (7 + (i % 3))) % 560;
+        g.strokeCircle(x, y, 2 + (i % 2));
+        g.lineBetween(x, y + 4, x, y + 12);
+      }
+    }
+  }
+
+  private drawSectorTexture(
+    g: Phaser.GameObjects.Graphics,
+    themeId: ArenaThemeId,
+    x: number,
+    y: number,
+    index: number,
+    accent: number,
+  ) {
+    if (themeId === "coast") {
+      g.lineStyle(1.5, 0x8de5a2, 0.2);
+      for (let i = 0; i < 3; i++) {
+        const ox = -36 + i * 7 + (index % 2) * 3;
+        const oy = 34 - i * 3;
+        g.lineBetween(x + ox, y + oy, x + ox - 2, y + oy - 8);
+        g.lineBetween(x + ox, y + oy, x + ox + 4, y + oy - 6);
+      }
+    } else if (themeId === "frost") {
+      g.lineStyle(1, 0xe8fbff, 0.17);
+      const ox = x + (index % 2 ? 31 : -31);
+      const oy = y + (index % 3 === 0 ? 29 : -29);
+      g.lineBetween(ox - 6, oy, ox + 6, oy);
+      g.lineBetween(ox, oy - 6, ox, oy + 6);
+      g.lineBetween(ox - 4, oy - 4, ox + 4, oy + 4);
+      g.lineBetween(ox + 4, oy - 4, ox - 4, oy + 4);
+    } else if (themeId === "ember") {
+      g.lineStyle(1.5, accent, 0.2);
+      const sx = x - 39 + (index % 3) * 4;
+      const sy = y + 28 - (index % 2) * 7;
+      g.lineBetween(sx, sy, sx + 10, sy - 7);
+      g.lineBetween(sx + 10, sy - 7, sx + 16, sy - 2);
+      g.lineBetween(sx + 10, sy - 7, sx + 12, sy - 15);
+    } else {
+      g.lineStyle(1, accent, 0.18);
+      const sx = x + (index % 2 ? 28 : -34);
+      const sy = y + (index % 3 ? 30 : -31);
+      g.lineBetween(sx, sy, sx + 11, sy);
+      g.lineBetween(sx + 11, sy, sx + 11, sy - 8);
+      g.fillStyle(accent, 0.25);
+      g.fillCircle(sx + 11, sy - 8, 1.8);
+    }
+  }
   private draw() {
     const m = this.bridge.match(),
       s = m.state,
@@ -207,6 +308,7 @@ export class ArenaScene extends Phaser.Scene {
       g.strokeEllipse(20 - k * 15, 270, 110 + k * 25, 250 + k * 45);
       g.strokeEllipse(420 + k * 12, 300, 90 + k * 25, 300 + k * 45);
     }
+    this.drawThemeAtmosphere(g, themeId, theme.accent);
     const boundary = [
       [28, 62],
       [80, 20],
@@ -298,6 +400,7 @@ export class ArenaScene extends Phaser.Scene {
         g.fillStyle(0x101f24, 0.5);
         g.fillRect(x - 51, y - 47, 3, 12);
         g.fillRect(x + 47, y + 35, 3, 12);
+        this.drawSectorTexture(g, themeId, x, y, row * 3 + col, theme.accent);
       }
     // Continuous supply boundary, with a highlighted deploy zone when selecting a unit.
     const frontShape = (team: "player" | "enemy") => [
