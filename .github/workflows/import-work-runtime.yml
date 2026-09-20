@@ -1,0 +1,43 @@
+name: Import exact Work runtime
+
+on:
+  push:
+    branches: ["work-052-import"]
+    paths:
+      - ".frontline-import/ready"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: work-052-import
+          fetch-depth: 0
+
+      - name: Reconstruct exact Work runtime
+        run: |
+          cat .frontline-import/part-* | tr -d '\n' | base64 -d > /tmp/web-runtime.tgz
+          echo "60c6ea978361975502dd3cd669d2f7751df358c52e5b800a7c73a09f8b8d44aa  /tmp/web-runtime.tgz" | sha256sum -c -
+          tar -xzf /tmp/web-runtime.tgz
+
+      - name: Validate production build
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.19.0 --activate
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Commit exact runtime
+        run: |
+          rm -rf .frontline-import
+          rm -f .github/workflows/import-work-runtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Import exact Frontline Work 0.52 runtime"
+          git push origin HEAD:work-052-import
