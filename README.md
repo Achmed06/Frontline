@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.54
+## Current v0.55
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -120,3 +120,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - dedicated Tagesfront card and full briefing in the headquarters lobby
 - Tagesfront records are included in portable save backups
 - backup format v2 remains able to import legacy v1 saves
+
+
+## v0.55 changes
+
+- Ehrenhof construction project now unlocks a real trophy display
+- chapter completion trophies derive directly from the 24-mission campaign
+- additional honors track seven distinct Tagesfront clears, three Gold-mastery units and 48 campaign stars
+- locked honors show measurable progress instead of hidden requirements
+- trophies are presentation-only and never alter combat values
