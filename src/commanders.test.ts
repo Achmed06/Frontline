@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Match, DEFAULT_DECK } from "./engine";
+import { commanderActiveSeconds } from "./commanders";
 import { newSeries, normalizeSeries, chooseSeriesRoute } from "./series";
 
 test("LYRA heals and cleanses only living allies, never wastes cooldown on a full healthy army", () => {
@@ -38,4 +39,17 @@ test("series retains commander choice and migrates legacy saves to ATLAS", () =>
   assert.equal(normalizeSeries(legacy)?.commander, "atlas");
   assert.equal(normalizeSeries({ ...run, commander: "fake" }), null);
   assert.equal(new Match().commanders.player, "atlas");
+});
+
+test("commander active timer reflects only the live team-wide duration", () => {
+  const units = [
+    { team: "player" as const, hp: 100, shieldTime: 4.2, rallyTime: 0 },
+    { team: "player" as const, hp: 80, shieldTime: 2.4, rallyTime: 5.1 },
+    { team: "enemy" as const, hp: 100, shieldTime: 5.8, rallyTime: 5.9 },
+    { team: "player" as const, hp: 0, shieldTime: 6, rallyTime: 6 },
+  ];
+  assert.equal(commanderActiveSeconds("atlas", units), 4.2);
+  assert.equal(commanderActiveSeconds("nova", units), 5.1);
+  assert.equal(commanderActiveSeconds("atlas", units, "enemy"), 5.8);
+  assert.equal(commanderActiveSeconds("lyra", units), 0);
 });

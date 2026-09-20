@@ -32,7 +32,11 @@ import {
 import { readLearning, saveLearning } from "./storage";
 import { battleCoachHint, type BattleCoachFocus } from "./battle-coach";
 import { baseHonors } from "./honors";
-import { COMMANDERS, type CommanderId } from "./commanders";
+import {
+  COMMANDERS,
+  commanderActiveSeconds,
+  type CommanderId,
+} from "./commanders";
 import { readCommander, saveCommander } from "./storage";
 import {
   SERIES_ROUTES,
@@ -737,6 +741,9 @@ function updateHud(force = false) {
     b.disabled = !live;
   }
   const commanderButton = el<HTMLButtonElement>("commander");
+  const commanderActive = live
+    ? commanderActiveSeconds(match.commanders.player, s.units, "player")
+    : 0;
   const commanderReady = live && s.commanderCooldown <= 0;
   if (
     active &&
@@ -748,8 +755,13 @@ function updateHud(force = false) {
     commanderReadyFlashUntil = performance.now() + 1250;
   lastCommanderCooldown = s.commanderCooldown;
   el("commander-status").textContent =
-    s.commanderCooldown > 0 ? `${Math.ceil(s.commanderCooldown)}s` : "BEREIT";
+    commanderActive > 0
+      ? `AKTIV ${Math.ceil(commanderActive)}s`
+      : s.commanderCooldown > 0
+        ? `${Math.ceil(s.commanderCooldown)}s`
+        : "BEREIT";
   commanderButton.disabled = !commanderReady;
+  commanderButton.classList.toggle("active", commanderActive > 0);
   commanderButton.classList.toggle("ready", commanderReady);
   commanderButton.classList.toggle(
     "just-ready",
@@ -1178,6 +1190,7 @@ function renderCommander(id: CommanderId) {
   const definition = COMMANDERS[id];
   el("commander-name").innerHTML =
     `${definition.name} <span>${definition.ability}</span>`;
+  el<HTMLButtonElement>("commander").dataset.commander = id;
   el("commander").querySelector(".commander-icon")!.textContent =
     definition.icon;
   el("commander").setAttribute(

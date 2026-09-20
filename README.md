@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.72
+## Current v0.73
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -298,3 +298,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the match does not flash the Commander at initial match start; only actual cooldown-to-ready transitions trigger it
 - reduced-motion settings disable the readiness animation
 - Commander cooldown values and activation rules are unchanged
+
+
+## v0.73 changes
+
+- ATLAS and NOVA now expose their real active-duration window directly on the Commander button
+- the status reads AKTIV with the remaining live effect time before returning to the normal cooldown countdown
+- active Commander effects stay visually emphasized even though the button is correctly disabled during cooldown
+- the active-duration display derives from the same per-unit shield/rally timers used by combat simulation
+- LYRA remains instantaneous and therefore never shows a misleading active-duration state
+- reduced-motion settings disable the active Commander pulse
+- Commander durations, cooldowns, combat values and activation rules are unchanged

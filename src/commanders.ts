@@ -33,6 +33,28 @@ export const COMMANDERS = {
   },
 } as const;
 export type CommanderId = keyof typeof COMMANDERS;
+export type CommanderUnitState = {
+  team: "player" | "enemy";
+  hp: number;
+  shieldTime: number;
+  rallyTime: number;
+};
 export function isCommanderId(value: unknown): value is CommanderId {
   return value === "atlas" || value === "lyra" || value === "nova";
+}
+export function commanderActiveSeconds(
+  commander: CommanderId,
+  units: readonly CommanderUnitState[],
+  team: "player" | "enemy" = "player",
+): number {
+  if (commander === "lyra") return 0;
+  let active = 0;
+  for (const unit of units) {
+    if (unit.team !== team || unit.hp <= 0) continue;
+    active = Math.max(
+      active,
+      commander === "atlas" ? unit.shieldTime : unit.rallyTime,
+    );
+  }
+  return active;
 }
