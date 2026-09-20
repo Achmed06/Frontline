@@ -968,6 +968,104 @@ h1 em {
   color: var(--lime);
   border-color: var(--lime);
 }
+.result-front {
+  margin: 18px 0 20px;
+  padding: 12px;
+  border: 1px solid #40533d;
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, #1f3024, #17251d 68%),
+    #17251d;
+}
+.result-front-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.result-front-head > span:last-child {
+  text-align: right;
+}
+.result-front-head b {
+  display: block;
+  color: #dbe8ce;
+  font-size: 9px;
+  letter-spacing: .8px;
+}
+.result-front-head small {
+  display: block;
+  margin-top: 3px;
+  color: #8ea286;
+  font-size: 8px;
+}
+.result-front-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  max-width: 190px;
+  margin: 0 auto 10px;
+}
+.result-front-grid i {
+  position: relative;
+  aspect-ratio: 1.35;
+  display: grid;
+  place-items: center;
+  border: 1px solid #5b6d59;
+  border-radius: 4px;
+  background: #354239;
+  overflow: hidden;
+}
+.result-front-grid i.owner-player {
+  border-color: #79dcb8;
+  background: linear-gradient(145deg, #336f5b, #214f43);
+}
+.result-front-grid i.owner-enemy {
+  border-color: #e58f78;
+  background: linear-gradient(145deg, #79473f, #57342f);
+}
+.result-front-grid i.owner-neutral {
+  border-color: #7e8a79;
+  background: linear-gradient(145deg, #4a5448, #343d34);
+}
+.result-front-grid i.cut::after {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 6px,
+      #f0cb7a66 6px 8px
+    );
+}
+.result-front-grid span {
+  position: relative;
+  z-index: 1;
+  color: #f1f5eb;
+  font: 700 8px/1 monospace;
+}
+.result-front-legend {
+  display: flex;
+  justify-content: center;
+  gap: 11px;
+  flex-wrap: wrap;
+  color: #84947d;
+  font-size: 7px;
+  letter-spacing: .6px;
+}
+.result-front-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 2px;
+  background: #727f70;
+}
+.result-front-legend .player::before { background: #66c9a4; }
+.result-front-legend .enemy::before { background: #d77b67; }
+.result-front-legend .neutral::before { background: #7c8978; }
+
 .result-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
