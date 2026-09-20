@@ -1103,7 +1103,7 @@ document.addEventListener("keydown", (e) => {
     if (!active && !el("modal").hidden) {
       document
         .querySelector<HTMLButtonElement>(
-          "#deck-cancel, #history-close, #help-close, #campaign-close, #series-close, #commander-close, #hq-close, #store-close, #backup-close, #learning-close, #draft-close",
+          "#deck-cancel, #history-close, #help-close, #campaign-close, #series-close, #daily-close, #commander-close, #hq-close, #store-close, #backup-close, #learning-close, #draft-close",
         )
         ?.click();
       return;
@@ -1146,6 +1146,7 @@ new Phaser.Game({
 });
 updateRecord();
 updateCampaignProgress();
+updateDaily();
 updateSound();
 updateSelection();
 updateHud(true);
