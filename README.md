@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.69
+## Current v0.70
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -267,3 +267,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Core turret attacks use the same readable lock treatment
 - healing keeps its separate pulse/beam language so support actions remain visually distinct from attacks
 - targeting behavior and target selection are unchanged
+
+
+## v0.70 changes
+
+- destroying a Core now gets a dedicated battlefield end moment before the result modal opens
+- player input stops immediately when the match ends, while the arena keeps rendering for 850 ms after a Core break
+- destroyed Cores trigger a stronger one-time camera shake, break ring, sparks and fracture treatment
+- victory/defeat gets a dedicated CORE GEBROCHEN / CORE GEFALLEN battle callout before results
+- time-limit and territory decisions still proceed directly to the result screen without the destruction hold
+- all match rules, winner calculation and rewards remain unchanged
