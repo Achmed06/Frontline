@@ -715,6 +715,9 @@ export class ArenaScene extends Phaser.Scene {
         fx.strokeEllipse(u.x, u.y + 12, 27, 9);
       }
       const healthWidth = u.cardId === "bulwark" ? 27 : 21;
+      const health = Math.max(0, u.hp / u.maxHp);
+      const healthColor =
+        health <= 0.3 ? 0xff6f5f : health <= 0.55 ? 0xffcf68 : u.team === "player" ? MINT : CORAL;
       fx.fillStyle(0x061519, 0.9);
       fx.fillRoundedRect(
         u.x - healthWidth / 2 - 1,
@@ -723,13 +726,30 @@ export class ArenaScene extends Phaser.Scene {
         4,
         2,
       );
-      fx.fillStyle(u.team === "player" ? MINT : CORAL);
+      fx.fillStyle(healthColor);
       fx.fillRect(
         u.x - healthWidth / 2,
         u.y - 22,
-        healthWidth * Math.max(0, u.hp / u.maxHp),
+        healthWidth * health,
         2,
       );
+      if (health <= 0.3 && u.hp > 0) {
+        const danger = 0.55 + 0.4 * Math.sin(this.clock * 8 + u.id);
+        fx.lineStyle(1.5, 0xff7b68, danger * 0.75);
+        fx.strokeCircle(u.x, u.y - 1, size * 0.53);
+        fx.fillStyle(0xffd18a, danger);
+        this.polygon(
+          fx,
+          [
+            [u.x, u.y - 31],
+            [u.x + 3.5, u.y - 27],
+            [u.x, u.y - 23],
+            [u.x - 3.5, u.y - 27],
+          ],
+          0xffd18a,
+          danger,
+        );
+      }
     }
     for (const e of s.effects) {
       const progress = 1 - e.life / e.maxLife,
