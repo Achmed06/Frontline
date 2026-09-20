@@ -376,7 +376,7 @@ function pause() {
   paused = true;
   updateHud(true);
   showModal(
-    `<div class="eyebrow">ATEMPAUSE</div><h2>Dein Plan.<br>Dein Tempo.</h2><p>${activeMission ? `${activeMission.name}: ${objectiveDescription(activeMission)}<br>${activeMission.tip}<br><br>${activeSeries ? "Einsatzserie: Dein Deck bleibt fest. Die zweite Niederlage beendet den Durchlauf." : `Sternziele: Sieg · mindestens ${Math.round(activeMission.healthTarget * 100)}% Core · Sieg in ${activeMission.speedTarget}s.`}` : match.controlObjective ? "Signalkrieg: Zwei markierte Punkte verbunden und ungestört halten. 45 Sekunden Kontrollzeit gewinnen. Am Zeitlimit zählt Kontrollzeit, dann Core-Leben und Gebiet. Core-Zerstörung gewinnt sofort." : "Das Gefecht ist angehalten."}</p><button class="primary" id="resume">WEITERSPIELEN <span>▷</span></button><button class="secondary" id="pause-help">Spielregeln ansehen</button><button class="text-btn" id="quit">Gefecht beenden</button>`,
+    `<div class="eyebrow">ATEMPAUSE</div><h2>Dein Plan.<br>Dein Tempo.</h2><p>${activeDaily ? `${activeDaily.title}: ${activeDaily.briefing}<br>${activeDaily.tip}<br><br>Tagesfronten haben ein festes Deck und Setup. Wiederholungen kosten nichts.` : activeMission ? `${activeMission.name}: ${objectiveDescription(activeMission)}<br>${activeMission.tip}<br><br>${activeSeries ? "Einsatzserie: Dein Deck bleibt fest. Die zweite Niederlage beendet den Durchlauf." : `Sternziele: Sieg · mindestens ${Math.round(activeMission.healthTarget * 100)}% Core · Sieg in ${activeMission.speedTarget}s.`}` : match.controlObjective ? "Signalkrieg: Markierte Punkte verbunden und ungestört halten. Am Zeitlimit zählt Kontrollzeit, dann Core-Leben und Gebiet. Core-Zerstörung gewinnt sofort." : "Das Gefecht ist angehalten."}</p><button class="primary" id="resume">WEITERSPIELEN <span>▷</span></button><button class="secondary" id="pause-help">Spielregeln ansehen</button><button class="text-btn" id="quit">Gefecht beenden</button>`,
   );
   el("resume").onclick = resume;
   el("pause-help").onclick = () => help(true);
@@ -449,14 +449,31 @@ function finish() {
   const st = match.state.stats;
   const wasSeries = activeSeries;
   const wasDraft = activeDraftDeck !== null;
+  const daily = activeDaily;
+  const wasDaily = daily !== null;
   let seriesResult = "";
+  let dailyResult = "";
   if (wasSeries && seriesRun) {
     seriesRun = completeSeriesBattle(seriesRun, match.state);
     const saved = saveSeries(seriesRun);
     seriesResult = `<div class="mission-result"><b>${seriesRun.wins} / 3 SIEGE</b><p>${seriesRun.wins === 3 ? "Serie gemeistert!" : seriesEnded(seriesRun) ? "Serie beendet. Stelle dein Deck neu auf und versuche es erneut." : `${SERIES_LIVES - seriesRun.losses} Versuche übrig. ${draw ? "Unentschieden: kein Versuch verloren." : "Dein Deck bleibt für die nächste Front bestehen."}`}</p>${saved ? "" : "<small>Zwischenstand nur für diese Sitzung gespeichert.</small>"}</div>`;
   }
+  if (daily) {
+    const before = dailyRecord(dailyHistory, daily.key);
+    dailyHistory = completeDaily(dailyHistory, daily.key, match.state);
+    const after = dailyRecord(dailyHistory, daily.key)!;
+    const saved = saveDailyHistory(dailyHistory);
+    const firstClear = won && !before?.completed;
+    const faster =
+      won &&
+      !!before?.bestTime &&
+      after.bestTime > 0 &&
+      after.bestTime < before.bestTime;
+    dailyResult = `<div class="mission-result daily-result"><b>${firstClear ? "TAGESFRONT GESICHERT" : won ? faster ? "NEUE BESTZEIT" : "TAGESFRONT GEHALTEN" : draw ? "TAGESFRONT UNENTSCHIEDEN" : "TAGESFRONT OFFEN"}</b><p>${won ? `Bestzeit ${Math.floor(after.bestTime / 60)}:${String(after.bestTime % 60).padStart(2, "0")} · bester Core ${after.bestCore}% · ${after.bestPoints}/9 Punkte` : `Versuch ${after.attempts}. Das heutige Setup bleibt gleich und kann sofort erneut gespielt werden.`}</p>${saved ? "" : "<small>Tagesrekord nur für diese Sitzung gespeichert.</small>"}</div>`;
+    updateDaily();
+  }
   const previousBaseStage = baseStage(Object.keys(campaignProgress).length);
-  const mission = wasSeries ? null : activeMission;
+  const mission = wasSeries || wasDaily ? null : activeMission;
   const earnedStars = mission ? missionStars(mission, match.state) : 0;
   let progressSaved = true;
   if (mission && earnedStars) {
@@ -490,7 +507,7 @@ function finish() {
   history.length = Math.min(history.length, HISTORY_LIMIT);
   const recorded = saveHistory(history);
   showModal(
-    `<div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p>${missionResult}${seriesResult}${rewardResult}${masteryResult}${resultComparison(report)}<div class="result-stats"><div><strong>${st.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${st.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${st.kills}</strong><span>ABSCHÜSSE</span></div></div>${nextMission ? `<button id="next-mission" class="primary">NÄCHSTER EINSATZ ↗</button>` : ""}<button id="rematch" class="${nextMission ? "secondary" : "primary"}">${wasDraft ? "NEUES DECK DRAFTEN" : wasSeries ? (seriesEnded(seriesRun!) ? "SERIENÜBERSICHT" : "SERIE FORTSETZEN") : mission ? "EINSATZ WIEDERHOLEN" : "NOCH EIN GEFECHT"} <span>↗</span></button><button id="back" class="secondary">Zur Basis</button><div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div>`,
+    `<div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p>${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${resultComparison(report)}<div class="result-stats"><div><strong>${st.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${st.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${st.kills}</strong><span>ABSCHÜSSE</span></div></div>${nextMission ? `<button id="next-mission" class="primary">NÄCHSTER EINSATZ ↗</button>` : ""}<button id="rematch" class="${nextMission ? "secondary" : "primary"}">${wasDraft ? "NEUES DECK DRAFTEN" : wasSeries ? (seriesEnded(seriesRun!) ? "SERIENÜBERSICHT" : "SERIE FORTSETZEN") : wasDaily ? "TAGESFRONT WIEDERHOLEN" : mission ? "EINSATZ WIEDERHOLEN" : "NOCH EIN GEFECHT"} <span>↗</span></button><button id="back" class="secondary">Zur Basis</button><div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div>`,
   );
   el("rematch").onclick = () => {
     if (wasDraft) {
@@ -499,6 +516,8 @@ function finish() {
     } else if (wasSeries) {
       lobby();
       openSeries();
+    } else if (daily) {
+      start(true, null, false, null, daily);
     } else start(true, mission);
   };
   if (nextMission) el("next-mission").onclick = () => start(false, nextMission);
@@ -578,13 +597,15 @@ function updateHud(force = false) {
   el("phase-label").textContent =
     s.phase === "overtime"
       ? "OVERTIME"
-      : activeSeries
-        ? `SERIE ${Math.min(3, (seriesRun?.wins ?? 0) + (ended ? 0 : 1))}/3`
-        : activeMission
-          ? `EINSATZ ${MISSIONS.indexOf(activeMission) + 1}`
-          : match.controlObjective
-            ? "SIGNALKRIEG"
-            : "TRAINING";
+      : activeDaily
+        ? "TAGESFRONT"
+        : activeSeries
+          ? `SERIE ${Math.min(3, (seriesRun?.wins ?? 0) + (ended ? 0 : 1))}/3`
+          : activeMission
+            ? `EINSATZ ${MISSIONS.indexOf(activeMission) + 1}`
+            : match.controlObjective
+              ? "SIGNALKRIEG"
+              : "TRAINING";
   const control = match.controlObjective;
   el("control-hud").hidden = !control;
   if (control) {
@@ -822,6 +843,38 @@ function openSeries() {
     el("series").focus();
   };
 }
+function dailyObjective(challenge: DailyChallenge): string {
+  const objective = challenge.controlObjective;
+  return objective
+    ? `${objective.requiredPoints} von ${objective.pointIds.length} markierten Relais · ${objective.seconds}s Kontrollzeit`
+    : "Core-Angriff · nach 3 Minuten zählt Core-Leben und Gebiet";
+}
+function updateDaily() {
+  const challenge = dailyChallenge();
+  const record = dailyRecord(dailyHistory, challenge.key);
+  el("daily-title").textContent = challenge.title;
+  el("daily-status").textContent = record?.completed
+    ? `GESICHERT · Bestzeit ${Math.floor(record.bestTime / 60)}:${String(record.bestTime % 60).padStart(2, "0")}`
+    : record?.attempts
+      ? `${record.attempts} Versuch${record.attempts === 1 ? "" : "e"} · Noch offen`
+      : `${challenge.difficulty === "veteran" ? "Veteran" : "Taktiker"} · ${dailyObjective(challenge)}`;
+  el("daily").classList.toggle("complete", !!record?.completed);
+}
+function openDaily() {
+  if (active) return;
+  const challenge = dailyChallenge();
+  const record = dailyRecord(dailyHistory, challenge.key);
+  showModal(
+    `<div class="eyebrow">TAGESFRONT · ${challenge.key}</div><h2>${challenge.title}</h2><p>${challenge.briefing}</p><div class="daily-brief"><div><small>SCHAUPLATZ</small><b>${ARENA_THEMES[challenge.theme].name}</b></div><div><small>GEGNER</small><b>${challenge.difficulty === "veteran" ? "VETERAN" : "TAKTIKER"} · ${COMMANDERS[challenge.enemyCommander].name}</b></div><div><small>DEIN COMMANDER</small><b>${COMMANDERS[challenge.playerCommander].name}</b></div><div><small>ZIEL</small><b>${dailyObjective(challenge)}</b></div></div><p class="mission-tip">${challenge.tip}</p><div class="daily-map" aria-label="Heutige Startfront">${challenge.owners.map((owner, id) => `<i class="owner-${owner ?? "neutral"} ${challenge.controlObjective?.pointIds.includes(id) ? "relay" : ""}"></i>`).join("")}</div><h3>Heutiges Einsatzdeck</h3><div class="daily-deck">${challenge.playerDeck.map((id) => { const card = CARDS.find((item) => item.id === id)!; return `<span data-card="${id}"><i>${card.cost}</i><span>${unitSvg(id)}</span><b>${card.name}</b></span>`; }).join("")}</div>${record ? `<div class="daily-record ${record.completed ? "complete" : ""}"><b>${record.completed ? "HEUTE GESICHERT" : "HEUTE NOCH OFFEN"}</b><span>${record.attempts} Versuch${record.attempts === 1 ? "" : "e"}${record.completed ? ` · Bestzeit ${Math.floor(record.bestTime / 60)}:${String(record.bestTime % 60).padStart(2, "0")} · Core ${record.bestCore}%` : ""}</span></div>` : ""}<p class="daily-note">Für diesen Kalendertag sind Setup, Deck und Seed fest. Wiederholungen sind kostenlos. Morgen entsteht automatisch eine neue Front.</p><button id="daily-play" class="primary">${record?.completed ? "BESTWERT VERBESSERN" : "TAGESFRONT STARTEN"} ↗</button><button id="daily-close" class="secondary">Zur Basis</button>`,
+  );
+  el("daily-play").onclick = () => start(false, null, false, null, challenge);
+  el("daily-close").onclick = () => {
+    el("modal").hidden = true;
+    el("daily").focus();
+  };
+}
+el("daily").onclick = openDaily;
+
 function headquartersMetrics(): BaseProjectMetrics {
   return {
     wins: Object.keys(campaignProgress).length,
