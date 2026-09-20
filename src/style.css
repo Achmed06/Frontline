@@ -255,6 +255,29 @@ h1 em {
 .core-info.enemy > span {
   justify-content: flex-end;
 }
+.enemy-command {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+}
+.enemy-command b {
+  white-space: nowrap;
+}
+#enemy-commander-status {
+  font: 700 7px/1 "Barlow Condensed", sans-serif;
+  letter-spacing: 0.8px;
+  color: #ad8f87;
+  white-space: nowrap;
+}
+#enemy-commander-status.ready {
+  color: #d8a69a;
+}
+#enemy-commander-status.active {
+  color: #ffd0c5;
+  text-shadow: 0 0 8px #ff684f66;
+}
 .core-info.enemy {
   text-align: right;
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Match, DEFAULT_DECK } from "./engine";
-import { commanderActiveSeconds } from "./commanders";
+import { commanderActiveSeconds, commanderStatusText } from "./commanders";
 import { newSeries, normalizeSeries, chooseSeriesRoute } from "./series";
 
 test("LYRA heals and cleanses only living allies, never wastes cooldown on a full healthy army", () => {
@@ -52,4 +52,15 @@ test("commander active timer reflects only the live team-wide duration", () => {
   assert.equal(commanderActiveSeconds("nova", units), 5.1);
   assert.equal(commanderActiveSeconds("atlas", units, "enemy"), 5.8);
   assert.equal(commanderActiveSeconds("lyra", units), 0);
+});
+
+test("commander status text prioritizes active effect, then cooldown, then ready", () => {
+  const units = [
+    { team: "player" as const, hp: 100, shieldTime: 4.2, rallyTime: 0 },
+    { team: "enemy" as const, hp: 100, shieldTime: 0, rallyTime: 5.1 },
+  ];
+  assert.equal(commanderStatusText("atlas", 28.4, units), "AKTIV 5s");
+  assert.equal(commanderStatusText("lyra", 12.2, units), "13s");
+  assert.equal(commanderStatusText("nova", 0, units, "enemy"), "AKTIV 6s");
+  assert.equal(commanderStatusText("atlas", 0, [], "enemy"), "BEREIT");
 });

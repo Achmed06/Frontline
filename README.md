@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.74
+## Current v0.75
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -320,3 +320,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the bot keeps its existing decision threshold and activation cadence
 - friend-duel and authoritative clients can reuse the same enemy cooldown state for readable Commander events
 - Commander abilities, cooldown lengths, AI thresholds and combat values are unchanged
+
+
+## v0.75 changes
+
+- the opposing Commander now keeps a compact live status in the match HUD
+- enemy status distinguishes BEREIT, active-duration windows and remaining cooldown seconds
+- ATLAS and NOVA active windows use the same real per-unit timers as the battlefield simulation
+- LYRA correctly skips an artificial active state and moves directly into cooldown
+- the persistent HUD state complements the existing short enemy-Commander warning banner
+- Commander abilities, cooldowns, AI behavior and combat values are unchanged

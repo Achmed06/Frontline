@@ -58,3 +58,15 @@ export function commanderActiveSeconds(
   }
   return active;
 }
+
+export function commanderStatusText(
+  commander: CommanderId,
+  cooldown: number,
+  units: readonly CommanderUnitState[],
+  team: "player" | "enemy" = "player",
+): string {
+  const active = commanderActiveSeconds(commander, units, team);
+  if (active > 0) return `AKTIV ${Math.ceil(active)}s`;
+  if (cooldown > 0) return `${Math.ceil(cooldown)}s`;
+  return "BEREIT";
+}
