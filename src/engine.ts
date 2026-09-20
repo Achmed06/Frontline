@@ -361,6 +361,7 @@ export interface Effect {
   id: number;
   type:
     | "spawn"
+    | "impact"
     | "shot"
     | "capture"
     | "heal"
@@ -949,8 +950,20 @@ export class Match {
   private damageUnit(unit: Unit, amount: number, source: Team): void {
     if (unit.hp <= 0) return;
     const shieldDamage = Math.min(unit.shield, amount);
+    const hpDamage = Math.min(unit.hp, Math.max(0, amount - shieldDamage));
     unit.shield -= shieldDamage;
-    unit.hp = Math.max(0, unit.hp - (amount - shieldDamage));
+    unit.hp = Math.max(0, unit.hp - hpDamage);
+    const applied = shieldDamage + hpDamage;
+    if (applied > 0)
+      this.effect(
+        "impact",
+        unit.x,
+        unit.y,
+        source,
+        0.24,
+        undefined,
+        clamp(6 + applied * 0.15, 7, 18),
+      );
     if (unit.hp <= 0) {
       this.effect("death", unit.x, unit.y, unit.team, 0.55);
       if (source === "player") this.state.stats.kills++;
