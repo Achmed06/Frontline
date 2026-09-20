@@ -15,6 +15,12 @@ import {
   styleUnlocked,
   advanceLearning,
   headquartersSvg,
+  BASE_PROJECTS,
+  baseProjectBuilt,
+  baseProjectProgress,
+  buildBaseProject,
+  type BaseProjectId,
+  type BaseProjectMetrics,
   type BaseStyle,
 } from "./headquarters";
 import { readLearning, saveLearning } from "./storage";
@@ -789,19 +795,47 @@ function openSeries() {
     el("series").focus();
   };
 }
+function headquartersMetrics(): BaseProjectMetrics {
+  return {
+    wins: Object.keys(campaignProgress).length,
+    stars: Object.values(campaignProgress).reduce((sum, best) => sum + best.stars, 0),
+    lessons: completedLessons(learningProgress),
+    mastery: Object.values(mastery.units).reduce(
+      (sum, value) => sum + (value ?? 0),
+      0,
+    ),
+  };
+}
+function baseMetricLabel(metric: keyof BaseProjectMetrics): string {
+  return metric === "wins"
+    ? "verschiedene Siege"
+    : metric === "stars"
+      ? "Kampagnensterne"
+      : metric === "mastery"
+        ? "Mastery-Punkte"
+        : "Lernaufträge";
+}
 function updateHeadquarters() {
   const wins = Object.keys(campaignProgress).length;
   const stage = baseStage(wins);
   const next = BASE_STAGES[stage + 1];
   const displayStyle = styleUnlocked(learningProgress.style, learningProgress, wins, supporterOwned) ? learningProgress.style : "field";
   const style = BASE_STYLES[displayStyle];
+  const projects = learningProgress.projects ?? [];
   el("lobby").dataset.baseStyle = displayStyle;
-  el("hq-mini-art").innerHTML = headquartersSvg(stage, style.color);
+  el("hq-mini-art").innerHTML = headquartersSvg(stage, style.color, projects);
   el("hq-name").textContent = BASE_STAGES[stage].name;
   el("hq-progress-fill").style.width = `${next ? Math.min(100, ((wins - BASE_STAGES[stage].wins) / (next.wins - BASE_STAGES[stage].wins)) * 100) : 100}%`;
-  el("hq-next").textContent = next
-    ? `${wins}/${next.wins} Einsätze · Nächster Ausbau: ${next.name}`
-    : "Vollständig ausgebaut · Deine Front steht";
+  const readyProjects = BASE_PROJECTS.filter(
+    (project) =>
+      !baseProjectBuilt(learningProgress, project.id) &&
+      baseProjectProgress(project.id, headquartersMetrics()).ready,
+  ).length;
+  el("hq-next").textContent = readyProjects
+    ? `${readyProjects} Bauprojekt${readyProjects === 1 ? "" : "e"} bereit · Basis öffnen`
+    : next
+      ? `${wins}/${next.wins} Einsätze · Nächster Ausbau: ${next.name}`
+      : "Vollständig ausgebaut · Deine Front steht";
   const done = completedLessons(learningProgress);
   el("learning-count").textContent =
     `FELDAUSBILDUNG · ${done}/${LESSONS.length}`;
@@ -811,12 +845,35 @@ function updateHeadquarters() {
 }
 function openHeadquarters() {
   if (active) return;
-  const wins = Object.keys(campaignProgress).length;
+  const metrics = headquartersMetrics();
+  const wins = metrics.wins;
   const stage = baseStage(wins);
   const nextStage = BASE_STAGES[stage + 1];
+  const displayStyle = styleUnlocked(learningProgress.style, learningProgress, wins, supporterOwned) ? learningProgress.style : "field";
+  const projects = learningProgress.projects ?? [];
   showModal(
-    `<div class="eyebrow">DEINE BLEIBENDE FRONT</div><h2>${BASE_STAGES[stage].name}</h2><div class="hq-art">${headquartersSvg(stage, BASE_STYLES[styleUnlocked(learningProgress.style, learningProgress, wins, supporterOwned) ? learningProgress.style : "field"].color)}</div><p>${BASE_STAGES[stage].description}</p>${nextStage ? `<details class="hq-next-preview"><summary>NÄCHSTER AUSBAU · ${nextStage.name} · Noch ${nextStage.wins - wins} ${nextStage.wins - wins === 1 ? "Sieg" : "Siege"}</summary><div class="hq-art">${headquartersSvg(stage + 1, BASE_STYLES[styleUnlocked(learningProgress.style, learningProgress, wins, supporterOwned) ? learningProgress.style : "field"].color)}</div><p>${nextStage.description}</p><small>VORSCHAU · ${nextStage.wins} verschiedene Kampagneneinsätze gewinnen.</small></details>` : '<div class="learning-reward"><b>KOMMANDOZITADELLE VOLLSTÄNDIG</b><p>Alle Ausbaustufen erreicht. Deine Basis zeigt deinen gesamten Feldzug.</p></div>'}<p>Verschiedene gewonnene Kampagneneinsätze bauen deine Basis aus. Wiederholte Siege zählen nicht doppelt. Gestaltung und Gebäude verändern keine Kampfwerte.</p><div class="hq-stages">${BASE_STAGES.map((item, i) => `<span class="${i <= stage ? "built" : ""}"><b>${i <= stage ? "✓" : item.wins}</b>${item.name}</span>`).join("")}</div><h3>Deine Gestaltung</h3><div class="hq-styles">${(Object.keys(BASE_STYLES) as BaseStyle[]).map((id) => `<button data-base-style="${id}" class="${id === learningProgress.style ? "selected" : ""}" ${styleUnlocked(id, learningProgress, wins, supporterOwned) ? "" : "disabled"}><i style="background:${BASE_STYLES[id].color}"></i><b>${BASE_STYLES[id].name}</b><small>${styleUnlocked(id, learningProgress, wins, supporterOwned) ? (id === learningProgress.style ? "AUSGERÜSTET" : "AUSRÜSTEN") : BASE_STYLES[id].requirement}</small></button>`).join("")}</div><button id="hq-store" class="primary">KOMMANDOGOLD ANSEHEN</button><button id="hq-close" class="secondary">Zur Basis</button>`,
+    `<div class="eyebrow">DEINE BLEIBENDE FRONT</div><h2>${BASE_STAGES[stage].name}</h2><div class="hq-art">${headquartersSvg(stage, BASE_STYLES[displayStyle].color, projects)}</div><p>${BASE_STAGES[stage].description}</p>${nextStage ? `<details class="hq-next-preview"><summary>NÄCHSTER AUSBAU · ${nextStage.name} · Noch ${nextStage.wins - wins} ${nextStage.wins - wins === 1 ? "Sieg" : "Siege"}</summary><div class="hq-art">${headquartersSvg(stage + 1, BASE_STYLES[displayStyle].color, projects)}</div><p>${nextStage.description}</p><small>VORSCHAU · ${nextStage.wins} verschiedene Kampagneneinsätze gewinnen.</small></details>` : '<div class="learning-reward"><b>KOMMANDOZITADELLE VOLLSTÄNDIG</b><p>Alle Ausbaustufen erreicht. Deine Basis zeigt deinen gesamten Feldzug.</p></div>'}<p>Deine Basis wächst auf zwei Arten: Feldzugstufen entstehen durch verschiedene Siege. Bauprojekte errichtest du selbst, sobald du ihre Spielziele erreicht hast. Alles bleibt kosmetisch und verändert keine Kampfwerte.</p><div class="hq-stages">${BASE_STAGES.map((item, i) => `<span class="${i <= stage ? "built" : ""}"><b>${i <= stage ? "✓" : item.wins}</b>${item.name}</span>`).join("")}</div><h3>Bauprojekte</h3><div class="hq-projects">${BASE_PROJECTS.map((project, index) => { const state = baseProjectProgress(project.id, metrics); const built = baseProjectBuilt(learningProgress, project.id); return `<article class="hq-project ${built ? "built" : state.ready ? "ready" : "locked"}"><div class="hq-project-head"><span>${String(index + 1).padStart(2, "0")}</span><b>${built ? "GEBAUT" : state.ready ? "BEREIT ZUM BAUEN" : "PROJEKT GESPERRT"}</b></div><h4>${project.name}</h4><p>${project.description}</p><div class="hq-project-progress"><i style="width:${Math.min(100, (state.current / state.goal) * 100)}%"></i></div><small>${Math.min(state.current, state.goal)}/${state.goal} ${baseMetricLabel(project.metric)}</small>${built ? '<button class="secondary" disabled>GEBAUT ✓</button>' : state.ready ? `<button class="primary" data-base-project="${project.id}">JETZT BAUEN ↗</button>` : '<button class="secondary" disabled>NOCH NICHT BEREIT</button>'}</article>`; }).join("")}</div><h3>Deine Gestaltung</h3><div class="hq-styles">${(Object.keys(BASE_STYLES) as BaseStyle[]).map((id) => `<button data-base-style="${id}" class="${id === learningProgress.style ? "selected" : ""}" ${styleUnlocked(id, learningProgress, wins, supporterOwned) ? "" : "disabled"}><i style="background:${BASE_STYLES[id].color}"></i><b>${BASE_STYLES[id].name}</b><small>${styleUnlocked(id, learningProgress, wins, supporterOwned) ? (id === learningProgress.style ? "AUSGERÜSTET" : "AUSRÜSTEN") : BASE_STYLES[id].requirement}</small></button>`).join("")}</div><button id="hq-store" class="primary">KOMMANDOGOLD ANSEHEN</button><button id="hq-close" class="secondary">Zur Basis</button>`,
   );
+  el("modal-content")
+    .querySelectorAll<HTMLButtonElement>("[data-base-project]")
+    .forEach((button) => {
+      button.onclick = () => {
+        const id = button.dataset.baseProject as BaseProjectId;
+        const project = BASE_PROJECTS.find((item) => item.id === id);
+        if (!project) return;
+        const next = buildBaseProject(learningProgress, id, headquartersMetrics());
+        if (next === learningProgress) return;
+        learningProgress = next;
+        const saved = saveLearning(learningProgress);
+        updateHeadquarters();
+        openHeadquarters();
+        showToast(
+          saved
+            ? `${project.name} gebaut. Deine Basis hat sich verändert.`
+            : `${project.name} für diese Sitzung gebaut.`,
+        );
+      };
+    });
   el("modal-content")
     .querySelectorAll<HTMLButtonElement>("[data-base-style]")
     .forEach((button) => {
