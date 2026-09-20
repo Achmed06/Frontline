@@ -2514,6 +2514,26 @@ h1 em {
 .hq-project button {
   width: 100%;
 }
+.hq-project.just-built {
+  animation: hq-project-built .65s ease-out;
+}
+.hq-art.build-flash {
+  animation: hq-build-flash .7s ease-out;
+}
+@keyframes hq-project-built {
+  0% { transform: scale(.97); box-shadow: 0 0 0 0 #f1cf6800; }
+  45% { transform: scale(1.015); box-shadow: 0 0 0 4px #f1cf6844, 0 0 28px #f1cf6833; }
+  100% { transform: scale(1); box-shadow: none; }
+}
+@keyframes hq-build-flash {
+  0% { box-shadow: 0 0 0 0 #8fffd100; }
+  45% { box-shadow: 0 0 0 4px #8fffd144, 0 0 30px #8fffd122; }
+  100% { box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hq-project.just-built,
+  .hq-art.build-flash { animation: none; }
+}
 .hq-garrison {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
