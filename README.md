@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.64
+## Current v0.65
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -216,3 +216,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - critical units below 30% switch to red and receive a small pulsing warning marker
 - team identity remains on the unit footprint and sprite, so health urgency does not obscure allegiance
 - critical-state presentation is renderer-only and does not change health, damage or targeting
+
+
+## v0.65 changes
+
+- Core-Angriff overtime now gets a dedicated VERLÄNGERUNG transition banner
+- the overtime callout explains that the next territorial or Core advantage decides the extended fight
+- the match clock switches to a distinct amber overtime state
+- overtime clock emphasis respects reduced-motion preferences
+- no overtime behavior or tie-break rule was changed
