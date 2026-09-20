@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.63
+## Current v0.64
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -206,3 +206,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - disconnected owned sectors remain visibly hatched in the final map
 - the map uses the actual end-state rather than reconstructed statistics
 - result screens now explain the territorial shape of a win, draw or loss at a glance
+
+
+## v0.64 changes
+
+- unit health bars now communicate condition instead of only shrinking
+- healthy units retain team-color health bars
+- wounded units below 55% switch to amber
+- critical units below 30% switch to red and receive a small pulsing warning marker
+- team identity remains on the unit footprint and sprite, so health urgency does not obscure allegiance
+- critical-state presentation is renderer-only and does not change health, damage or targeting
