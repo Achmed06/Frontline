@@ -423,12 +423,28 @@ export class ArenaScene extends Phaser.Scene {
         ? 0.12
         : 0.045,
     );
-    g.lineStyle(2, MINT, 0.65);
+    const playerCaptureWave = s.effects.find(
+      (effect) => effect.type === "capture" && effect.team === "player",
+    );
+    const enemyCaptureWave = s.effects.find(
+      (effect) => effect.type === "capture" && effect.team === "enemy",
+    );
+    if (playerCaptureWave) {
+      const pulse = playerCaptureWave.life / playerCaptureWave.maxLife;
+      g.lineStyle(7, MINT, 0.08 + pulse * 0.16);
+      g.strokePoints(front.map(([x, y]) => ({ x, y })), false);
+    }
+    if (enemyCaptureWave) {
+      const pulse = enemyCaptureWave.life / enemyCaptureWave.maxLife;
+      g.lineStyle(6, CORAL, 0.06 + pulse * 0.14);
+      g.strokePoints(enemyFront.map(([x, y]) => ({ x, y })), false);
+    }
+    g.lineStyle(2, MINT, playerCaptureWave ? 0.92 : 0.65);
     g.strokePoints(
       front.map(([x, y]) => ({ x, y })),
       false,
     );
-    g.lineStyle(1.5, CORAL, 0.3);
+    g.lineStyle(1.5, CORAL, enemyCaptureWave ? 0.72 : 0.3);
     g.strokePoints(
       enemyFront.map(([x, y]) => ({ x, y })),
       false,
@@ -482,7 +498,16 @@ export class ArenaScene extends Phaser.Scene {
     }
     for (const p of s.points) {
       if (m.controlObjective?.pointIds.includes(p.id)) {
-        g.lineStyle(2, 0xf3dc82, 0.9);
+        const relayColor =
+          p.owner === "player" && p.supplied
+            ? MINT
+            : p.owner === "enemy" && p.supplied
+              ? CORAL
+              : 0xf3dc82;
+        const relayPulse = 0.55 + 0.3 * Math.sin(this.clock * 3 + p.id);
+        g.lineStyle(4, relayColor, 0.08 + relayPulse * 0.08);
+        g.strokeRoundedRect(p.x - 41, p.y - 41, 82, 82, 14);
+        g.lineStyle(2, relayColor, 0.62 + relayPulse * 0.28);
         g.strokeRoundedRect(p.x - 38, p.y - 38, 76, 76, 12);
       }
       const color =
@@ -497,14 +522,36 @@ export class ArenaScene extends Phaser.Scene {
       g.fillStyle(0xffffff, 0.8);
       g.fillCircle(p.x, p.y - 18, 2);
       if (p.owner && !p.supplied) {
-        g.lineStyle(1, 0xd0ba87, 0.5);
-        g.lineBetween(p.x - 18, p.y + 18, p.x + 18, p.y - 18);
+        g.fillStyle(0x0d1720, 0.36);
+        g.fillCircle(p.x, p.y, 23);
+        g.lineStyle(1.5, 0xe4c17e, 0.6);
+        for (let offset = -24; offset <= 16; offset += 8)
+          g.lineBetween(
+            p.x + offset,
+            p.y + 20,
+            p.x + offset + 26,
+            p.y - 20,
+          );
+        g.lineStyle(2, 0xf0c978, 0.75);
+        g.strokeCircle(p.x, p.y, 29);
       }
       if (p.contested) {
-        g.lineStyle(3, 0xffdf6b, 0.9);
+        const warning = 0.6 + 0.35 * Math.sin(this.clock * 7 + p.id);
+        g.fillStyle(0xffc64f, 0.04 + warning * 0.05);
+        g.fillCircle(p.x, p.y, 35);
+        g.lineStyle(3, 0xffdf6b, 0.72 + warning * 0.22);
         g.lineBetween(p.x - 10, p.y - 10, p.x + 10, p.y + 10);
         g.lineBetween(p.x + 10, p.y - 10, p.x - 10, p.y + 10);
         g.strokeCircle(p.x, p.y, 34);
+        for (let i = 0; i < 4; i++) {
+          const angle = this.clock * 2.5 + i * Math.PI * 0.5;
+          g.lineBetween(
+            p.x + Math.cos(angle) * 37,
+            p.y + Math.sin(angle) * 37,
+            p.x + Math.cos(angle) * 43,
+            p.y + Math.sin(angle) * 43,
+          );
+        }
       }
       const r = 8 + Math.sin(this.clock * 2 + p.id) * 0.6;
       this.polygon(
@@ -521,19 +568,55 @@ export class ArenaScene extends Phaser.Scene {
       g.lineStyle(2, color, 0.25);
       g.strokeCircle(p.x, p.y, 30);
       if (p.capture > 0.01) {
-        g.lineStyle(6, 0x102540, 0.9);
+        const captureColor = p.captureTeam === "player" ? MINT : CORAL;
+        const endAngle = -Math.PI / 2 + p.capture * Math.PI * 2;
+        g.lineStyle(8, 0x102540, 0.92);
         g.strokeCircle(p.x, p.y, 30);
-        g.lineStyle(4, p.captureTeam === "player" ? MINT : CORAL, 1);
+        g.lineStyle(5, captureColor, 0.95);
+        g.beginPath();
+        g.arc(p.x, p.y, 30, -Math.PI / 2, endAngle, false);
+        g.strokePath();
+        g.lineStyle(2, 0xffffff, 0.32);
         g.beginPath();
         g.arc(
           p.x,
           p.y,
-          30,
-          -Math.PI / 2,
-          -Math.PI / 2 + p.capture * Math.PI * 2,
+          34,
+          Math.max(-Math.PI / 2, endAngle - 0.55),
+          endAngle,
           false,
         );
         g.strokePath();
+        g.fillStyle(0xffffff, 0.9);
+        g.fillCircle(
+          p.x + Math.cos(endAngle) * 30,
+          p.y + Math.sin(endAngle) * 30,
+          2.5,
+        );
+      }
+      const secured = s.effects.find(
+        (effect) =>
+          effect.type === "capture" &&
+          Math.abs(effect.x - p.x) < 1 &&
+          Math.abs(effect.y - p.y) < 1,
+      );
+      if (secured) {
+        const progress = 1 - secured.life / secured.maxLife;
+        const secureColor = secured.team === "player" ? MINT : CORAL;
+        const radius = 29 + progress * 28;
+        g.lineStyle(2.5, secureColor, 0.75 * (1 - progress));
+        this.polygon(g, this.hex(p.x, p.y, radius), 0x000000, 0, secureColor);
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3 - Math.PI / 6;
+          const inner = 31 + progress * 8;
+          const outer = 45 + progress * 20;
+          g.lineBetween(
+            p.x + Math.cos(angle) * inner,
+            p.y + Math.sin(angle) * inner,
+            p.x + Math.cos(angle) * outer,
+            p.y + Math.sin(angle) * outer,
+          );
+        }
       }
       this.labels[p.id]
         ?.setText(
