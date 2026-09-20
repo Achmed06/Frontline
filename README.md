@@ -102,4 +102,8 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - project unlocks reuse campaign wins, campaign stars, learning tasks and unit mastery instead of adding another currency
 - built projects become visible in the headquarters illustration
 - ready-to-build projects are surfaced directly on the base card
+- mastery-driven headquarters garrison shows the player's most-used units once the Trainingsplatz is built
+- construction feedback animates the completed project and updated base without adding wait timers
+- projectile trails now travel to targets instead of rendering as full debug lines
+- dedicated Core impact feedback adds a subtle hit flash and camera impulse
 - no construction timer and no combat-stat bonuses
