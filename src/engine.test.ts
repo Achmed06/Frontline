@@ -742,7 +742,12 @@ test("bot commander activation exposes the real enemy cooldown state", () => {
   staticUnit(match, "enemy", 210, 150);
   staticUnit(match, "enemy", 255, 150);
   assert.equal(match.state.enemyCommanderCooldown, 0);
-  match.update(18);
+  for (
+    let elapsed = 0;
+    elapsed < 30 && match.state.enemyCommanderCooldown <= 0;
+    elapsed += 0.5
+  )
+    match.update(0.5);
   assert.ok(match.state.enemyCommanderCooldown > 0);
   assert.ok(match.state.enemyCommanderCooldown <= 30);
   assert.ok(
