@@ -235,6 +235,12 @@ export class FrontlineScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.units = [];
+    this.cards = [];
+    this.laneHighlights = [];
+    this.lanePressureTexts = [];
+    this.nextUnitId = 1;
+
     this.cameras.main.setBackgroundColor("#07111f");
     this.drawArena();
     this.createHud();
@@ -1257,15 +1263,27 @@ export class FrontlineScene extends Phaser.Scene {
       },
     ).setOrigin(0.5).setDepth(101);
 
-    const rematch = this.add.rectangle(WIDTH / 2, 530, 176, 48, 0x153149)
+    const rematch = this.add.rectangle(WIDTH / 2 - 62, 530, 112, 48, 0x153149)
       .setStrokeStyle(2, 0x66dff5)
       .setInteractive({ useHandCursor: true })
       .setDepth(101);
 
-    const rematchText = this.add.text(WIDTH / 2, 530, "REMATCH", {
+    const rematchText = this.add.text(WIDTH / 2 - 62, 530, "REMATCH", {
       fontFamily: "monospace",
-      fontSize: "16px",
+      fontSize: "13px",
       color: "#dff9ff",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(102);
+
+    const home = this.add.rectangle(WIDTH / 2 + 78, 530, 112, 48, 0x101d2a)
+      .setStrokeStyle(1, 0x6b8497)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(101);
+
+    const homeText = this.add.text(WIDTH / 2 + 78, 530, "HOME", {
+      fontFamily: "monospace",
+      fontSize: "13px",
+      color: "#b8c8d3",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(102);
 
@@ -1276,7 +1294,15 @@ export class FrontlineScene extends Phaser.Scene {
       summary.destroy();
       rematch.destroy();
       rematchText.destroy();
+      home.destroy();
+      homeText.destroy();
       this.resetMatch();
+    });
+
+    home.on("pointerdown", () => {
+      home.disableInteractive();
+      this.cameras.main.fadeOut(180, 5, 11, 20);
+      this.time.delayedCall(180, () => this.scene.start("MenuScene"));
     });
   }
 
