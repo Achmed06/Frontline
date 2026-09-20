@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.68
+## Current v0.69
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -258,3 +258,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - invalid placement keeps the same preview geometry but switches to the existing error color
 - ability targeting still uses its existing effect-radius preview
 - deployment range visualization is renderer-only and does not alter card ranges or targeting
+
+
+## v0.69 changes
+
+- active attacks now briefly mark their current target with a compact four-corner lock indicator
+- the target lock exists only for the short lifetime of the existing shot effect, avoiding permanent targeting-line clutter
+- Core turret attacks use the same readable lock treatment
+- healing keeps its separate pulse/beam language so support actions remain visually distinct from attacks
+- targeting behavior and target selection are unchanged
