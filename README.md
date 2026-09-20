@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.70
+## Current v0.71
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -277,3 +277,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - victory/defeat gets a dedicated CORE GEBROCHEN / CORE GEFALLEN battle callout before results
 - time-limit and territory decisions still proceed directly to the result screen without the destruction hold
 - all match rules, winner calculation and rewards remain unchanged
+
+
+## v0.71 changes
+
+- Pulse, Rally, Stasis, Repulsor and Shield now use clearly different battlefield visual languages
+- Pulse reads as a concentric shockwave with radial burst lines
+- Rally uses outward tempo chevrons and a green support wave
+- Stasis uses an icy hex field with rotating frost markers
+- Repulsor uses directional push arrows radiating from the cast point
+- Shield uses layered hex protection geometry instead of a generic circle
+- ability mechanics, radii, damage, healing and crowd-control values remain unchanged
