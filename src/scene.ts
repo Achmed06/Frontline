@@ -550,8 +550,32 @@ export class ArenaScene extends Phaser.Scene {
                 : "#fff0bc",
         );
     }
-    this.drawCore(210, 35, "enemy", s.cores.enemy.hp / s.cores.enemy.maxHp);
-    this.drawCore(210, 525, "player", s.cores.player.hp / s.cores.player.maxHp);
+    const enemyCoreHit = s.effects.find(
+      (effect) =>
+        effect.type === "core-hit" &&
+        Math.abs(effect.x - s.cores.enemy.x) < 2 &&
+        Math.abs(effect.y - s.cores.enemy.y) < 2,
+    );
+    const playerCoreHit = s.effects.find(
+      (effect) =>
+        effect.type === "core-hit" &&
+        Math.abs(effect.x - s.cores.player.x) < 2 &&
+        Math.abs(effect.y - s.cores.player.y) < 2,
+    );
+    this.drawCore(
+      210,
+      35,
+      "enemy",
+      s.cores.enemy.hp / s.cores.enemy.maxHp,
+      enemyCoreHit ? enemyCoreHit.life / enemyCoreHit.maxLife : 0,
+    );
+    this.drawCore(
+      210,
+      525,
+      "player",
+      s.cores.player.hp / s.cores.player.maxHp,
+      playerCoreHit ? playerCoreHit.life / playerCoreHit.maxLife : 0,
+    );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
       if (!alive.has(id)) {
@@ -823,6 +847,7 @@ export class ArenaScene extends Phaser.Scene {
     y: number,
     team: "player" | "enemy",
     fraction: number,
+    hitAlpha = 0,
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
@@ -852,6 +877,16 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.polygon(g, this.hex(x, y - 2, 22), 0x47635a, 1, color);
     this.polygon(g, this.hex(x, y - 3, 15), 0x132627, 1, color);
+    if (fraction <= 0.6) {
+      g.lineStyle(1.5, 0xffd18f, fraction <= 0.3 ? 0.82 : 0.52);
+      g.lineBetween(x - 12, y - 13, x - 4, y - 6);
+      g.lineBetween(x - 4, y - 6, x - 9, y + 1);
+      g.lineBetween(x + 10, y - 10, x + 3, y - 2);
+      if (fraction <= 0.3) {
+        g.lineBetween(x + 3, y - 2, x + 10, y + 7);
+        g.lineBetween(x - 9, y + 1, x - 3, y + 8);
+      }
+    }
     this.polygon(
       g,
       [
@@ -867,5 +902,27 @@ export class ArenaScene extends Phaser.Scene {
     g.fillRect(x - 27, y + 26, 54, 3);
     g.fillStyle(color);
     g.fillRect(x - 27, y + 26, 54 * Math.max(0, fraction), 3);
+    if (fraction <= 0.3) {
+      const pulse = 0.45 + 0.35 * Math.sin(this.clock * 6);
+      g.fillStyle(0xff8b68, pulse);
+      g.fillCircle(x - 31, y - 15, 2.5);
+      g.fillCircle(x + 31, y - 15, 2.5);
+      g.lineStyle(1.4, 0xffb36f, 0.28 + pulse * 0.35);
+      for (let i = 0; i < 3; i++) {
+        const drift = (this.clock * (9 + i * 2) + i * 11) % 18;
+        g.lineBetween(
+          x + (i - 1) * 8,
+          y - 19 - drift * 0.25,
+          x + (i - 1) * 8 + (i - 1) * 2,
+          y - 23 - drift,
+        );
+      }
+    }
+    if (hitAlpha > 0) {
+      const flash = Math.min(0.75, hitAlpha * 0.8);
+      this.polygon(g, this.hex(x, y - 3, 24), 0xffffff, flash * 0.18);
+      g.lineStyle(2, 0xffffff, flash);
+      g.strokeCircle(x, y - 2, 21 + (1 - hitAlpha) * 9);
+    }
   }
 }
