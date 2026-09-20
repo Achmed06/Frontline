@@ -154,6 +154,8 @@ let active = false,
   pauseBeganAt = 0,
   startBannerShown = false,
   finishReadyAt = 0,
+  lastCommanderCooldown = 0,
+  commanderReadyFlashUntil = 0,
   lastPointOwners: Array<"player" | "enemy" | null> = match.state.points.map(
     (point) => point.owner,
   );
@@ -349,6 +351,8 @@ function start(
   startBannerShown = false;
   ended = false;
   finishReadyAt = 0;
+  lastCommanderCooldown = 0;
+  commanderReadyFlashUntil = 0;
   lastCaptured = 0;
   battleNotices.clear();
   bannerUntil = 0;
@@ -732,10 +736,25 @@ function updateHud(force = false) {
     b.classList.toggle("unaffordable", s.energy.player < card.cost);
     b.disabled = !live;
   }
+  const commanderButton = el<HTMLButtonElement>("commander");
+  const commanderReady = live && s.commanderCooldown <= 0;
+  if (
+    active &&
+    !ended &&
+    live &&
+    lastCommanderCooldown > 0 &&
+    s.commanderCooldown <= 0
+  )
+    commanderReadyFlashUntil = performance.now() + 1250;
+  lastCommanderCooldown = s.commanderCooldown;
   el("commander-status").textContent =
     s.commanderCooldown > 0 ? `${Math.ceil(s.commanderCooldown)}s` : "BEREIT";
-  el<HTMLButtonElement>("commander").disabled =
-    !live || s.commanderCooldown > 0;
+  commanderButton.disabled = !commanderReady;
+  commanderButton.classList.toggle("ready", commanderReady);
+  commanderButton.classList.toggle(
+    "just-ready",
+    commanderReady && performance.now() < commanderReadyFlashUntil,
+  );
   const lostPoint =
     active && !ended
       ? s.points.find(
