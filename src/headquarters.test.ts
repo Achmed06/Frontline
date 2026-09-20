@@ -7,6 +7,9 @@ import {
   completedLessons,
   baseStage,
   styleUnlocked,
+  baseProjectBuilt,
+  baseProjectProgress,
+  buildBaseProject,
 } from "./headquarters";
 test("permanent learning rewards require finished matches, survive saves, and never double grant", () => {
   const m = new Match({ botEnabled: false });
@@ -42,4 +45,41 @@ test("permanent learning rewards require finished matches, survive saves, and ne
     }),
     empty,
   );
+});
+
+
+test("headquarters projects unlock from existing progression and persist without combat power", () => {
+  const progress = normalizeLearning(null);
+  const early = { wins: 2, mastery: 2, lessons: 3, stars: 20 };
+
+  assert.equal(baseProjectProgress("depot", early).ready, false);
+  assert.equal(buildBaseProject(progress, "depot", early), progress);
+
+  const ready = { wins: 3, mastery: 3, lessons: 4, stars: 24 };
+  const depot = buildBaseProject(progress, "depot", ready);
+  assert.equal(baseProjectBuilt(depot, "depot"), true);
+  assert.deepEqual(depot.projects, ["depot"]);
+
+  const training = buildBaseProject(depot, "training", ready);
+  const relay = buildBaseProject(training, "relay", ready);
+  const workshop = buildBaseProject(relay, "workshop", ready);
+  assert.deepEqual(workshop.projects, ["depot", "training", "relay", "workshop"]);
+  assert.equal(baseProjectBuilt(workshop, "honor"), false);
+
+  const honor = buildBaseProject(workshop, "honor", { ...ready, wins: 18 });
+  assert.equal(baseProjectBuilt(honor, "honor"), true);
+  assert.deepEqual(
+    normalizeLearning(JSON.parse(JSON.stringify(honor))),
+    honor,
+  );
+});
+
+test("headquarters project normalization drops unknown and duplicate project ids", () => {
+  const normalized = normalizeLearning({
+    counts: { deploy: 0, capture: 0, ability: 0, win: 0 },
+    style: "field",
+    lastMatch: "",
+    projects: ["relay", "relay", "bad", "depot"],
+  });
+  assert.deepEqual(normalized.projects, ["depot", "relay"]);
 });
