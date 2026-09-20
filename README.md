@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.56
+## Current v0.57
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -138,3 +138,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - pausing or backgrounding during the countdown preserves the remaining countdown instead of letting it expire invisibly
 - match objective banner appears as combat begins
 - reduced-motion preference disables countdown animation while keeping the timing and game-state behavior
+
+
+## v0.57 changes
+
+- each arena now has its own lightweight procedural atmosphere instead of relying mainly on palette changes
+- Smaragdküste adds water glints, shoreline movement and vegetation marks
+- Frostrelais adds drifting snow and ice-crystal details
+- Glutbruch adds rising sparks and glowing fracture marks
+- Nexuskern adds scanning lines and circuit-like data details
+- territory plates also carry theme-specific surface details
+- all atmosphere remains cosmetic, deterministic and collision-free
