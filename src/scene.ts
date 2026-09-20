@@ -991,8 +991,35 @@ export class ArenaScene extends Phaser.Scene {
             .setTint(valid ? MINT : CORAL)
             .setVisible(true);
       }
-      fx.lineStyle(1.5, valid ? MINT : CORAL, 0.65);
-      fx.strokeCircle(x, y, card.kind === "ability" ? (card.range ?? 65) : 19);
+      const previewColor = valid ? MINT : CORAL;
+      if (card.kind === "unit") {
+        const attackRange = Math.max(18, card.range ?? 18);
+        fx.fillStyle(previewColor, valid ? 0.025 : 0.018);
+        fx.fillCircle(x, y, attackRange);
+        fx.lineStyle(1, previewColor, valid ? 0.22 : 0.16);
+        fx.strokeCircle(x, y, attackRange);
+        if (attackRange >= 55) {
+          for (let i = 0; i < 8; i++) {
+            const angle = i * Math.PI * 0.25 + this.clock * 0.18;
+            const inner = attackRange - 3;
+            const outer = attackRange + 3;
+            fx.lineBetween(
+              x + Math.cos(angle) * inner,
+              y + Math.sin(angle) * inner,
+              x + Math.cos(angle) * outer,
+              y + Math.sin(angle) * outer,
+            );
+          }
+        }
+        fx.lineStyle(1.8, previewColor, 0.72);
+        fx.strokeCircle(x, y, 19);
+      } else {
+        fx.fillStyle(previewColor, valid ? 0.045 : 0.025);
+        fx.fillCircle(x, y, card.range ?? 65);
+        fx.lineStyle(1.5, previewColor, 0.68);
+        fx.strokeCircle(x, y, card.range ?? 65);
+      }
+      fx.lineStyle(1.5, previewColor, 0.8);
       fx.lineBetween(x - 7, y, x + 7, y);
       fx.lineBetween(x, y - 7, x, y + 7);
     }
