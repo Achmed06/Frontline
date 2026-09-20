@@ -2407,6 +2407,184 @@ h1 em {
   font-size: 7px;
   letter-spacing: 1px;
 }
+.daily-launch {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 9px;
+  padding: 13px 14px;
+  text-align: left;
+  border: 1px solid #d1a85b;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 90% 10%, #f7c96e24, transparent 42%),
+    linear-gradient(120deg, #3b3853, #20344f 65%, #214d61);
+  color: #f8f3e4;
+  box-shadow: inset 0 0 0 1px #ffe49b14;
+}
+.daily-launch > span:first-child { min-width: 0; }
+.daily-launch > span:last-child {
+  color: #ffe19a;
+  font-size: 9px;
+  letter-spacing: .8px;
+  white-space: nowrap;
+}
+.daily-launch b {
+  display: block;
+  margin: 4px 0;
+  font: 700 20px "Barlow Condensed", Impact, sans-serif;
+  letter-spacing: .5px;
+  color: #fff0c4;
+}
+.daily-launch small {
+  display: block;
+  color: #bcd3e5;
+  font-size: 8px;
+  line-height: 1.35;
+  letter-spacing: .7px;
+}
+.daily-launch.complete {
+  border-color: #79d7b5;
+  background:
+    radial-gradient(circle at 90% 10%, #62efbd20, transparent 42%),
+    linear-gradient(120deg, #254c4c, #203d55 68%, #1c5761);
+}
+.daily-launch.complete > span:last-child,
+.daily-launch.complete b { color: #b9f5d7; }
+
+.daily-brief {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+.daily-brief > div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #4e6980;
+  border-radius: 7px;
+  background: #1a3046;
+}
+.daily-brief small {
+  display: block;
+  margin-bottom: 4px;
+  color: #89aabd;
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+.daily-brief b {
+  display: block;
+  color: #f4e3ae;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.daily-map {
+  width: max-content;
+  display: grid;
+  grid-template-columns: repeat(3, 28px);
+  gap: 4px;
+  margin: 16px auto 20px;
+  transform: skewY(-5deg);
+}
+.daily-map i {
+  position: relative;
+  height: 28px;
+  border: 1px solid #70879a;
+  border-radius: 4px;
+  background: #304154;
+}
+.daily-map .owner-player {
+  background: #3f9479;
+  border-color: #89e8c1;
+}
+.daily-map .owner-enemy {
+  background: #a65353;
+  border-color: #ff9c8b;
+}
+.daily-map .relay::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 2px solid #ffe18d;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ffe18d55;
+}
+.daily-deck {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 10px 0 16px;
+}
+.daily-deck > span {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 4px 6px;
+  border: 1px solid var(--role-color, #6385a5);
+  border-radius: 7px;
+  background: linear-gradient(150deg, var(--role-dark, #263d5c), #17283d);
+  text-align: center;
+}
+.daily-deck > span > i {
+  position: absolute;
+  z-index: 2;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #8b52db;
+  color: #fff;
+  font: 700 9px/17px monospace;
+}
+.daily-deck > span > span {
+  display: block;
+  height: 45px;
+}
+.daily-deck svg {
+  width: 100%;
+  height: 100%;
+}
+.daily-deck b {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.daily-record,
+.daily-note {
+  margin: 12px 0;
+  padding: 11px;
+  border: 1px solid #536a7d;
+  border-radius: 7px;
+  background: #172a3d;
+}
+.daily-record {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.daily-record.complete {
+  border-color: #76cfae;
+  background: #183c3b;
+}
+.daily-record b {
+  color: #f4df9d;
+  font-size: 9px;
+  letter-spacing: .7px;
+}
+.daily-record.complete b { color: #a8efd0; }
+.daily-record span,
+.daily-note {
+  color: #9fb8c8;
+  font-size: 9px;
+  line-height: 1.45;
+}
 .hq-art {
   background: radial-gradient(ellipse, #46626c66, #182b35);
   border: 1px solid #425d65;
