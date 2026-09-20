@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.53
+## Current v0.54
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -107,3 +107,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - projectile trails now travel to targets instead of rendering as full debug lines
 - dedicated Core impact feedback adds a subtle hit flash and camera impulse
 - no construction timer and no combat-stat bonuses
+
+
+## v0.54 changes
+
+- deterministic Tagesfront generated from the local calendar day
+- fixed daily seed, battlefield, starting front, player deck, enemy deck and commanders
+- rotating Core-Angriff and Signalkrieg objectives
+- same daily setup can be replayed freely without tickets, energy or wait timers
+- local daily record tracks attempts and successful best time, Core health and controlled points
+- daily best values only compare successful clears
+- dedicated Tagesfront card and full briefing in the headquarters lobby
+- Tagesfront records are included in portable save backups
+- backup format v2 remains able to import legacy v1 saves
