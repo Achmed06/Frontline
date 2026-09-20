@@ -10,6 +10,7 @@ import {
   baseProjectBuilt,
   baseProjectProgress,
   buildBaseProject,
+  headquartersSvg,
 } from "./headquarters";
 test("permanent learning rewards require finished matches, survive saves, and never double grant", () => {
   const m = new Match({ botEnabled: false });
@@ -82,4 +83,24 @@ test("headquarters project normalization drops unknown and duplicate project ids
     projects: ["relay", "relay", "bad", "depot"],
   });
   assert.deepEqual(normalized.projects, ["depot", "relay"]);
+});
+
+
+test("headquarters patrols only appear for mastered units after the training ground is built", () => {
+  const withoutTraining = headquartersSvg(3, "#a3efd0", [], [
+    "vanguard",
+    "ranger",
+  ]);
+  assert.equal(withoutTraining.includes("hq-patrol"), false);
+
+  const withTraining = headquartersSvg(3, "#a3efd0", ["training"], [
+    "vanguard",
+    "ranger",
+    "swarm",
+    "medic",
+    "mortar",
+  ]);
+  assert.equal((withTraining.match(/hq-patrol hq-patrol-/g) ?? []).length, 4);
+  assert.equal(withTraining.includes("hq-patrol-1"), true);
+  assert.equal(withTraining.includes("hq-patrol-4"), true);
 });
