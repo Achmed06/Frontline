@@ -150,6 +150,11 @@ const ABILITY_COST: Record<AbilityKind, number> = {
   repulse: 4,
 };
 
+const ABILITY_COOLDOWN_MS: Record<AbilityKind, number> = {
+  surge: 8_000,
+  repulse: 10_000,
+};
+
 export class FrontlineScene extends Phaser.Scene {
   private units: UnitEntity[] = [];
   private nextUnitId = 1;
@@ -171,6 +176,11 @@ export class FrontlineScene extends Phaser.Scene {
   private botAbilityMs = 5000;
   private playerSurgeUntil = 0;
   private enemySurgeUntil = 0;
+  private abilityReadyAt: Record<Side, Record<AbilityKind, number>> = {
+    player: { surge: 0, repulse: 0 },
+    enemy: { surge: 0, repulse: 0 },
+  };
+  private counterTextReadyAt = 0;
 
   private arenaGraphics!: Phaser.GameObjects.Graphics;
   private frontLineGraphics!: Phaser.GameObjects.Graphics;
@@ -183,6 +193,8 @@ export class FrontlineScene extends Phaser.Scene {
   private frontLineText!: Phaser.GameObjects.Text;
   private holdText!: Phaser.GameObjects.Text;
   private commanderText!: Phaser.GameObjects.Text;
+  private phaseText!: Phaser.GameObjects.Text;
+  private laneHighlights: Phaser.GameObjects.Rectangle[] = [];
 
   private cards: CardUi[] = [];
   private lastUiRefresh = 0;
@@ -208,8 +220,9 @@ export class FrontlineScene extends Phaser.Scene {
 
     const playerComeback = this.frontLineY > 430 ? 1.1 : 1;
     const enemyComeback = this.frontLineY < 360 ? 1.1 : 1;
-    this.playerEnergy = Math.min(MAX_ENERGY, this.playerEnergy + 1.15 * playerComeback * dt);
-    this.enemyEnergy = Math.min(MAX_ENERGY, this.enemyEnergy + 1.15 * enemyComeback * dt);
+    const finalMinuteBoost = this.remainingMs <= 60_000 ? 1.25 : 1;
+    this.playerEnergy = Math.min(MAX_ENERGY, this.playerEnergy + 1.15 * playerComeback * finalMinuteBoost * dt);
+    this.enemyEnergy = Math.min(MAX_ENERGY, this.enemyEnergy + 1.15 * enemyComeback * finalMinuteBoost * dt);
 
     this.updateUnits(dt);
     this.updateFrontline(dt);
@@ -235,6 +248,17 @@ export class FrontlineScene extends Phaser.Scene {
     this.arenaGraphics.lineStyle(1, 0x22425d, 0.65);
     this.arenaGraphics.lineBetween(143, ARENA_TOP, 143, ARENA_BOTTOM);
     this.arenaGraphics.lineBetween(247, ARENA_TOP, 247, ARENA_BOTTOM);
+
+    this.laneHighlights = LANES.map((laneX) =>
+      this.add.rectangle(
+        laneX,
+        (ARENA_TOP + ARENA_BOTTOM) / 2,
+        92,
+        ARENA_BOTTOM - ARENA_TOP - 10,
+        0x55dfff,
+        0,
+      ).setStrokeStyle(2, 0x55dfff, 0).setDepth(2),
+    );
 
     for (let y = ARENA_TOP + 35; y < ARENA_BOTTOM; y += 52) {
       this.arenaGraphics.lineStyle(1, 0x17324a, 0.4);
@@ -316,13 +340,20 @@ export class FrontlineScene extends Phaser.Scene {
       color: "#5f7e94",
     });
 
-    this.statusText = this.add.text(WIDTH / 2, 128, "SELECT A UNIT, THEN TAP A LANE", {
+    this.statusText = this.add.text(WIDTH / 2, 126, "SELECT A UNIT, THEN TAP A LANE", {
       fontFamily: "monospace",
       fontSize: "9px",
       color: "#8aa7bc",
     }).setOrigin(0.5);
 
-    this.holdText = this.add.text(WIDTH / 2, 145, "", {
+    this.phaseText = this.add.text(WIDTH / 2, 139, "", {
+      fontFamily: "monospace",
+      fontSize: "8px",
+      color: "#70a0bd",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+
+    this.holdText = this.add.text(WIDTH / 2, 149, "", {
       fontFamily: "monospace",
       fontSize: "10px",
       color: "#f7dc6f",
@@ -430,7 +461,8 @@ export class FrontlineScene extends Phaser.Scene {
       const lane = this.closestLane(pointer.x);
       if (this.deployUnit("player", this.selectedKind, lane)) {
         this.selectedKind = null;
-        this.statusText.setText("UNIT DEPLOYED");
+        this.statusText.setText(`DEPLOYED // LANE ${lane + 1}`);
+        this.updateLaneHighlights();
         this.refreshCards();
       }
     });
@@ -454,8 +486,15 @@ export class FrontlineScene extends Phaser.Scene {
     this.botAbilityMs = 4500;
     this.playerSurgeUntil = 0;
     this.enemySurgeUntil = 0;
+    this.abilityReadyAt = {
+      player: { surge: 0, repulse: 0 },
+      enemy: { surge: 0, repulse: 0 },
+    };
+    this.counterTextReadyAt = 0;
     this.statusText.setText("SELECT A UNIT, THEN TAP A LANE");
+    this.phaseText.setText("");
     this.holdText.setText("");
+    this.updateLaneHighlights();
     this.refreshHud();
     this.refreshCards();
     this.renderFrontline();
@@ -470,7 +509,8 @@ export class FrontlineScene extends Phaser.Scene {
     }
 
     this.selectedKind = this.selectedKind === kind ? null : kind;
-    this.statusText.setText(this.selectedKind ? `${def.name.toUpperCase()} READY // TAP A LANE` : "SELECTION CLEARED");
+    this.statusText.setText(this.selectedKind ? `${def.name.toUpperCase()} READY // TAP LANE 1, 2 OR 3` : "SELECTION CLEARED");
+    this.updateLaneHighlights();
     this.refreshCards();
   }
 
@@ -483,7 +523,11 @@ export class FrontlineScene extends Phaser.Scene {
     else this.enemyEnergy -= def.cost;
 
     const x = LANES[lane];
-    const y = side === "player" ? PLAYER_SPAWN_Y : ENEMY_SPAWN_Y;
+    const nearbySpawnCount = this.units.filter(
+      (unit) => unit.side === side && unit.lane === lane && Math.abs(unit.y - (side === "player" ? PLAYER_SPAWN_Y : ENEMY_SPAWN_Y)) < 55,
+    ).length;
+    const spawnOffset = Math.min(nearbySpawnCount * 7, 21);
+    const y = side === "player" ? PLAYER_SPAWN_Y + spawnOffset : ENEMY_SPAWN_Y - spawnOffset;
     const outline = side === "player" ? 0x7de4ff : 0xff7a8d;
 
     const body = this.add.circle(0, 0, def.radius, def.color)
@@ -525,6 +569,7 @@ export class FrontlineScene extends Phaser.Scene {
     };
 
     this.units.push(unit);
+    this.spawnDeployPulse(x, y, outline);
     return true;
   }
 
@@ -581,8 +626,7 @@ export class FrontlineScene extends Phaser.Scene {
     for (const candidate of this.units) {
       if (candidate.dead || candidate.side === unit.side) continue;
 
-      const laneDifference = Math.abs(candidate.lane - unit.lane);
-      if (laneDifference > 1) continue;
+      if (candidate.lane !== unit.lane) continue;
 
       const distance = Phaser.Math.Distance.Between(unit.x, unit.y, candidate.x, candidate.y);
       const aggroRange = Math.max(unit.def.range + 44, 90);
@@ -627,13 +671,15 @@ export class FrontlineScene extends Phaser.Scene {
   private attackUnit(attacker: UnitEntity, target: UnitEntity): void {
     const now = this.time.now;
     let damage = attacker.def.damage;
+    let counterMultiplier = 1;
 
-    if (attacker.kind === "hunter" && target.def.heavy) damage *= 1.8;
-    if (attacker.kind === "runner" && target.kind === "ranger") damage *= 1.6;
-    if (attacker.kind === "striker" && target.kind === "runner") damage *= 1.55;
-    if (attacker.kind === "vanguard" && target.kind === "striker") damage *= 1.25;
-    if (attacker.kind === "ranger" && target.kind === "warden") damage *= 1.3;
-    if (attacker.kind === "warden" && target.kind === "hunter") damage *= 1.2;
+    if (attacker.kind === "hunter" && target.def.heavy) counterMultiplier = 1.8;
+    if (attacker.kind === "runner" && target.kind === "ranger") counterMultiplier = 1.6;
+    if (attacker.kind === "striker" && target.kind === "runner") counterMultiplier = 1.55;
+    if (attacker.kind === "vanguard" && target.kind === "striker") counterMultiplier = 1.25;
+    if (attacker.kind === "ranger" && target.kind === "warden") counterMultiplier = 1.3;
+    if (attacker.kind === "warden" && target.kind === "hunter") counterMultiplier = 1.2;
+    damage *= counterMultiplier;
 
     const surgeUntil = attacker.side === "player" ? this.playerSurgeUntil : this.enemySurgeUntil;
     if (now < surgeUntil) damage *= 1.18;
@@ -641,6 +687,11 @@ export class FrontlineScene extends Phaser.Scene {
     target.hp -= damage;
     target.hpBar.displayWidth = 30 * Phaser.Math.Clamp(target.hp / target.maxHp, 0, 1);
     this.flashAttack(attacker, target.x, target.y);
+
+    if (counterMultiplier > 1 && now >= this.counterTextReadyAt) {
+      this.counterTextReadyAt = now + 650;
+      this.spawnCombatText(target.x, target.y - target.def.radius - 12, `COUNTER x${counterMultiplier.toFixed(2)}`);
+    }
 
     if (target.hp <= 0) {
       target.dead = true;
@@ -797,7 +848,17 @@ export class FrontlineScene extends Phaser.Scene {
   private castAbility(side: Side, ability: AbilityKind): void {
     if (this.matchEnded) return;
 
+    const now = this.time.now;
     const cost = ABILITY_COST[ability];
+    const readyAt = this.abilityReadyAt[side][ability];
+    if (now < readyAt) {
+      if (side === "player") {
+        const seconds = Math.ceil((readyAt - now) / 1000);
+        this.statusText.setText(`${ability.toUpperCase()} COOLDOWN // ${seconds}s`);
+      }
+      return;
+    }
+
     const energy = side === "player" ? this.playerEnergy : this.enemyEnergy;
     if (energy + 0.001 < cost) {
       if (side === "player") {
@@ -809,6 +870,7 @@ export class FrontlineScene extends Phaser.Scene {
 
     if (side === "player") this.playerEnergy -= cost;
     else this.enemyEnergy -= cost;
+    this.abilityReadyAt[side][ability] = now + ABILITY_COOLDOWN_MS[ability];
 
     if (ability === "surge") {
       if (side === "player") this.playerSurgeUntil = this.time.now + 5000;
@@ -849,6 +911,41 @@ export class FrontlineScene extends Phaser.Scene {
     });
 
     if (side === "player") this.statusText.setText("REPULSE // FRONT CLEARED");
+  }
+
+  private spawnDeployPulse(x: number, y: number, color: number): void {
+    const pulse = this.add.circle(x, y, 12, color, 0.08)
+      .setStrokeStyle(2, color, 0.9)
+      .setDepth(9);
+    this.tweens.add({
+      targets: pulse,
+      scaleX: 2.7,
+      scaleY: 2.7,
+      alpha: 0,
+      duration: 260,
+      ease: "Quad.Out",
+      onComplete: () => pulse.destroy(),
+    });
+  }
+
+  private spawnCombatText(x: number, y: number, value: string): void {
+    const text = this.add.text(x, y, value, {
+      fontFamily: "monospace",
+      fontSize: "8px",
+      color: "#ffe98a",
+      fontStyle: "bold",
+      stroke: "#07111f",
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(40);
+
+    this.tweens.add({
+      targets: text,
+      y: y - 18,
+      alpha: 0,
+      duration: 520,
+      ease: "Quad.Out",
+      onComplete: () => text.destroy(),
+    });
   }
 
   private flashAttack(attacker: UnitEntity, targetX: number, targetY: number): void {
@@ -986,20 +1083,44 @@ export class FrontlineScene extends Phaser.Scene {
     const rallyActive = this.frontLineY > 430;
     this.commanderText.setColor(rallyActive ? "#72f2ca" : "#8faabd");
     this.commanderText.setText(rallyActive ? "CMD: AEGIS // RALLY ACTIVE" : "CMD: AEGIS");
+
+    if (this.remainingMs <= 60_000) {
+      this.phaseText.setText("FINAL MINUTE // ENERGY FLOW +25%");
+      this.phaseText.setColor("#f2d678");
+    } else {
+      this.phaseText.setText("");
+    }
   }
 
   private refreshCards(): void {
     for (const card of this.cards) {
       const cost = card.kind ? UNIT_DEFS[card.kind].cost : ABILITY_COST[card.ability!];
-      const affordable = this.playerEnergy + 0.001 >= cost;
+      const cooldownRemaining =
+        card.ability ? Math.max(0, this.abilityReadyAt.player[card.ability] - this.time.now) : 0;
+      const offCooldown = cooldownRemaining <= 0;
+      const affordable = this.playerEnergy + 0.001 >= cost && offCooldown;
       const selected = !!card.kind && this.selectedKind === card.kind;
 
       card.rect.setFillStyle(card.baseFill, affordable ? 1 : 0.45);
       card.rect.setStrokeStyle(selected ? 3 : 1, selected ? 0x7df7d3 : 0x45667e, selected ? 1 : 0.9);
       card.title.setAlpha(affordable ? 1 : 0.45);
-      card.cost.setAlpha(affordable ? 1 : 0.4);
-      card.cost.setColor(affordable ? "#77f1cf" : "#61707a");
+      card.cost.setAlpha(affordable ? 1 : 0.65);
+      card.cost.setText(cooldownRemaining > 0 ? `${Math.ceil(cooldownRemaining / 1000)}s` : String(cost));
+      card.cost.setColor(affordable ? "#77f1cf" : cooldownRemaining > 0 ? "#efc76e" : "#61707a");
     }
+  }
+
+  private updateLaneHighlights(): void {
+    const active = this.selectedKind !== null;
+    this.laneHighlights.forEach((highlight, index) => {
+      highlight.setFillStyle(0x55dfff, active ? 0.045 : 0);
+      highlight.setStrokeStyle(2, 0x55dfff, active ? 0.32 : 0);
+      if (active) {
+        highlight.setScale(index === 1 ? 1.02 : 1);
+      } else {
+        highlight.setScale(1);
+      }
+    });
   }
 
   private closestLane(x: number): number {
