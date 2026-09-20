@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.73
+## Current v0.74
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -309,3 +309,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - LYRA remains instantaneous and therefore never shows a misleading active-duration state
 - reduced-motion settings disable the active Commander pulse
 - Commander durations, cooldowns, combat values and activation rules are unchanged
+
+
+## v0.74 changes
+
+- enemy Commander activations now surface immediately with a short battlefield warning
+- the warning names both the opposing Commander and the ability that just fired
+- bot Commander activation now uses the same public activation path as player/authoritative combat
+- enemy Commander cooldown state is therefore real and observable instead of remaining at zero while the bot uses a separate hidden timer
+- the bot keeps its existing decision threshold and activation cadence
+- friend-duel and authoritative clients can reuse the same enemy cooldown state for readable Commander events
+- Commander abilities, cooldown lengths, AI thresholds and combat values are unchanged

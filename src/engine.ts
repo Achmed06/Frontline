@@ -1285,7 +1285,7 @@ export class Match {
     if (
       this.state.time >= this.nextBotCommander &&
       readyForCommander &&
-      this.applyCommander("enemy")
+      this.activateCommander("enemy").ok
     ) {
       this.nextBotCommander =
         this.state.time + COMMANDERS[this.commanders.enemy].cooldown;

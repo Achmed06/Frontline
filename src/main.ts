@@ -159,6 +159,7 @@ let active = false,
   startBannerShown = false,
   finishReadyAt = 0,
   lastCommanderCooldown = 0,
+  lastEnemyCommanderCooldown = 0,
   commanderReadyFlashUntil = 0,
   lastPointOwners: Array<"player" | "enemy" | null> = match.state.points.map(
     (point) => point.owner,
@@ -356,6 +357,7 @@ function start(
   ended = false;
   finishReadyAt = 0;
   lastCommanderCooldown = 0;
+  lastEnemyCommanderCooldown = 0;
   commanderReadyFlashUntil = 0;
   lastCaptured = 0;
   battleNotices.clear();
@@ -754,6 +756,22 @@ function updateHud(force = false) {
   )
     commanderReadyFlashUntil = performance.now() + 1250;
   lastCommanderCooldown = s.commanderCooldown;
+  const enemyCommanderTriggered =
+    active &&
+    !ended &&
+    live &&
+    lastEnemyCommanderCooldown <= 0 &&
+    s.enemyCommanderCooldown > 0;
+  if (enemyCommanderTriggered) {
+    const enemyCommander = COMMANDERS[match.commanders.enemy];
+    announceBattle(
+      "GEGNER-KOMMANDO",
+      `${enemyCommander.name}: ${enemyCommander.ability}`,
+      true,
+    );
+    sound.play("ability");
+  }
+  lastEnemyCommanderCooldown = s.enemyCommanderCooldown;
   el("commander-status").textContent =
     commanderActive > 0
       ? `AKTIV ${Math.ceil(commanderActive)}s`

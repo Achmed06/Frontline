@@ -730,3 +730,24 @@ test("bot without Pulse or Rally never attempts an excluded tactic or stalls on 
   assert.ok(actions.length >= 3);
   assert.ok(actions.includes("repulsor"));
 });
+
+
+test("bot commander activation exposes the real enemy cooldown state", () => {
+  const match = new Match({
+    seed: 190,
+    difficulty: "standard",
+    enemyCommander: "atlas",
+  });
+  staticUnit(match, "enemy", 165, 150);
+  staticUnit(match, "enemy", 210, 150);
+  staticUnit(match, "enemy", 255, 150);
+  assert.equal(match.state.enemyCommanderCooldown, 0);
+  match.update(18);
+  assert.ok(match.state.enemyCommanderCooldown > 0);
+  assert.ok(match.state.enemyCommanderCooldown <= 30);
+  assert.ok(
+    match.state.units
+      .filter((unit) => unit.team === "enemy" && unit.hp > 0)
+      .some((unit) => unit.shield > 0),
+  );
+});
