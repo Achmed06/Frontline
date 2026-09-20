@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import "./style.css";
+import { MenuScene } from "./scenes/MenuScene";
 import { FrontlineScene } from "./scenes/FrontlineScene";
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -18,7 +19,7 @@ const config: Phaser.Types.Core.GameConfig = {
     antialias: true,
     roundPixels: true,
   },
-  scene: [FrontlineScene],
+  scene: [MenuScene, FrontlineScene],
 };
 
 new Phaser.Game(config);
