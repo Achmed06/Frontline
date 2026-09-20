@@ -832,6 +832,20 @@ export class ArenaScene extends Phaser.Scene {
               );
             }
           }
+          if (e.type === "shot") {
+            const lockAlpha = alpha * (0.2 + (1 - travel) * 0.45);
+            const r = 8 + travel * 2;
+            const arm = 4;
+            fx.lineStyle(1.2, color, lockAlpha);
+            fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r + arm, e.targetY - r);
+            fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r, e.targetY - r + arm);
+            fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r - arm, e.targetY - r);
+            fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r, e.targetY - r + arm);
+            fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r + arm, e.targetY + r);
+            fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r, e.targetY + r - arm);
+            fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r - arm, e.targetY + r);
+            fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r, e.targetY + r - arm);
+          }
           if (travel > 0.86) {
             const impact = (travel - 0.86) / 0.14;
             fx.lineStyle(1.4, color, alpha * (1 - impact));
