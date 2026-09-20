@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.66
+## Current v0.67
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -238,3 +238,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - second-tier projects cannot be skipped by having enough progress; their predecessor must actually be built first
 - build cards show the missing predecessor directly when a construction chain is locked
 - all five new upgrades add visible structures to the headquarters artwork and remain cosmetic only
+
+
+## v0.67 changes
+
+- moving units now receive subtle renderer-only walk motion instead of sliding as static icons
+- movement uses actual frame-to-frame unit displacement and does not alter simulation positions
+- attacking units receive a short recoil away from their current target
+- shots and melee attacks now begin with a brief source flash before the existing projectile/impact feedback
+- unit motion state resets completely between matches so rematches cannot inherit stale animation state
+- all motion remains cosmetic and preserves deterministic combat logic
