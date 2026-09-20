@@ -92,7 +92,7 @@ app.innerHTML = `
   <main class="device" aria-label="Project Frontline Spiel">
     <header class="game-top"><div class="mini-brand">F<span>∕</span></div><div><b>FRONTLINE</b><small id="mode-label">EINSATZBASIS</small></div><div class="top-actions"><button id="sound" class="icon-btn" aria-label="Ton einschalten" title="Ton umschalten">♪</button><button id="help" class="icon-btn" aria-label="Spielanleitung">?</button><button id="pause" class="icon-btn" aria-label="Spiel pausieren" disabled>Ⅱ</button></div></header>
     <section class="match-hud" aria-label="Matchstatus"><div class="core-info"><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span></div><div class="core-info enemy"><span><b id="enemy-commander-label">BOT</b> <i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
-    <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div>
+    <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div>
     <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
       <div class="base-status"><span><i></i> DEINE EINSATZBASIS</span><b id="base-stars">0 ★</b></div>
@@ -148,7 +148,10 @@ let active = false,
   ended = false,
   lastHud = 0,
   lastCaptured = 0,
-  toastTimer = 0;
+  toastTimer = 0,
+  matchReadyAt = 0,
+  matchGoUntil = 0,
+  startBannerShown = false;
 const battleNotices = new Set<string>();
 let bannerUntil = 0;
 let nextCampaignMission: Mission = MISSIONS[0];
@@ -204,8 +207,11 @@ function showToast(message: string, error = false) {
     2200,
   );
 }
+function matchLive(): boolean {
+  return active && !paused && !ended && performance.now() >= matchReadyAt;
+}
 function selectCard(id: string) {
-  if (!active || paused || ended) return;
+  if (!matchLive()) return;
   sound.unlock();
   const card = CARDS.find((c) => c.id === id)!;
   selected = selected === id ? null : id;
@@ -238,6 +244,7 @@ function updateSelection() {
   el("arena-tip").classList.toggle("selected", !!selected);
 }
 function deploy(x: number, y: number) {
+  if (!matchLive()) return;
   if (!selected) {
     showToast("Wähle zuerst unten eine Karte.");
     return;
@@ -328,11 +335,17 @@ function start(
   active = true;
   paused = false;
   selected = null;
+  matchReadyAt = performance.now() + 3000;
+  matchGoUntil = matchReadyAt + 650;
+  startBannerShown = false;
   ended = false;
   lastCaptured = 0;
   battleNotices.clear();
   bannerUntil = 0;
   el("battle-banner").hidden = true;
+  el("deployment-countdown").hidden = false;
+  el("deployment-countdown").classList.remove("go");
+  el("deployment-countdown").textContent = "3";
   el("lobby").hidden = true;
   el("modal").hidden = true;
   el<HTMLButtonElement>("pause").disabled = false;
@@ -348,10 +361,6 @@ function start(
   sound.play("deploy");
   updateSelection();
   updateHud(true);
-  announceBattle(
-    daily ? "TAGESFRONT" : "DEIN AUFTRAG",
-    match.controlObjective ? "RELAIS SICHERN" : "FRONT DURCHBRECHEN",
-  );
 }
 function announceBattle(label: string, title: string, danger = false) {
   el("battle-banner-label").textContent = label;
@@ -412,6 +421,10 @@ function lobby() {
   updateCampaignProgress();
   updateDaily();
   el("battle-banner").hidden = true;
+  el("deployment-countdown").hidden = true;
+  matchReadyAt = 0;
+  matchGoUntil = 0;
+  startBannerShown = false;
   el("continue-campaign").focus();
 }
 function help(fromPause = false) {
@@ -553,11 +566,34 @@ function setCoachFocus(focus: BattleCoachFocus | null) {
 function updateHud(force = false) {
   if (!force && (!active || paused || ended)) return;
   const now = performance.now();
+  const live = matchLive();
+  const countdown = el("deployment-countdown");
+  if (active && !ended && now < matchReadyAt) {
+    countdown.hidden = false;
+    countdown.classList.remove("go");
+    countdown.textContent = String(
+      Math.max(1, Math.ceil((matchReadyAt - now) / 1000)),
+    );
+  } else if (active && !ended && now < matchGoUntil) {
+    countdown.hidden = false;
+    countdown.classList.add("go");
+    countdown.textContent = "LOS";
+    if (!startBannerShown) {
+      startBannerShown = true;
+      announceBattle(
+        activeDaily ? "TAGESFRONT" : "DEIN AUFTRAG",
+        match.controlObjective ? "RELAIS SICHERN" : "FRONT DURCHBRECHEN",
+      );
+    }
+  } else {
+    countdown.hidden = true;
+    countdown.classList.remove("go");
+  }
   if (!force && now - lastHud < 100) return;
   lastHud = now;
   const s = match.state;
   const coach = battleCoachHint(learningProgress, s, selected);
-  el("learning-hud").hidden = !active || ended || !coach;
+  el("learning-hud").hidden = !live || !coach;
   if (coach) {
     el("learning-hud").innerHTML =
       `<small>${coach.kicker}</small><b>${coach.title}</b><span>${coach.detail}</span><i>${coach.current}/${coach.goal}</i>`;
@@ -567,7 +603,7 @@ function updateHud(force = false) {
   }
   if (s.time >= bannerUntil || ended || !active)
     el("battle-banner").hidden = true;
-  if (active && !ended && s.phase !== "ended") {
+  if (live && s.phase !== "ended") {
     const critical = s.cores.player.hp <= s.cores.player.maxHp * 0.25;
     const lastPush = s.time >= MATCH_DURATION - 30;
     const notice =
@@ -596,7 +632,9 @@ function updateHud(force = false) {
   el("timer").textContent =
     `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`;
   el("phase-label").textContent =
-    s.phase === "overtime"
+    active && !live && !paused
+      ? "BEREIT"
+      : s.phase === "overtime"
       ? "OVERTIME"
       : activeDaily
         ? "TAGESFRONT"
@@ -649,12 +687,12 @@ function updateHud(force = false) {
   for (const card of deckCards) {
     const b = cardButtons.get(card.id)!;
     b.classList.toggle("unaffordable", s.energy.player < card.cost);
-    b.disabled = !active || paused || ended;
+    b.disabled = !live;
   }
   el("commander-status").textContent =
     s.commanderCooldown > 0 ? `${Math.ceil(s.commanderCooldown)}s` : "BEREIT";
   el<HTMLButtonElement>("commander").disabled =
-    !active || paused || ended || s.commanderCooldown > 0;
+    !live || s.commanderCooldown > 0;
   if (active && !ended && s.stats.captured > lastCaptured) {
     lastCaptured = s.stats.captured;
     if (el("battle-banner").hidden)
@@ -665,7 +703,7 @@ function updateHud(force = false) {
   if (active && !ended && s.phase === "ended") finish();
 }
 function commander() {
-  if (!active || paused || ended) return;
+  if (!matchLive()) return;
   const result = match.activateCommander();
   showToast(result.message, !result.ok);
   sound.play(result.ok ? "ability" : "error");
@@ -1125,7 +1163,7 @@ watchAppState(isActive => { if (!isActive && active && !ended) pause(); });
 const scene = new ArenaScene({
   theme: () => arenaTheme,
   match: () => match,
-  running: () => active && !paused && !ended,
+  running: matchLive,
   selected: () => selected,
   deploy,
   tick: () => updateHud(),
