@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.59
+## Current v0.60
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -168,3 +168,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - units fade, descend and scale into the battlefield during the existing engine spawn effect
 - Swarm members receive their own deployment feedback because each spawned unit already has an independent engine effect
 - deployment presentation remains renderer-only and does not change attack timing, energy cost or unit statistics
+
+
+## v0.60 changes
+
+- real combat damage now emits a dedicated hit-impact effect
+- impact size scales from the damage actually applied after shields
+- heavy hits receive a larger double-ring burst while normal hits stay restrained
+- lethal hits combine the impact with the existing death burst
+- hit feedback contains no floating damage numbers and does not alter combat simulation
