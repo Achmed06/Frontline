@@ -187,6 +187,8 @@ export class FrontlineScene extends Phaser.Scene {
   private breakthroughSide: Side | null = null;
   private breakthroughMs = 0;
   private matchEnded = false;
+  private preMatchMs = 3_000;
+  private matchLive = false;
 
   private selectedKind: UnitKind | null = null;
   private botDecisionMs = 800;
@@ -219,6 +221,9 @@ export class FrontlineScene extends Phaser.Scene {
   private holdText!: Phaser.GameObjects.Text;
   private commanderText!: Phaser.GameObjects.Text;
   private phaseText!: Phaser.GameObjects.Text;
+  private countdownText!: Phaser.GameObjects.Text;
+  private controlText!: Phaser.GameObjects.Text;
+  private controlMarker!: Phaser.GameObjects.Rectangle;
   private laneHighlights: Phaser.GameObjects.Rectangle[] = [];
   private lanePressureTexts: Phaser.GameObjects.Text[] = [];
 
@@ -240,6 +245,11 @@ export class FrontlineScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.matchEnded) return;
+
+    if (!this.matchLive) {
+      this.updatePreMatch(delta);
+      return;
+    }
 
     const dt = Math.min(delta, 50) / 1000;
     this.remainingMs = Math.max(0, this.remainingMs - delta);
@@ -345,7 +355,7 @@ export class FrontlineScene extends Phaser.Scene {
       fontStyle: "bold",
     });
 
-    this.add.text(18, 43, "FIELD TEST // v0.3", {
+    this.add.text(18, 43, "FIELD TEST // v0.4", {
       fontFamily: "monospace",
       fontSize: "9px",
       color: "#6e91ac",
@@ -357,6 +367,15 @@ export class FrontlineScene extends Phaser.Scene {
       color: "#f3f7fb",
       fontStyle: "bold",
     }).setOrigin(0.5);
+
+    this.countdownText = this.add.text(WIDTH / 2, 360, "", {
+      fontFamily: "monospace",
+      fontSize: "54px",
+      color: "#ffffff",
+      fontStyle: "bold",
+      stroke: "#07111f",
+      strokeThickness: 8,
+    }).setOrigin(0.5).setDepth(80).setVisible(false);
 
     this.add.text(18, 74, "ENEMY", {
       fontFamily: "monospace",
@@ -374,16 +393,29 @@ export class FrontlineScene extends Phaser.Scene {
     this.add.rectangle(69, 103, 102, 8, 0x123244).setOrigin(0, 0.5);
     this.playerCoreBar = this.add.rectangle(69, 103, 102, 8, 0x52d8ff).setOrigin(0, 0.5);
 
-    this.commanderText = this.add.text(220, 78, "CMD: AEGIS", {
+    this.commanderText = this.add.text(220, 74, "CMD: AEGIS", {
       fontFamily: "monospace",
       fontSize: "9px",
       color: "#8faabd",
     });
-    this.add.text(220, 94, "RALLY: +10% energy when pressured", {
+    this.add.text(220, 88, "RALLY: +10% energy when pressured", {
       fontFamily: "monospace",
       fontSize: "8px",
       color: "#5f7e94",
     });
+
+    this.add.text(220, 103, "CONTROL", {
+      fontFamily: "monospace",
+      fontSize: "7px",
+      color: "#607f94",
+    });
+    this.add.rectangle(268, 108, 92, 5, 0x203141).setOrigin(0, 0.5);
+    this.controlMarker = this.add.rectangle(314, 108, 3, 11, 0xf2d86c).setOrigin(0.5);
+    this.controlText = this.add.text(362, 103, "50/50", {
+      fontFamily: "monospace",
+      fontSize: "7px",
+      color: "#879eae",
+    }).setOrigin(1, 0);
 
     this.statusText = this.add.text(WIDTH / 2, 126, "SELECT A UNIT, THEN TAP A LANE", {
       fontFamily: "monospace",
@@ -486,7 +518,7 @@ export class FrontlineScene extends Phaser.Scene {
       };
 
       rect.on("pointerdown", () => {
-        if (this.matchEnded) return;
+        if (this.matchEnded || !this.matchLive) return;
         if (card.kind) {
           this.selectUnit(card.kind);
         } else if (card.ability) {
@@ -500,7 +532,7 @@ export class FrontlineScene extends Phaser.Scene {
 
   private bindInput(): void {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (this.matchEnded || !this.selectedKind) return;
+      if (this.matchEnded || !this.matchLive || !this.selectedKind) return;
       if (pointer.y < ARENA_TOP || pointer.y > ARENA_BOTTOM) return;
 
       const lane = this.closestLane(pointer.x);
@@ -529,6 +561,8 @@ export class FrontlineScene extends Phaser.Scene {
     this.breakthroughSide = null;
     this.breakthroughMs = 0;
     this.matchEnded = false;
+    this.preMatchMs = 3_000;
+    this.matchLive = false;
     this.selectedKind = null;
     this.botDecisionMs = 750;
     this.botAbilityMs = 4500;
@@ -546,13 +580,41 @@ export class FrontlineScene extends Phaser.Scene {
     };
     this.tutorialStep = this.matchNumber === 1 ? 0 : 3;
     this.tutorialFinishAt = 0;
-    this.statusText.setText(this.matchNumber === 1 ? "TUTORIAL 1/3 // PICK A UNIT CARD" : "SELECT A UNIT, THEN TAP A LANE");
+    this.statusText.setText("MATCH PREPARING");
     this.phaseText.setText("");
     this.holdText.setText("");
+    this.countdownText.setVisible(true).setText("3");
     this.updateLaneHighlights();
     this.refreshHud();
     this.refreshCards();
     this.renderFrontline();
+  }
+
+  private updatePreMatch(delta: number): void {
+    this.preMatchMs = Math.max(0, this.preMatchMs - delta);
+    const seconds = Math.ceil(this.preMatchMs / 1000);
+
+    if (this.preMatchMs > 0) {
+      this.countdownText.setVisible(true).setText(String(Math.max(1, seconds)));
+      return;
+    }
+
+    this.matchLive = true;
+    this.countdownText.setText("GO");
+    this.tweens.add({
+      targets: this.countdownText,
+      alpha: 0,
+      scaleX: 1.35,
+      scaleY: 1.35,
+      duration: 420,
+      onComplete: () => {
+        this.countdownText.setVisible(false).setAlpha(1).setScale(1);
+      },
+    });
+
+    this.statusText.setText(
+      this.matchNumber === 1 ? "TUTORIAL 1/3 // PICK A UNIT CARD" : "SELECT A UNIT, THEN TAP A LANE",
+    );
   }
 
   private selectUnit(kind: UnitKind): void {
@@ -1152,6 +1214,9 @@ export class FrontlineScene extends Phaser.Scene {
     this.matchEnded = true;
     this.selectedKind = null;
 
+    this.matchLive = false;
+    this.cameras.main.flash(180, winner === "player" ? 90 : 120, winner === "player" ? 220 : 30, winner === "player" ? 255 : 50);
+
     const overlay = this.add.rectangle(WIDTH / 2, HEIGHT / 2, WIDTH, HEIGHT, 0x02070d, 0.84)
       .setDepth(100);
 
@@ -1288,6 +1353,18 @@ export class FrontlineScene extends Phaser.Scene {
     const rallyActive = this.frontLineY > 430;
     this.commanderText.setColor(rallyActive ? "#72f2ca" : "#8faabd");
     this.commanderText.setText(rallyActive ? "CMD: AEGIS // RALLY ACTIVE" : "CMD: AEGIS");
+
+    const controlSpan = 606 - 184;
+    const playerControl = Phaser.Math.Clamp((606 - this.frontLineY) / controlSpan, 0, 1);
+    const enemyControl = 1 - playerControl;
+    this.controlMarker.setX(268 + 92 * playerControl);
+    this.controlMarker.setFillStyle(
+      playerControl > 0.55 ? 0x66e5ff : playerControl < 0.45 ? 0xff7085 : 0xf2d86c,
+    );
+    this.controlText.setText(`${Math.round(playerControl * 100)}/${Math.round(enemyControl * 100)}`);
+    this.controlText.setColor(
+      playerControl > 0.55 ? "#72dff5" : playerControl < 0.45 ? "#ff8293" : "#879eae",
+    );
 
     if (this.remainingMs <= 60_000) {
       this.phaseText.setText("FINAL MINUTE // ENERGY FLOW +25%");
