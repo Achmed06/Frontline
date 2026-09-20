@@ -308,6 +308,18 @@ h1 em {
 .clock .urgent {
   color: var(--coral);
 }
+.clock .overtime {
+  color: #ffe08a;
+  text-shadow: 0 0 14px #ffd76a55;
+  animation: overtime-clock 1s ease-in-out infinite alternate;
+}
+@keyframes overtime-clock {
+  from { transform: scale(1); opacity: .86; }
+  to { transform: scale(1.055); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock .overtime { animation: none; }
+}
 .arena-wrap {
   position: relative;
   flex: 1;
