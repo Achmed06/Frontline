@@ -141,8 +141,9 @@ export function normalizeDailyHistory(value: unknown): DailyRecord[] {
       typeof source.key !== "string" ||
       !/^\d{4}-\d{2}-\d{2}$/.test(source.key) ||
       seen.has(source.key) ||
+      typeof source.attempts !== "number" ||
       !Number.isSafeInteger(source.attempts) ||
-      (source.attempts ?? -1) < 0 ||
+      source.attempts < 0 ||
       typeof source.completed !== "boolean" ||
       typeof source.bestTime !== "number" ||
       !Number.isFinite(source.bestTime) ||
