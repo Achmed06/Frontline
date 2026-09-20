@@ -29,11 +29,16 @@ jobs:
         with:
           node-version: 22
 
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.19.0 --activate
+
       - name: Install
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
