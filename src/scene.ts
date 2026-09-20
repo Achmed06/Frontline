@@ -31,6 +31,7 @@ export class ArenaScene extends Phaser.Scene {
   private aimLabel!: Phaser.GameObjects.Text;
   private clock = 0;
   private reactedEffects = new Set<number>();
+  private brokenCores = new Set<"player" | "enemy">();
   private lastMatch: Match | null = null;
   private wasRunning = false;
   constructor(private bridge: SceneBridge) {
@@ -152,6 +153,7 @@ export class ArenaScene extends Phaser.Scene {
       this.sprites.clear();
       this.unitMotion.clear();
       this.reactedEffects.clear();
+      this.brokenCores.clear();
     }
     if (running) {
       this.clock += Math.min(delta, 100) / 1000;
@@ -1047,7 +1049,12 @@ export class ArenaScene extends Phaser.Scene {
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
-    g.fillStyle(0x07151b, 0.7);
+    const destroyed = fraction <= 0;
+    if (destroyed && !this.brokenCores.has(team)) {
+      this.brokenCores.add(team);
+      this.cameras.main.shake(260, 0.0065, true);
+    }
+    g.fillStyle(0x07151b, destroyed ? 0.92 : 0.7);
     g.fillEllipse(x, y + 9, 98, 26);
     this.polygon(
       g,
@@ -1119,6 +1126,24 @@ export class ArenaScene extends Phaser.Scene {
       this.polygon(g, this.hex(x, y - 3, 24), 0xffffff, flash * 0.18);
       g.lineStyle(2, 0xffffff, flash);
       g.strokeCircle(x, y - 2, 21 + (1 - hitAlpha) * 9);
+    }
+    if (destroyed) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.clock * 10);
+      g.fillStyle(0x120d0b, 0.78);
+      this.polygon(g, this.hex(x, y - 3, 17), 0x120d0b, 0.78, 0xff9b68);
+      g.lineStyle(2.2, 0xffb06f, 0.62 + pulse * 0.25);
+      g.strokeCircle(x, y - 2, 22 + pulse * 5);
+      for (let i = 0; i < 8; i++) {
+        const angle = i * Math.PI * 0.25 + this.clock * (i % 2 ? -0.45 : 0.45);
+        const drift = 13 + ((this.clock * (22 + i * 2) + i * 7) % 24);
+        const sx = x + Math.cos(angle) * (12 + drift * 0.35);
+        const sy = y - 3 + Math.sin(angle) * (8 + drift * 0.22) - drift * 0.22;
+        g.fillStyle(i % 3 === 0 ? 0xffffff : 0xff9b68, 0.35 + pulse * 0.3);
+        g.fillCircle(sx, sy, i % 2 ? 1.4 : 2);
+      }
+      g.lineStyle(1.6, 0xffd19a, 0.72);
+      g.lineBetween(x - 10, y - 13, x + 8, y + 8);
+      g.lineBetween(x + 9, y - 12, x - 6, y + 9);
     }
   }
 }
