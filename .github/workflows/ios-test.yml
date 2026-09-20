@@ -4,6 +4,17 @@ on:
   push:
     branches: ["main"]
     paths:
+      - "src/**"
+      - "public/**"
+      - "ios/**"
+      - "scripts/**"
+      - "index.html"
+      - "duel.html"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - "capacitor.config.ts"
       - ".github/workflows/ios-test.yml"
   workflow_dispatch:
     inputs:
@@ -34,6 +45,8 @@ jobs:
           node-version: '22'
       - run: npm install --global pnpm@11.19.0
       - run: pnpm install --frozen-lockfile
+      - name: Test game logic
+        run: pnpm run test
       - name: Select Xcode 26.3
         run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
       - run: npm run ios:sync
