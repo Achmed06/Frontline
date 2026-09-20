@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.57
+## Current v0.58
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -149,3 +149,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Nexuskern adds scanning lines and circuit-like data details
 - territory plates also carry theme-specific surface details
 - all atmosphere remains cosmetic, deterministic and collision-free
+
+
+## v0.58 changes
+
+- mastered units now appear directly inside the headquarters artwork once the Trainingsplatz is built
+- the visible patrol is derived from the same top-mastery units used by the garrison panel
+- unit silhouettes differ for heavy, ranged, support, swarm and assault roles
+- up to four earned units can occupy the base artwork at once
+- subtle patrol movement makes the headquarters feel inhabited while respecting reduced-motion settings
+- no training-ground or patrol element alters combat values
