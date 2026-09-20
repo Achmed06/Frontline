@@ -2,8 +2,9 @@
 
 Mobile-first portrait PvP prototype built with Phaser, TypeScript and Vite.
 
-## Current v0.4 loop
+## Current v0.5 loop
 
+- Dedicated home screen with one functional Play entry
 - 3-minute matches with a 3-second pre-match countdown
 - Three clearly selectable deployment lanes
 - Moving frontline / territory pressure
@@ -23,7 +24,7 @@ Mobile-first portrait PvP prototype built with Phaser, TypeScript and Vite.
 - Counter-aware bot composition and lane response
 - Combat counter feedback
 - Post-match telemetry for deploys, kills, core damage and best territorial push
-- Rematch flow with a fresh countdown
+- Functional Rematch and Home actions
 - Procedural prototype visuals with no third-party game assets
 
 ## Local development
@@ -33,14 +34,14 @@ npm install
 npm run dev
 ```
 
-Tap a unit card and then tap lane 1, 2 or 3 to deploy it. Ability cards cast immediately when both energy and cooldown permit.
+Tap **Play**, then select a unit card and tap lane 1, 2 or 3 to deploy it. Ability cards cast immediately when both energy and cooldown permit.
 
 ## Browser preview
 
-A GitHub Pages deployment workflow is included. GitHub currently requires Pages to be enabled once in the repository settings:
+A GitHub Pages deployment workflow is included. GitHub requires Pages to be enabled once in the repository settings:
 
 `Settings -> Pages -> Build and deployment -> Source -> GitHub Actions`
 
-After that, run the **Deploy Frontline Preview** workflow or re-enable deployment on push.
+After that, run the **Deploy Frontline Preview** workflow.
 
-The prototype remains focused on validating match flow, territory pressure, counters, readability and pacing before art production, progression systems or online multiplayer.
+The prototype remains focused on validating match flow, territory pressure, counters, readability and pacing before full art production, progression systems or online multiplayer.
