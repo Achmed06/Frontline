@@ -3,7 +3,13 @@ import { initializeStore, renderStore, supporterOwned } from "./store";
 import { watchAppState } from "./mobile";
 import { ARENA_THEMES, isArenaTheme, type ArenaThemeId } from "./arena-themes";
 import { renderDraft } from "./draft";
-import { readDeckSlots, saveDeckSlots } from "./storage";
+import {
+  completeDaily,
+  dailyChallenge,
+  dailyRecord,
+  type DailyChallenge,
+} from "./daily-front";
+import { readDeckSlots, saveDeckSlots, readDailyHistory, saveDailyHistory } from "./storage";
 import { advanceMastery, masteryRank, masteryLabel } from "./mastery";
 import { readMastery, saveMastery } from "./storage";
 import {
@@ -96,6 +102,7 @@ app.innerHTML = `
       </section>
       <button id="headquarters" class="hq-launch"><span id="hq-mini-art" aria-hidden="true"></span><span><small>DEIN HAUPTQUARTIER</small><b id="hq-name"></b><small id="hq-next"></small><span class="hq-progress-track"><i id="hq-progress-fill"></i></span></span><span class="hq-open">BASIS ANSEHEN ↗</span></button>
       <button id="learning" class="learning-launch"><span><small id="learning-count"></small><b id="learning-next"></b><small>AURORA-GESTALTUNG FREISPIELEN</small></span><span>↗</span></button>
+      <button id="daily" class="daily-launch"><span><small>TAGESFRONT · HEUTE</small><b id="daily-title">WIRD GELADEN</b><small id="daily-status"></small></span><span>ANTRETEN ↗</span></button>
       <div class="base-section-title"><span>DEIN FELDZUG</span><span id="base-completed"></span></div>
       <div id="chapter-track" class="chapter-track" aria-label="Kapitel-Fortschritt"></div>
       <a class="duel-launch primary" href="./duel.html">FREUNDESDUELL ↗ <small>Raum erstellen oder mit Code beitreten</small></a><div class="base-modes">
@@ -125,8 +132,10 @@ const savedArena = setting("arena-theme");
 let arenaTheme: ArenaThemeId = isArenaTheme(savedArena) ? savedArena : "coast";
 el<HTMLSelectElement>("arena-theme").value = arenaTheme;
 let seriesRun = readSeries();
+let dailyHistory = readDailyHistory();
 let activeSeries = false;
 let activeDraftDeck: CardId[] | null = null;
+let activeDaily: DailyChallenge | null = null;
 let commanderId = readCommander();
 let deck: CardId[] = readDeck();
 let deckSlots = readDeckSlots();
@@ -252,8 +261,13 @@ function start(
   mission: Mission | null = null,
   inSeries = false,
   draftDeck: readonly CardId[] | null = null,
+  daily: DailyChallenge | null = null,
 ) {
-  if (draftDeck && (!isValidDeck(draftDeck) || inSeries || mission)) return;
+  if (
+    (draftDeck && (!isValidDeck(draftDeck) || inSeries || mission || daily)) ||
+    (daily && (mission || inSeries || draftDeck))
+  )
+    return;
   if (
     inSeries &&
     (!seriesRun || seriesEnded(seriesRun) || mission?.id !== seriesRun.route)
@@ -266,37 +280,46 @@ function start(
   )
     return;
   activeSeries = inSeries;
-  activeMission = mission;
+  activeDaily = daily;
+  activeMission = daily ? null : mission;
   const chosenArena = el<HTMLSelectElement>("arena-theme").value;
-  arenaTheme = mission
-    ? CHAPTERS.reduce((current, chapter) => MISSIONS.findIndex(m => m.id === chapter.firstMission) <= MISSIONS.indexOf(mission) ? chapter.theme : current, "coast" as ArenaThemeId)
-    : isArenaTheme(chosenArena) ? chosenArena : "coast";
-  if (!mission) setting("arena-theme", arenaTheme);
+  arenaTheme = daily
+    ? daily.theme
+    : mission
+      ? CHAPTERS.reduce((current, chapter) => MISSIONS.findIndex(m => m.id === chapter.firstMission) <= MISSIONS.indexOf(mission) ? chapter.theme : current, "coast" as ArenaThemeId)
+      : isArenaTheme(chosenArena) ? chosenArena : "coast";
+  if (!mission && !daily) setting("arena-theme", arenaTheme);
   activeDraftDeck = draftDeck ? [...draftDeck] : null;
-  renderCards(activeDraftDeck ?? undefined);
+  renderCards(daily?.playerDeck ?? activeDraftDeck ?? undefined);
   if (rematch) {
     stats.rematches++;
     saveStats(stats);
   }
-  difficulty = draftDeck
-    ? "standard"
-    : (el<HTMLSelectElement>("difficulty").value as typeof difficulty);
-  if (!draftDeck) setting("difficulty", difficulty);
+  difficulty = daily
+    ? daily.difficulty
+    : draftDeck
+      ? "standard"
+      : (el<HTMLSelectElement>("difficulty").value as typeof difficulty);
+  if (!draftDeck && !daily) setting("difficulty", difficulty);
   match = new Match({
-    seed: mission?.seed ?? crypto.getRandomValues(new Uint32Array(1))[0],
-    difficulty: mission?.difficulty ?? difficulty,
-    playerDeck: activeDraftDeck ?? (inSeries ? seriesRun!.deck : deck),
-    playerCommander: inSeries ? seriesRun!.commander : commanderId,
-    enemyDeck: mission?.enemyDeck,
-    enemyCommander: mission?.enemyCommander,
-    startingOwners: mission?.owners,
-    controlObjective: draftDeck
-      ? undefined
-      : mission
-        ? mission.controlObjective
-        : el<HTMLSelectElement>("training-mode").value === "control"
-          ? TRAINING_CONTROL
-          : undefined,
+    seed: daily?.seed ?? mission?.seed ?? crypto.getRandomValues(new Uint32Array(1))[0],
+    difficulty: daily?.difficulty ?? mission?.difficulty ?? difficulty,
+    playerDeck:
+      daily?.playerDeck ?? activeDraftDeck ?? (inSeries ? seriesRun!.deck : deck),
+    playerCommander:
+      daily?.playerCommander ?? (inSeries ? seriesRun!.commander : commanderId),
+    enemyDeck: daily?.enemyDeck ?? mission?.enemyDeck,
+    enemyCommander: daily?.enemyCommander ?? mission?.enemyCommander,
+    startingOwners: daily?.owners ?? mission?.owners,
+    controlObjective: daily
+      ? daily.controlObjective
+      : draftDeck
+        ? undefined
+        : mission
+          ? mission.controlObjective
+          : el<HTMLSelectElement>("training-mode").value === "control"
+            ? TRAINING_CONTROL
+            : undefined,
   });
   renderCommander(match.commanders.player);
   el("enemy-commander-label").textContent =
@@ -313,17 +336,19 @@ function start(
   el("modal").hidden = true;
   el<HTMLButtonElement>("pause").disabled = false;
   el<HTMLButtonElement>("commander").disabled = false;
-  el("mode-label").textContent = draftDeck ? "DRAFT · TAKTIKER" : inSeries
-    ? `SERIE ${seriesRun!.wins + 1}/3 · ${SERIES_LIVES - seriesRun!.losses} VERSUCHE`
-    : mission
-      ? `EINSATZ ${MISSIONS.indexOf(mission) + 1} · ${mission.name.toUpperCase()}`
-      : `TRAINING · ${difficulty === "rookie" ? "REKRUT" : difficulty === "standard" ? "TAKTIKER" : "VETERAN"}`;
+  el("mode-label").textContent = daily
+    ? `TAGESFRONT · ${daily.title}`
+    : draftDeck ? "DRAFT · TAKTIKER" : inSeries
+      ? `SERIE ${seriesRun!.wins + 1}/3 · ${SERIES_LIVES - seriesRun!.losses} VERSUCHE`
+      : mission
+        ? `EINSATZ ${MISSIONS.indexOf(mission) + 1} · ${mission.name.toUpperCase()}`
+        : `TRAINING · ${difficulty === "rookie" ? "REKRUT" : difficulty === "standard" ? "TAKTIKER" : "VETERAN"}`;
   sound.unlock();
   sound.play("deploy");
   updateSelection();
   updateHud(true);
   announceBattle(
-    "DEIN AUFTRAG",
+    daily ? "TAGESFRONT" : "DEIN AUFTRAG",
     match.controlObjective ? "RELAIS SICHERN" : "FRONT DURCHBRECHEN",
   );
 }
@@ -366,6 +391,7 @@ function pause() {
 function lobby() {
   activeSeries = false;
   activeDraftDeck = null;
+  activeDaily = null;
   renderCommander(commanderId);
   renderCards();
   activeMission = null;
@@ -383,6 +409,7 @@ function lobby() {
   updateHud(true);
   updateRecord();
   updateCampaignProgress();
+  updateDaily();
   el("battle-banner").hidden = true;
   el("continue-campaign").focus();
 }
