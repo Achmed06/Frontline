@@ -153,6 +153,7 @@ let active = false,
   matchGoUntil = 0,
   pauseBeganAt = 0,
   startBannerShown = false,
+  finishReadyAt = 0,
   lastPointOwners: Array<"player" | "enemy" | null> = match.state.points.map(
     (point) => point.owner,
   );
@@ -211,8 +212,11 @@ function showToast(message: string, error = false) {
     2200,
   );
 }
-function matchLive(): boolean {
+function sceneRunning(): boolean {
   return active && !paused && !ended && performance.now() >= matchReadyAt;
+}
+function matchLive(): boolean {
+  return sceneRunning() && match.state.phase !== "ended" && finishReadyAt === 0;
 }
 function selectCard(id: string) {
   if (!matchLive()) return;
@@ -344,6 +348,7 @@ function start(
   matchGoUntil = matchReadyAt + 650;
   startBannerShown = false;
   ended = false;
+  finishReadyAt = 0;
   lastCaptured = 0;
   battleNotices.clear();
   bannerUntil = 0;
@@ -753,7 +758,26 @@ function updateHud(force = false) {
     else showToast("Punkt erobert. Deine Front rückt vor.");
     sound.play("capture");
   }
-  if (active && !ended && s.phase === "ended") finish();
+  if (active && !ended && s.phase === "ended") {
+    const coreBroken = s.cores.player.hp <= 0 || s.cores.enemy.hp <= 0;
+    if (!coreBroken) {
+      finish();
+    } else if (!finishReadyAt) {
+      finishReadyAt = performance.now() + 850;
+      selected = null;
+      updateSelection();
+      el<HTMLButtonElement>("commander").disabled = true;
+      for (const button of cardButtons.values()) button.disabled = true;
+      announceBattle(
+        s.cores.enemy.hp <= 0 ? "GEGNERISCHER CORE GEBROCHEN" : "DEIN CORE IST GEFALLEN",
+        s.cores.enemy.hp <= 0 ? "FRONT DURCHBROCHEN" : "STELLUNG VERLOREN",
+        s.cores.player.hp <= 0,
+      );
+    } else if (performance.now() >= finishReadyAt) {
+      finishReadyAt = 0;
+      finish();
+    }
+  }
 }
 function commander() {
   if (!matchLive()) return;
@@ -1228,7 +1252,7 @@ watchAppState(isActive => { if (!isActive && active && !ended) pause(); });
 const scene = new ArenaScene({
   theme: () => arenaTheme,
   match: () => match,
-  running: matchLive,
+  running: sceneRunning,
   selected: () => selected,
   deploy,
   tick: () => updateHud(),
