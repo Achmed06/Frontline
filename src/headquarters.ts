@@ -1,5 +1,5 @@
 /** New permanent learning rewards; headquarters growth derives from campaign wins. */
-import type { MatchState } from "./engine";
+import type { CardId, MatchState } from "./engine";
 export const LESSONS = [
   {
     id: "deploy",
@@ -265,9 +265,35 @@ export function headquartersSvg(
   stage: number,
   color: string,
   projects: readonly BaseProjectId[] = [],
+  garrison: readonly CardId[] = [],
 ): string {
   const building = (x: number, y: number, width: number, height: number) =>
     `<g transform="translate(${x} ${y})"><path d="M0 0 ${width} -12 ${width + 28} 4 28 17Z" fill="#c2e7ff"/><path d="M0 0 28 17 28 ${height + 17} 0 ${height}Z" fill="#2865a4"/><path d="M28 17 ${width + 28} 4 ${width + 28} ${height + 4} 28 ${height + 17}Z" fill="#438bd0"/><path d="M33 23 ${width + 23} 12" stroke="${color}" stroke-width="3"/><path d="M${width} 30v${Math.max(6, height - 8)}" stroke="#172f3b" stroke-width="9"/></g>`;
+  const patrol = (id: CardId, index: number) => {
+    const positions = [
+      [116, 159],
+      [218, 156],
+      [146, 181],
+      [248, 178],
+    ] as const;
+    const [x, y] = positions[index % positions.length];
+    const heavy = id === "bulwark" || id === "sentinel";
+    const ranged =
+      id === "ranger" ||
+      id === "lancer" ||
+      id === "mortar" ||
+      id === "disruptor";
+    const support = id === "medic" || id === "pioneer";
+    if (id === "swarm")
+      return `<g class="hq-patrol hq-patrol-${index + 1}" transform="translate(${x} ${y})"><ellipse cx="0" cy="6" rx="12" ry="4" fill="#071a25" opacity=".45"/><g fill="${color}" stroke="#dffcff" stroke-width=".8"><circle cx="-6" cy="0" r="3"/><circle cx="0" cy="-4" r="3"/><circle cx="6" cy="1" r="3"/></g><path d="M-9 4 9-3M-2-7l5 11" stroke="#dffcff" stroke-width=".8" opacity=".65"/></g>`;
+    if (heavy)
+      return `<g class="hq-patrol hq-patrol-${index + 1}" transform="translate(${x} ${y})"><ellipse cx="0" cy="7" rx="12" ry="4" fill="#071a25" opacity=".45"/><path d="M-7-3 0-8 8-3 7 7 0 11-7 7Z" fill="#39566f" stroke="${color}" stroke-width="1.4"/><path d="M-4 0h8M0-5v11" stroke="#e5f7ff" stroke-width="1.2"/><circle cx="0" cy="-3" r="2.5" fill="${color}"/></g>`;
+    if (ranged)
+      return `<g class="hq-patrol hq-patrol-${index + 1}" transform="translate(${x} ${y})"><ellipse cx="0" cy="7" rx="10" ry="3.5" fill="#071a25" opacity=".45"/><circle cx="-1" cy="-5" r="3" fill="#d9f4ff" stroke="#18354b"/><path d="M-1-2v9m-5 6 5-6 6 6M-4 1l7 2 8-5" fill="none" stroke="#d9f4ff" stroke-width="2"/><path d="M3 3 13-2" stroke="${color}" stroke-width="2"/></g>`;
+    if (support)
+      return `<g class="hq-patrol hq-patrol-${index + 1}" transform="translate(${x} ${y})"><ellipse cx="0" cy="7" rx="10" ry="3.5" fill="#071a25" opacity=".45"/><circle cx="0" cy="-5" r="3" fill="#d9f4ff" stroke="#18354b"/><path d="M0-2v9m-5 6 5-6 5 6M-5 1 0 4 6 1" fill="none" stroke="#d9f4ff" stroke-width="2"/><rect x="4" y="-1" width="6" height="7" rx="1" fill="#24495c" stroke="${color}"/><path d="M7 0v5M5 2.5h4" stroke="${color}" stroke-width="1"/></g>`;
+    return `<g class="hq-patrol hq-patrol-${index + 1}" transform="translate(${x} ${y})"><ellipse cx="0" cy="7" rx="10" ry="3.5" fill="#071a25" opacity=".45"/><circle cx="0" cy="-5" r="3" fill="#d9f4ff" stroke="#18354b"/><path d="M0-2v9m-5 6 5-6 5 6M-5 1 0 4 6 0" fill="none" stroke="#d9f4ff" stroke-width="2"/><path d="M6 0 10-5" stroke="${color}" stroke-width="2"/></g>`;
+  };
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 205" role="img" aria-label="Hauptquartier Ausbaustufe ${stage + 1}">
     <ellipse cx="180" cy="161" rx="168" ry="37" fill="#08254c" opacity=".4"/>
     <path d="m14 137 167 63 165-65v15l-165 55-167-52z" fill="#1e4768"/>
@@ -291,5 +317,6 @@ export function headquartersSvg(
     ${projects.includes("relay") ? `<g transform="translate(315 78)" fill="none" stroke="${color}"><path d="M0 52 12 0l12 52M5 31h14M3 42h18" stroke-width="3"/><path d="M12 8c8 1 13 5 17 10M12 8C4 9-1 13-5 18" stroke-width="2" opacity=".8"/><circle cx="12" cy="3" r="3" fill="${color}"/></g>` : ""}
     ${projects.includes("workshop") ? `<g transform="translate(82 157)"><path d="m0 8 23-12 29 11-26 13z" fill="#7a90a3" stroke="#c8e9ff"/><path d="M26 20 52 7v16L26 36z" fill="#38556f"/><path d="M0 8 26 20v16L0 24z" fill="#46657b"/><path d="M9 18h9m13-2h11" stroke="#ffd475" stroke-width="3"/><path d="M42 -1v-12m0 0 10 5" stroke="${color}" stroke-width="3"/></g>` : ""}
     ${projects.includes("honor") ? `<g transform="translate(158 169)"><path d="M0 13 22 2l23 11-23 10z" fill="#213f58" stroke="#f5d279"/><path d="M10 8V-7m24 15V-7" stroke="#f5d279" stroke-width="2"/><path d="M10-7h10l-5 7-5-3zm24 0h10l-5 7-5-3z" fill="${color}"/><circle cx="22" cy="12" r="4" fill="#f5d279"/></g>` : ""}
+    ${projects.includes("training") ? garrison.slice(0, 4).map(patrol).join("") : ""}
   </svg>`;
 }
