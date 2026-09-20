@@ -602,6 +602,21 @@ test("Mortar hits its primary once, splashes only nearby enemies and respects sh
   assert.equal(friend.hp, 125);
   assert.equal(m.state.effects.find((e) => e.type === "blast")?.radius, 42);
 });
+test("combat damage emits scaled hit impacts and lethal hits keep the death burst", () => {
+  const m = new Match({ playerDeck: controlDeck, botEnabled: false });
+  const mortar = staticUnit(m, "player", 210, 350, "mortar");
+  Object.assign(mortar, { damage: 80, range: 115, attackCooldown: 0 });
+  const target = staticUnit(m, "enemy", 210, 270);
+  target.hp = 50;
+  m.update(1 / 30);
+  const impact = m.state.effects.find((effect) => effect.type === "impact");
+  assert.ok(impact);
+  assert.ok((impact.radius ?? 0) >= 12);
+  assert.equal(target.hp, 0);
+  assert.ok(m.state.effects.some((effect) => effect.type === "death"));
+  assert.equal(m.state.stats.kills, 1);
+});
+
 test("Disruptor refreshes a non-stacking slow that expires and combines with Rally movement", () => {
   const m = new Match({ playerDeck: controlDeck, botEnabled: false });
   const first = staticUnit(m, "player", 180, 350, "disruptor");
