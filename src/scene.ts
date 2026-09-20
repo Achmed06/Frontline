@@ -685,6 +685,30 @@ export class ArenaScene extends Phaser.Scene {
           fx.lineStyle(2, 0xfff2bf, alpha);
           fx.strokeCircle(e.x, e.y, 3 + radius * progress * 0.65);
         }
+        if (e.type === "impact") {
+          const heavy = (e.radius ?? 0) >= 12;
+          const impactRadius = 3 + (e.radius ?? 9) * progress;
+          fx.fillStyle(0xffffff, alpha * (heavy ? 0.46 : 0.3));
+          fx.fillCircle(e.x, e.y, 2.8 + (heavy ? 1.8 : 0.8));
+          fx.lineStyle(heavy ? 2.2 : 1.5, effectColor, alpha * 0.92);
+          fx.strokeCircle(e.x, e.y, impactRadius);
+          const rays = heavy ? 8 : 5;
+          for (let i = 0; i < rays; i++) {
+            const angle = (i * Math.PI * 2) / rays + e.id * 0.37;
+            const inner = 4 + impactRadius * 0.42;
+            const outer = inner + (heavy ? 8 : 5) * (1 - progress * 0.35);
+            fx.lineBetween(
+              e.x + Math.cos(angle) * inner,
+              e.y + Math.sin(angle) * inner,
+              e.x + Math.cos(angle) * outer,
+              e.y + Math.sin(angle) * outer,
+            );
+          }
+          if (heavy) {
+            fx.lineStyle(1, 0xffffff, alpha * 0.45);
+            fx.strokeCircle(e.x, e.y, impactRadius + 5);
+          }
+        }
         if (e.type === "spawn") {
           const beamHeight = 54 * (1 - Math.min(1, progress * 1.45));
           const ring = 7 + 19 * progress;
