@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.55
+## Current v0.56
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -129,3 +129,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - additional honors track seven distinct Tagesfront clears, three Gold-mastery units and 48 campaign stars
 - locked honors show measurable progress instead of hidden requirements
 - trophies are presentation-only and never alter combat values
+
+
+## v0.56 changes
+
+- every match now has a short fair deployment countdown: 3, 2, 1, LOS
+- player input and bot simulation stay frozen until the countdown completes
+- pausing or backgrounding during the countdown preserves the remaining countdown instead of letting it expire invisibly
+- match objective banner appears as combat begins
+- reduced-motion preference disables countdown animation while keeping the timing and game-state behavior
