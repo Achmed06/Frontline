@@ -345,7 +345,7 @@ export class FrontlineScene extends Phaser.Scene {
       fontStyle: "bold",
     });
 
-    this.add.text(18, 43, "FIELD TEST // v0.2", {
+    this.add.text(18, 43, "FIELD TEST // v0.3", {
       fontFamily: "monospace",
       fontSize: "9px",
       color: "#6e91ac",
@@ -506,7 +506,9 @@ export class FrontlineScene extends Phaser.Scene {
       const lane = this.closestLane(pointer.x);
       if (this.deployUnit("player", this.selectedKind, lane)) {
         this.selectedKind = null;
-        this.statusText.setText(`DEPLOYED // LANE ${lane + 1}`);
+        if (this.tutorialStep !== 2) {
+          this.statusText.setText(`DEPLOYED // LANE ${lane + 1}`);
+        }
         this.updateLaneHighlights();
         this.refreshCards();
       }
