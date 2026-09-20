@@ -152,7 +152,10 @@ let active = false,
   matchReadyAt = 0,
   matchGoUntil = 0,
   pauseBeganAt = 0,
-  startBannerShown = false;
+  startBannerShown = false,
+  lastPointOwners: Array<"player" | "enemy" | null> = match.state.points.map(
+    (point) => point.owner,
+  );
 const battleNotices = new Set<string>();
 let bannerUntil = 0;
 let nextCampaignMission: Mission = MISSIONS[0];
@@ -330,6 +333,7 @@ function start(
             ? TRAINING_CONTROL
             : undefined,
   });
+  lastPointOwners = match.state.points.map((point) => point.owner);
   renderCommander(match.commanders.player);
   el("enemy-commander-label").textContent =
     `BOT · ${COMMANDERS[match.commanders.enemy].name}`;
@@ -702,6 +706,21 @@ function updateHud(force = false) {
     s.commanderCooldown > 0 ? `${Math.ceil(s.commanderCooldown)}s` : "BEREIT";
   el<HTMLButtonElement>("commander").disabled =
     !live || s.commanderCooldown > 0;
+  const lostPoint =
+    active && !ended
+      ? s.points.find(
+          (point, index) =>
+            lastPointOwners[index] === "player" && point.owner === "enemy",
+        )
+      : undefined;
+  if (lostPoint) {
+    const pointName =
+      `${"ABC"[lostPoint.id % 3]}${Math.floor(lostPoint.id / 3) + 1}`;
+    if (el("battle-banner").hidden)
+      announceBattle("FRONT VERLOREN", `${pointName} IST GEFALLEN`);
+    else showToast(`${pointName} verloren. Front neu stabilisieren.`, true);
+  }
+  lastPointOwners = s.points.map((point) => point.owner);
   if (active && !ended && s.stats.captured > lastCaptured) {
     lastCaptured = s.stats.captured;
     if (el("battle-banner").hidden)
