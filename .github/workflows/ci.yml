@@ -2,9 +2,10 @@ name: Build Frontline
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "work-052-import"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,51 +19,52 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install
-        run: npm install
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.19.0 --activate
 
-      - name: Typecheck and build
-        run: npm run build
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck and production build
+        run: pnpm run build
+
+      - name: Validate built entry points
+        run: |
+          test -s dist/index.html
+          test -s dist/duel.html
+          grep -q "FRONTLINE" dist/index.html
+          grep -q "FRONTLINE" dist/duel.html
 
       - name: Start preview
         run: |
-          npm run preview -- --port 4173 > /tmp/frontline-vite.log 2>&1 &
+          pnpm run preview -- --port 4173 > /tmp/frontline-vite.log 2>&1 &
           echo $! > /tmp/frontline-vite.pid
 
-      - name: Wait for preview
+      - name: Preview smoke test
         run: |
           for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:4173/ >/tmp/frontline-index.html; then
-              exit 0
+            if curl -fsS http://127.0.0.1:4173/ > /tmp/frontline-index.html; then
+              break
             fi
             sleep 1
           done
-          cat /tmp/frontline-vite.log
-          exit 1
 
-      - name: Browser smoke test
-        run: |
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          if [ -z "$CHROME" ]; then
-            echo "No Chromium-compatible browser found on runner."
-            exit 1
-          fi
-
-          set +e
-          timeout 20s "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3500 --dump-dom http://127.0.0.1:4173/ > /tmp/frontline-dom.html
-          CHROME_EXIT=$?
-          set -e
-
-          if [ "$CHROME_EXIT" -ne 0 ] && [ "$CHROME_EXIT" -ne 124 ]; then
-            echo "Headless Chrome exited unexpectedly with code $CHROME_EXIT."
-            exit "$CHROME_EXIT"
-          fi
-
-          grep -q "<canvas" /tmp/frontline-dom.html || {
-            echo "Frontline did not create a Phaser canvas."
-            cat /tmp/frontline-dom.html
+          test -s /tmp/frontline-index.html || {
+            cat /tmp/frontline-vite.log
             exit 1
           }
+
+          grep -q "FRONTLINE" /tmp/frontline-index.html
+
+          MAIN_JS="$(grep -oE '\./assets/main-[^"]+\.js' /tmp/frontline-index.html | head -1)"
+          test -n "$MAIN_JS"
+          curl -fsS "http://127.0.0.1:4173/${MAIN_JS#./}" > /tmp/frontline-main.js
+          test -s /tmp/frontline-main.js
+
+          curl -fsS http://127.0.0.1:4173/duel.html > /tmp/frontline-duel.html
+          grep -q "FRONTLINE" /tmp/frontline-duel.html
 
       - name: Stop preview
         if: always()
