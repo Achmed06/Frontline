@@ -12,11 +12,53 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Use Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - name: Install
         run: npm install
+
       - name: Typecheck and build
         run: npm run build
+
+      - name: Start preview
+        run: |
+          npm run preview -- --port 4173 > /tmp/frontline-vite.log 2>&1 &
+          echo $! > /tmp/frontline-vite.pid
+
+      - name: Wait for preview
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/tmp/frontline-index.html; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/frontline-vite.log
+          exit 1
+
+      - name: Browser smoke test
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "No Chromium-compatible browser found on runner."
+            exit 1
+          fi
+
+          "$CHROME"             --headless             --no-sandbox             --disable-gpu             --virtual-time-budget=3500             --dump-dom             http://127.0.0.1:4173/             > /tmp/frontline-dom.html
+
+          grep -q "<canvas" /tmp/frontline-dom.html || {
+            echo "Frontline did not create a Phaser canvas."
+            cat /tmp/frontline-dom.html
+            exit 1
+          }
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if [ -f /tmp/frontline-vite.pid ]; then
+            kill "$(cat /tmp/frontline-vite.pid)" 2>/dev/null || true
+          fi
