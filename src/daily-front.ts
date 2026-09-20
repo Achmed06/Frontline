@@ -201,8 +201,12 @@ export function completeDaily(
           ? Math.min(previous.bestTime, time)
           : time
         : previous?.bestTime ?? 0,
-    bestCore: Math.max(previous?.bestCore ?? 0, core),
-    bestPoints: Math.max(previous?.bestPoints ?? 0, points),
+    bestCore: won
+      ? Math.max(previous?.bestCore ?? 0, core)
+      : previous?.bestCore ?? 0,
+    bestPoints: won
+      ? Math.max(previous?.bestPoints ?? 0, points)
+      : previous?.bestPoints ?? 0,
   };
   return [next, ...history.filter((record) => record.key !== key)].slice(
     0,
