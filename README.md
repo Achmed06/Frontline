@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.62
+## Current v0.63
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -197,3 +197,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Signalkrieg relay points pulse with the owning team's color when supplied
 - freshly captured territory sends a visible hex shockwave and briefly brightens the corresponding frontline
 - losing a point that you previously held now triggers a FRONT VERLOREN callout with the sector coordinate
+
+
+## v0.63 changes
+
+- match results now include a compact final 3x3 territory map
+- the summary shows both sides' final controlled-sector count and Core health
+- disconnected owned sectors remain visibly hatched in the final map
+- the map uses the actual end-state rather than reconstructed statistics
+- result screens now explain the territorial shape of a win, draw or loss at a glance
