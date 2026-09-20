@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.71
+## Current v0.72
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -288,3 +288,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Repulsor uses directional push arrows radiating from the cast point
 - Shield uses layered hex protection geometry instead of a generic circle
 - ability mechanics, radii, damage, healing and crowd-control values remain unchanged
+
+
+## v0.72 changes
+
+- the Commander button now clearly distinguishes ready and cooling-down states
+- a ready Commander receives a brighter green border, subtle internal glow and highlighted icon
+- when a real cooldown reaches zero, the button flashes briefly to surface the timing window without a modal or banner
+- the match does not flash the Commander at initial match start; only actual cooldown-to-ready transitions trigger it
+- reduced-motion settings disable the readiness animation
+- Commander cooldown values and activation rules are unchanged
