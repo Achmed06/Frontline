@@ -2638,6 +2638,21 @@ h1 em {
   display: block;
   width: 100%;
 }
+.hq-art .hq-patrol {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hq-patrol-idle 2.8s ease-in-out infinite alternate;
+}
+.hq-art .hq-patrol-2 { animation-delay: -.7s; }
+.hq-art .hq-patrol-3 { animation-delay: -1.4s; }
+.hq-art .hq-patrol-4 { animation-delay: -2.1s; }
+@keyframes hq-patrol-idle {
+  from { opacity: .82; translate: -1px 0; }
+  to { opacity: 1; translate: 2px -1px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hq-art .hq-patrol { animation: none; }
+}
 .hq-stages {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
