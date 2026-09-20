@@ -49,6 +49,21 @@ interface CardUi {
   baseFill: number;
 }
 
+interface MatchStats {
+  playerDeploys: number;
+  enemyDeploys: number;
+  playerEnergySpent: number;
+  enemyEnergySpent: number;
+  playerKills: number;
+  enemyKills: number;
+  damageToEnemyCore: number;
+  damageToPlayerCore: number;
+  playerAbilities: number;
+  enemyAbilities: number;
+  bestPlayerFrontlineY: number;
+  bestEnemyFrontlineY: number;
+}
+
 const WIDTH = 390;
 const HEIGHT = 844;
 const ARENA_TOP = 150;
@@ -181,6 +196,7 @@ export class FrontlineScene extends Phaser.Scene {
     enemy: { surge: 0, repulse: 0 },
   };
   private counterTextReadyAt = 0;
+  private stats: MatchStats = this.createEmptyStats();
 
   private arenaGraphics!: Phaser.GameObjects.Graphics;
   private frontLineGraphics!: Phaser.GameObjects.Graphics;
@@ -249,6 +265,15 @@ export class FrontlineScene extends Phaser.Scene {
     this.arenaGraphics.lineBetween(143, ARENA_TOP, 143, ARENA_BOTTOM);
     this.arenaGraphics.lineBetween(247, ARENA_TOP, 247, ARENA_BOTTOM);
 
+    LANES.forEach((laneX, index) => {
+      this.add.text(laneX, ARENA_BOTTOM - 14, `L${index + 1}`, {
+        fontFamily: "monospace",
+        fontSize: "8px",
+        color: "#45677f",
+        fontStyle: "bold",
+      }).setOrigin(0.5).setDepth(3);
+    });
+
     this.laneHighlights = LANES.map((laneX) =>
       this.add.rectangle(
         laneX,
@@ -300,7 +325,7 @@ export class FrontlineScene extends Phaser.Scene {
       fontStyle: "bold",
     });
 
-    this.add.text(18, 43, "FIELD TEST // v0.1", {
+    this.add.text(18, 43, "FIELD TEST // v0.2", {
       fontFamily: "monospace",
       fontSize: "9px",
       color: "#6e91ac",
@@ -491,6 +516,7 @@ export class FrontlineScene extends Phaser.Scene {
       enemy: { surge: 0, repulse: 0 },
     };
     this.counterTextReadyAt = 0;
+    this.stats = this.createEmptyStats();
     this.statusText.setText("SELECT A UNIT, THEN TAP A LANE");
     this.phaseText.setText("");
     this.holdText.setText("");
@@ -519,8 +545,15 @@ export class FrontlineScene extends Phaser.Scene {
     const energy = side === "player" ? this.playerEnergy : this.enemyEnergy;
     if (energy + 0.001 < def.cost || this.matchEnded) return false;
 
-    if (side === "player") this.playerEnergy -= def.cost;
-    else this.enemyEnergy -= def.cost;
+    if (side === "player") {
+      this.playerEnergy -= def.cost;
+      this.stats.playerDeploys += 1;
+      this.stats.playerEnergySpent += def.cost;
+    } else {
+      this.enemyEnergy -= def.cost;
+      this.stats.enemyDeploys += 1;
+      this.stats.enemyEnergySpent += def.cost;
+    }
 
     const x = LANES[lane];
     const nearbySpawnCount = this.units.filter(
@@ -695,6 +728,8 @@ export class FrontlineScene extends Phaser.Scene {
 
     if (target.hp <= 0) {
       target.dead = true;
+      if (attacker.side === "player") this.stats.playerKills += 1;
+      else this.stats.enemyKills += 1;
       this.spawnImpact(target.x, target.y, target.side === "player" ? 0x52d8ff : 0xff596d);
     }
   }
@@ -732,10 +767,14 @@ export class FrontlineScene extends Phaser.Scene {
     if (this.time.now < surgeUntil) damage *= 1.18;
 
     if (attacker.side === "player") {
+      const before = this.enemyCoreHp;
       this.enemyCoreHp = Math.max(0, this.enemyCoreHp - damage);
+      this.stats.damageToEnemyCore += before - this.enemyCoreHp;
       this.spawnImpact(attacker.x, ENEMY_CORE_Y, 0xff596d);
     } else {
+      const before = this.playerCoreHp;
       this.playerCoreHp = Math.max(0, this.playerCoreHp - damage);
+      this.stats.damageToPlayerCore += before - this.playerCoreHp;
       this.spawnImpact(attacker.x, PLAYER_CORE_Y, 0x52d8ff);
     }
   }
@@ -765,6 +804,8 @@ export class FrontlineScene extends Phaser.Scene {
     }
 
     this.frontLineY = Phaser.Math.Clamp(this.frontLineY, 184, 606);
+    this.stats.bestPlayerFrontlineY = Math.min(this.stats.bestPlayerFrontlineY, this.frontLineY);
+    this.stats.bestEnemyFrontlineY = Math.max(this.stats.bestEnemyFrontlineY, this.frontLineY);
   }
 
   private updateBreakthrough(delta: number): void {
@@ -868,8 +909,15 @@ export class FrontlineScene extends Phaser.Scene {
       return;
     }
 
-    if (side === "player") this.playerEnergy -= cost;
-    else this.enemyEnergy -= cost;
+    if (side === "player") {
+      this.playerEnergy -= cost;
+      this.stats.playerEnergySpent += cost;
+      this.stats.playerAbilities += 1;
+    } else {
+      this.enemyEnergy -= cost;
+      this.stats.enemyEnergySpent += cost;
+      this.stats.enemyAbilities += 1;
+    }
     this.abilityReadyAt[side][ability] = now + ABILITY_COOLDOWN_MS[ability];
 
     if (ability === "surge") {
@@ -1016,25 +1064,33 @@ export class FrontlineScene extends Phaser.Scene {
       color: "#a5b9c8",
     }).setOrigin(0.5).setDepth(101);
 
+    const territoryPlayer = Math.max(0, 395 - this.stats.bestPlayerFrontlineY);
+    const territoryEnemy = Math.max(0, this.stats.bestEnemyFrontlineY - 395);
     const summary = this.add.text(
       WIDTH / 2,
-      415,
-      `CORE  ${Math.round(this.playerCoreHp)} : ${Math.round(this.enemyCoreHp)}\nLINE  ${Math.round(this.frontLineY)}px`,
+      424,
+      [
+        `CORE       ${Math.round(this.playerCoreHp)} : ${Math.round(this.enemyCoreHp)}`,
+        `DEPLOYS    ${this.stats.playerDeploys} : ${this.stats.enemyDeploys}`,
+        `KILLS      ${this.stats.playerKills} : ${this.stats.enemyKills}`,
+        `CORE DMG   ${Math.round(this.stats.damageToEnemyCore)} : ${Math.round(this.stats.damageToPlayerCore)}`,
+        `BEST PUSH  ${Math.round(territoryPlayer)} : ${Math.round(territoryEnemy)}`,
+      ].join("\n"),
       {
         fontFamily: "monospace",
-        fontSize: "11px",
+        fontSize: "10px",
         color: "#7894a8",
         align: "center",
-        lineSpacing: 8,
+        lineSpacing: 6,
       },
     ).setOrigin(0.5).setDepth(101);
 
-    const rematch = this.add.rectangle(WIDTH / 2, 500, 176, 48, 0x153149)
+    const rematch = this.add.rectangle(WIDTH / 2, 530, 176, 48, 0x153149)
       .setStrokeStyle(2, 0x66dff5)
       .setInteractive({ useHandCursor: true })
       .setDepth(101);
 
-    const rematchText = this.add.text(WIDTH / 2, 500, "REMATCH", {
+    const rematchText = this.add.text(WIDTH / 2, 530, "REMATCH", {
       fontFamily: "monospace",
       fontSize: "16px",
       color: "#dff9ff",
@@ -1067,6 +1123,23 @@ export class FrontlineScene extends Phaser.Scene {
 
     this.frontLineText.setY(this.frontLineY - 17);
     this.frontLineText.setColor(playerStrength > 0.08 ? "#7eeaff" : playerStrength < -0.08 ? "#ff8395" : "#f5e277");
+  }
+
+  private createEmptyStats(): MatchStats {
+    return {
+      playerDeploys: 0,
+      enemyDeploys: 0,
+      playerEnergySpent: 0,
+      enemyEnergySpent: 0,
+      playerKills: 0,
+      enemyKills: 0,
+      damageToEnemyCore: 0,
+      damageToPlayerCore: 0,
+      playerAbilities: 0,
+      enemyAbilities: 0,
+      bestPlayerFrontlineY: 395,
+      bestEnemyFrontlineY: 395,
+    };
   }
 
   private refreshHud(): void {
