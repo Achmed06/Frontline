@@ -32,10 +32,51 @@ export const LESSONS = [
 ] as const;
 export type LessonId = (typeof LESSONS)[number]["id"];
 export type BaseStyle = "field" | "aurora" | "ember" | "supporter";
+export const BASE_PROJECTS = [
+  {
+    id: "depot",
+    name: "Versorgungsdepot",
+    description: "Kisten, Treibstoff und Nachschub machen aus dem Lager eine echte Einsatzbasis.",
+    metric: "wins",
+    goal: 3,
+  },
+  {
+    id: "training",
+    name: "Trainingsplatz",
+    description: "Deine gemeisterten Einheiten trainieren sichtbar in der Basis.",
+    metric: "mastery",
+    goal: 3,
+  },
+  {
+    id: "relay",
+    name: "Signalrelais",
+    description: "Ein eigener Funkmast verbindet Ausbildung, Feldzug und Kommando.",
+    metric: "lessons",
+    goal: 4,
+  },
+  {
+    id: "workshop",
+    name: "Feldwerkstatt",
+    description: "Eine Werkstatt für Ausrüstung, Fahrzeuge und spätere kosmetische Projekte.",
+    metric: "stars",
+    goal: 24,
+  },
+  {
+    id: "honor",
+    name: "Ehrenhof",
+    description: "Banner und Trophäen halten deinen Feldzug dauerhaft in der Basis fest.",
+    metric: "wins",
+    goal: 18,
+  },
+] as const;
+export type BaseProjectId = (typeof BASE_PROJECTS)[number]["id"];
+export type BaseProjectMetric = (typeof BASE_PROJECTS)[number]["metric"];
+export type BaseProjectMetrics = Record<BaseProjectMetric, number>;
 export type LearningProgress = {
   counts: Record<LessonId, number>;
   style: BaseStyle;
   lastMatch: string;
+  projects?: BaseProjectId[];
 };
 export const BASE_STAGES = [
   {
@@ -122,6 +163,16 @@ export function normalizeLearning(value: unknown): LearningProgress {
     result.style = source.style;
   if (typeof source.lastMatch === "string" && source.lastMatch.length < 160)
     result.lastMatch = source.lastMatch;
+  if (Array.isArray(source.projects)) {
+    const valid = new Set<BaseProjectId>();
+    for (const id of source.projects)
+      if (BASE_PROJECTS.some((project) => project.id === id))
+        valid.add(id as BaseProjectId);
+    if (valid.size)
+      result.projects = BASE_PROJECTS.map((project) => project.id).filter((id) =>
+        valid.has(id),
+      );
+  }
   return result;
 }
 export function completedLessons(progress: LearningProgress): number {
@@ -142,6 +193,40 @@ export function styleUnlocked(
       : campaignWins >= 6)
   );
 }
+export function baseProjectProgress(
+  projectId: BaseProjectId,
+  metrics: BaseProjectMetrics,
+): { current: number; goal: number; ready: boolean } {
+  const project = BASE_PROJECTS.find((item) => item.id === projectId)!;
+  const current = Math.max(0, Math.floor(metrics[project.metric] ?? 0));
+  return { current, goal: project.goal, ready: current >= project.goal };
+}
+export function baseProjectBuilt(
+  progress: LearningProgress,
+  projectId: BaseProjectId,
+): boolean {
+  return progress.projects?.includes(projectId) ?? false;
+}
+export function buildBaseProject(
+  progress: LearningProgress,
+  projectId: BaseProjectId,
+  metrics: BaseProjectMetrics,
+): LearningProgress {
+  if (
+    baseProjectBuilt(progress, projectId) ||
+    !baseProjectProgress(projectId, metrics).ready
+  )
+    return progress;
+  const built = new Set(progress.projects ?? []);
+  built.add(projectId);
+  return {
+    ...progress,
+    projects: BASE_PROJECTS.map((project) => project.id).filter((id) =>
+      built.has(id),
+    ),
+  };
+}
+
 export function baseStage(campaignWins: number): number {
   return BASE_STAGES.reduce(
     (stage, candidate, index) =>
@@ -176,7 +261,11 @@ export function advanceLearning(
 }
 
 /** Original vector base: later stages add structures, not combat bonuses. */
-export function headquartersSvg(stage: number, color: string): string {
+export function headquartersSvg(
+  stage: number,
+  color: string,
+  projects: readonly BaseProjectId[] = [],
+): string {
   const building = (x: number, y: number, width: number, height: number) =>
     `<g transform="translate(${x} ${y})"><path d="M0 0 ${width} -12 ${width + 28} 4 28 17Z" fill="#c2e7ff"/><path d="M0 0 28 17 28 ${height + 17} 0 ${height}Z" fill="#2865a4"/><path d="M28 17 ${width + 28} 4 ${width + 28} ${height + 4} 28 ${height + 17}Z" fill="#438bd0"/><path d="M33 23 ${width + 23} 12" stroke="${color}" stroke-width="3"/><path d="M${width} 30v${Math.max(6, height - 8)}" stroke="#172f3b" stroke-width="9"/></g>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 205" role="img" aria-label="Hauptquartier Ausbaustufe ${stage + 1}">
@@ -197,5 +286,10 @@ export function headquartersSvg(stage: number, color: string): string {
     ${stage >= 6 ? '<path d="M104 103V48l70-35 72 35v55M104 48l70 37 72-37" fill="none" stroke="#f5d279" stroke-width="3"/><circle cx="174" cy="13" r="5" fill="#f5d279"/>' : ""}
     <path d="m286 137 11-5 10 5-11 5z" fill="none" stroke="${color}" stroke-width="2"/>
     <circle cx="51" cy="140" r="3" fill="${color}"/><circle cx="313" cy="139" r="3" fill="${color}"/>
+    ${projects.includes("depot") ? `<g transform="translate(43 145)"><path d="m0 10 17-9 18 8-18 9z" fill="#9b6f47" stroke="#f0c789"/><path d="m17 18 18-9v13l-18 9z" fill="#6d4d39"/><path d="m0 10 17 8v13L0 23z" fill="#80593f"/><path d="M8 7v16m18-18v15" stroke="#f0c789" stroke-width="2"/></g>` : ""}
+    ${projects.includes("training") ? `<g transform="translate(282 142)"><ellipse cx="18" cy="12" rx="24" ry="11" fill="#244e59" stroke="${color}" stroke-width="2"/><circle cx="18" cy="11" r="7" fill="none" stroke="#ffd475" stroke-width="2"/><circle cx="18" cy="11" r="2" fill="#ffd475"/><g fill="#d9f6ff" stroke="#17384b"><circle cx="4" cy="5" r="3"/><path d="M4 8v8m-4 5 4-5 4 5"/><circle cx="33" cy="6" r="3"/><path d="M33 9v8m-4 5 4-5 4 5"/></g></g>` : ""}
+    ${projects.includes("relay") ? `<g transform="translate(315 78)" fill="none" stroke="${color}"><path d="M0 52 12 0l12 52M5 31h14M3 42h18" stroke-width="3"/><path d="M12 8c8 1 13 5 17 10M12 8C4 9-1 13-5 18" stroke-width="2" opacity=".8"/><circle cx="12" cy="3" r="3" fill="${color}"/></g>` : ""}
+    ${projects.includes("workshop") ? `<g transform="translate(82 157)"><path d="m0 8 23-12 29 11-26 13z" fill="#7a90a3" stroke="#c8e9ff"/><path d="M26 20 52 7v16L26 36z" fill="#38556f"/><path d="M0 8 26 20v16L0 24z" fill="#46657b"/><path d="M9 18h9m13-2h11" stroke="#ffd475" stroke-width="3"/><path d="M42 -1v-12m0 0 10 5" stroke="${color}" stroke-width="3"/></g>` : ""}
+    ${projects.includes("honor") ? `<g transform="translate(158 169)"><path d="M0 13 22 2l23 11-23 10z" fill="#213f58" stroke="#f5d279"/><path d="M10 8V-7m24 15V-7" stroke="#f5d279" stroke-width="2"/><path d="M10-7h10l-5 7-5-3zm24 0h10l-5 7-5-3z" fill="${color}"/><circle cx="22" cy="12" r="4" fill="#f5d279"/></g>` : ""}
   </svg>`;
 }
