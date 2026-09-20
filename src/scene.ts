@@ -19,6 +19,7 @@ export class ArenaScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
   private fx!: Phaser.GameObjects.Graphics;
   private sprites = new Map<number, Phaser.GameObjects.Image>();
+  private unitMotion = new Map<number, { x: number; y: number; phase: number }>();
   private labels: Phaser.GameObjects.Text[] = [];
   private pointer: { x: number; y: number } | null = null;
   private aim: {
@@ -664,6 +665,7 @@ export class ArenaScene extends Phaser.Scene {
       if (!alive.has(id)) {
         sprite.destroy();
         this.sprites.delete(id);
+        this.unitMotion.delete(id);
       }
     for (const u of s.units) {
       let sprite = this.sprites.get(u.id);
@@ -683,9 +685,43 @@ export class ArenaScene extends Phaser.Scene {
         ? 1 - spawnEffect.life / spawnEffect.maxLife
         : 1;
       const spawnScale = 0.72 + Math.min(1, spawnProgress * 1.5) * 0.28;
+      const previous = this.unitMotion.get(u.id);
+      const moved = previous ? Math.hypot(u.x - previous.x, u.y - previous.y) : 0;
+      const moving = moved > 0.015;
+      const phase = (previous?.phase ?? u.id * 0.71) + Math.min(0.9, moved * 0.42);
+      this.unitMotion.set(u.id, { x: u.x, y: u.y, phase });
+      const walkBob = moving ? Math.sin(phase) * 1.6 : 0;
+      const walkScale = moving ? 1 + Math.sin(phase * 2) * 0.018 : 1;
+      const firing = s.effects.find(
+        (effect) =>
+          effect.type === "shot" &&
+          effect.team === u.team &&
+          Math.hypot(effect.x - u.x, effect.y - u.y) < 5 &&
+          effect.targetX !== undefined &&
+          effect.targetY !== undefined,
+      );
+      let recoilX = 0;
+      let recoilY = 0;
+      let recoilScale = 1;
+      if (firing && firing.targetX !== undefined && firing.targetY !== undefined) {
+        const dx = firing.targetX - firing.x;
+        const dy = firing.targetY - firing.y;
+        const d = Math.max(0.01, Math.hypot(dx, dy));
+        const recoil = Math.min(1, firing.life / firing.maxLife) * 3.2;
+        recoilX = -(dx / d) * recoil;
+        recoilY = -(dy / d) * recoil;
+        recoilScale = 1.035;
+      }
       sprite
-        .setPosition(u.x, u.y - 3 - (1 - spawnProgress) * 8)
-        .setDisplaySize(size * spawnScale, size * spawnScale)
+        .setPosition(
+          u.x + recoilX,
+          u.y - 3 - (1 - spawnProgress) * 8 + walkBob + recoilY,
+        )
+        .setDisplaySize(
+          size * spawnScale * walkScale * recoilScale,
+          size * spawnScale * walkScale * recoilScale,
+        )
+        .setAngle(moving ? Math.sin(phase) * 1.6 : 0)
         .setAlpha(
           u.hp > 0
             ? spawnEffect
@@ -780,6 +816,21 @@ export class ArenaScene extends Phaser.Scene {
           fx.fillCircle(x, y, 2.6);
           fx.fillStyle(color, alpha * 0.55);
           fx.fillCircle(x, y, 4.5);
+          if (travel < 0.42) {
+            const muzzle = 1 - travel / 0.42;
+            fx.fillStyle(0xffffff, alpha * muzzle * 0.72);
+            fx.fillCircle(e.x, e.y, 2.5 + muzzle * 2.2);
+            fx.lineStyle(1.4, color, alpha * muzzle * 0.8);
+            for (let i = 0; i < 4; i++) {
+              const angle = i * Math.PI * 0.5 + e.id * 0.31;
+              fx.lineBetween(
+                e.x + Math.cos(angle) * 3,
+                e.y + Math.sin(angle) * 3,
+                e.x + Math.cos(angle) * (6 + muzzle * 4),
+                e.y + Math.sin(angle) * (6 + muzzle * 4),
+              );
+            }
+          }
           if (travel > 0.86) {
             const impact = (travel - 0.86) / 0.14;
             fx.lineStyle(1.4, color, alpha * (1 - impact));
