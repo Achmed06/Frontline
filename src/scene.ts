@@ -150,6 +150,7 @@ export class ArenaScene extends Phaser.Scene {
       this.scale.refresh();
       for (const sprite of this.sprites.values()) sprite.destroy();
       this.sprites.clear();
+      this.unitMotion.clear();
       this.reactedEffects.clear();
     }
     if (running) {
