@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.79
+## Current v0.80
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -374,3 +374,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - enemy active-duration, cooldown text and target-aware availability states remain unchanged
 - progress uses the same real enemy Commander cooldown and shared clamped progress helper as the player rail
 - the enemy cooldown rail is purely presentational and does not alter bot decisions, Commander timing or combat values
+
+
+## v0.80 changes
+
+- persistent unit-status visuals now expose remaining whole seconds with compact pips around affected units
+- shield, rally and slow states lose one pip as each remaining second expires
+- the timer pips use the same live per-unit status timers as combat simulation
+- enemy ATLAS shields now use the enemy team color instead of incorrectly appearing in the player's mint color
+- rally keeps its neutral gold tempo language and slowing keeps its blue control language
+- status pips are renderer-only and do not alter shield strength, movement, attack speed, slow duration or any combat rule

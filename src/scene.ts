@@ -191,6 +191,26 @@ export class ArenaScene extends Phaser.Scene {
       y + Math.sin((i * Math.PI) / 3 - Math.PI / 6) * r,
     ]);
   }
+  private statusPips(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    seconds: number,
+    color: number,
+    startAngle: number,
+  ) {
+    const count = Math.max(0, Math.min(6, Math.ceil(seconds - 1e-6)));
+    if (!count) return;
+    g.fillStyle(color, 0.9);
+    for (let i = 0; i < count; i++) {
+      const angle = startAngle + i * 0.24;
+      g.fillCircle(
+        x + Math.cos(angle) * 26,
+        y + Math.sin(angle) * 26,
+        1.35,
+      );
+    }
+  }
   private drawThemeAtmosphere(
     g: Phaser.GameObjects.Graphics,
     themeId: ArenaThemeId,
@@ -737,8 +757,21 @@ export class ArenaScene extends Phaser.Scene {
       g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
       g.strokeEllipse(u.x, u.y + 7, size * 0.75, size * 0.32);
       if (u.shield > 0) {
-        fx.lineStyle(2, MINT, 0.5 + 0.2 * Math.sin(this.clock * 5));
+        const shieldColor = u.team === "player" ? MINT : CORAL;
+        fx.lineStyle(
+          2,
+          shieldColor,
+          0.5 + 0.2 * Math.sin(this.clock * 5),
+        );
         fx.strokeCircle(u.x, u.y, 22);
+        this.statusPips(
+          fx,
+          u.x,
+          u.y,
+          u.shieldTime,
+          shieldColor,
+          -2.9,
+        );
       }
       if (u.rallyTime > 0) {
         // Two gold chevrons make the tempo boost legible even without its initial pulse.
@@ -748,10 +781,12 @@ export class ArenaScene extends Phaser.Scene {
           fx.lineBetween(u.x - 5, y + 3, u.x, y);
           fx.lineBetween(u.x, y, u.x + 5, y + 3);
         }
+        this.statusPips(fx, u.x, u.y, u.rallyTime, 0xffdf6b, 0.18);
       }
       if (u.slowTime > 0) {
         fx.lineStyle(2, 0x94caff, 0.85);
         fx.strokeEllipse(u.x, u.y + 12, 27, 9);
+        this.statusPips(fx, u.x, u.y, u.slowTime, 0x94caff, 1.72);
       }
       const healthWidth = u.cardId === "bulwark" ? 27 : 21;
       const health = Math.max(0, u.hp / u.maxHp);
