@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.84
+## Current v0.85
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -427,3 +427,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a selected usable tactic takes coaching priority over a simultaneously ready Commander so the tutorial respects the player's current intent
 - dedicated tests cover tactic energy, target availability and selected-tactic priority
 - tactic effects, targeting radii, energy costs, Commander rules and all combat values remain unchanged
+
+
+## v0.85 changes
+
+- field-training step 2 now detects when the player's entire deployed army has been wiped before the first capture
+- the coach no longer highlights the battlefield with BODEN EROBERN when no living allied unit can capture anything
+- with no living allies it first asks for a unit card, keeps unaffordable reinforcement on the card row with the real energy countdown, and only returns to arena focus once the selected reinforcement is affordable
+- after a living allied unit is back on the field, the normal BODEN EROBERN objective resumes automatically
+- selecting a tactic while the army is wiped correctly keeps the recovery guidance on unit cards
+- dedicated tests cover wipeout, wrong-card, low-energy, affordable-reinforcement and recovered-army states
+- unit stats, capture rules, energy regeneration, deployment validation and all combat values remain unchanged

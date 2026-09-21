@@ -108,6 +108,49 @@ export function battleCoachHint(
 
   const captured = total(progress, state, "capture");
   if (captured < GOALS.capture) {
+    const livingAllies = state.units.some(
+      (unit) => unit.team === "player" && unit.hp > 0,
+    );
+    if (!livingAllies) {
+      const selected = CARDS.find((card) => card.id === selectedCardId);
+      if (!selected || selected.kind !== "unit") {
+        return {
+          lesson: "capture",
+          kicker: "FELDAUSBILDUNG · SCHRITT 2",
+          title: "VERSTÄRKUNG WÄHLEN",
+          detail:
+            "Deine eingesetzten Truppen sind gefallen. Wähle eine Einheitenkarte, damit du wieder Boden erobern kannst.",
+          focus: "cards",
+          current: captured,
+          goal: GOALS.capture,
+        };
+      }
+      if (state.energy.player + 1e-8 < selected.cost) {
+        const waitLabel = energyWaitSeconds(
+          selected.cost,
+          state.energy.player,
+        );
+        return {
+          lesson: "capture",
+          kicker: "FELDAUSBILDUNG · SCHRITT 2",
+          title: "ENERGIE SAMMELN",
+          detail: `${selected.name} kostet ${selected.cost} Energie. Bereit in ${waitLabel}s. Danach kannst du Verstärkung ins versorgte Gebiet setzen.`,
+          focus: "cards",
+          current: captured,
+          goal: GOALS.capture,
+        };
+      }
+      return {
+        lesson: "capture",
+        kicker: "FELDAUSBILDUNG · SCHRITT 2",
+        title: "VERSTÄRKUNG EINSETZEN",
+        detail:
+          "Setze die ausgewählte Truppe im grünen versorgten Gebiet ein. Danach kann sie den nächsten Kontrollpunkt erobern.",
+        focus: "arena",
+        current: captured,
+        goal: GOALS.capture,
+      };
+    }
     return {
       lesson: "capture",
       kicker: "FELDAUSBILDUNG · SCHRITT 2",

@@ -25,6 +25,31 @@ test("battle coach guides the existing learning path without changing combat", (
 
   match.state.stats.deployed = 3;
   hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "VERSTÄRKUNG WÄHLEN");
+  assert.equal(hint?.focus, "cards");
+
+  match.state.units.push({
+    id: 998,
+    cardId: "vanguard",
+    team: "player",
+    x: 210,
+    y: 450,
+    hp: 125,
+    maxHp: 125,
+    radius: 10,
+    shield: 0,
+    damage: 16,
+    range: 20,
+    speed: 35,
+    interval: 1,
+    attackCooldown: 0,
+    healCooldown: 0,
+    shieldTime: 0,
+    rallyTime: 0,
+    slowTime: 0,
+    slowFactor: 1,
+  });
+  hint = battleCoachHint(progress, match.state, null);
   assert.equal(hint?.title, "BODEN EROBERN");
   assert.equal(hint?.focus, "arena");
 
@@ -230,5 +255,56 @@ test("a deliberately selected usable tactic takes priority over commander coachi
 
   const hint = battleCoachHint(progress, match.state, "pulse", "atlas");
   assert.equal(hint?.title, "TAKTIK ZIELEN");
+  assert.equal(hint?.focus, "arena");
+});
+
+
+test("capture coaching recovers from a wiped army before pointing back to the objective", () => {
+  const progress = normalizeLearning(null);
+  const match = new Match({ botEnabled: false });
+  match.state.stats.deployed = 3;
+
+  let hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "VERSTÄRKUNG WÄHLEN");
+  assert.equal(hint?.focus, "cards");
+
+  hint = battleCoachHint(progress, match.state, "pulse");
+  assert.equal(hint?.title, "VERSTÄRKUNG WÄHLEN");
+  assert.equal(hint?.focus, "cards");
+
+  match.state.energy.player = 1;
+  hint = battleCoachHint(progress, match.state, "vanguard");
+  assert.equal(hint?.title, "ENERGIE SAMMELN");
+  assert.equal(hint?.focus, "cards");
+  assert.match(hint?.detail ?? "", /1,4s/);
+
+  match.state.energy.player = 2;
+  hint = battleCoachHint(progress, match.state, "vanguard");
+  assert.equal(hint?.title, "VERSTÄRKUNG EINSETZEN");
+  assert.equal(hint?.focus, "arena");
+
+  match.state.units.push({
+    id: 3001,
+    cardId: "vanguard",
+    team: "player",
+    x: 210,
+    y: 450,
+    hp: 125,
+    maxHp: 125,
+    radius: 10,
+    shield: 0,
+    damage: 16,
+    range: 20,
+    speed: 35,
+    interval: 1,
+    attackCooldown: 0,
+    healCooldown: 0,
+    shieldTime: 0,
+    rallyTime: 0,
+    slowTime: 0,
+    slowFactor: 1,
+  });
+  hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "BODEN EROBERN");
   assert.equal(hint?.focus, "arena");
 });
