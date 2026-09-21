@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.85
+## Current v0.86
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -438,3 +438,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - selecting a tactic while the army is wiped correctly keeps the recovery guidance on unit cards
 - dedicated tests cover wipeout, wrong-card, low-energy, affordable-reinforcement and recovered-army states
 - unit stats, capture rules, energy regeneration, deployment validation and all combat values remain unchanged
+
+
+## v0.86 changes
+
+- field-training step 4 now detects a full allied wipe before directing the player to push the front or attack the enemy Core
+- with no living allied units, the final lesson first asks for a unit card instead of highlighting an impossible battlefield objective
+- an unaffordable reinforcement remains on the card row with the real energy-ready countdown
+- once the selected reinforcement is affordable, the arena is highlighted for deployment
+- after a living allied unit returns, the coach automatically resumes FRONT WEITER SCHIEBEN or CORE DURCHBRECHEN according to the live territory state
+- losing the rebuilt army again immediately returns the lesson to reinforcement recovery
+- dedicated tests cover wrong-card, low-energy, affordable deployment, front push, Core push and repeated wipeout states
+- win conditions, unit stats, territory ownership, energy regeneration and all combat values remain unchanged

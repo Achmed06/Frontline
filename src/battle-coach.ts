@@ -242,6 +242,49 @@ export function battleCoachHint(
 
   const won = total(progress, state, "win");
   if (won < GOALS.win) {
+    const livingAllies = state.units.some(
+      (unit) => unit.team === "player" && unit.hp > 0,
+    );
+    if (!livingAllies) {
+      const selected = CARDS.find((card) => card.id === selectedCardId);
+      if (!selected || selected.kind !== "unit") {
+        return {
+          lesson: "win",
+          kicker: "FELDAUSBILDUNG · SCHRITT 4",
+          title: "VERSTÄRKUNG WÄHLEN",
+          detail:
+            "Deine Front hat keine lebenden Truppen mehr. Wähle eine Einheitenkarte, bevor du den letzten Vorstoß fortsetzt.",
+          focus: "cards",
+          current: won,
+          goal: GOALS.win,
+        };
+      }
+      if (state.energy.player + 1e-8 < selected.cost) {
+        const waitLabel = energyWaitSeconds(
+          selected.cost,
+          state.energy.player,
+        );
+        return {
+          lesson: "win",
+          kicker: "FELDAUSBILDUNG · SCHRITT 4",
+          title: "ENERGIE SAMMELN",
+          detail: `${selected.name} kostet ${selected.cost} Energie. Bereit in ${waitLabel}s. Danach kannst du den Vorstoß wieder aufbauen.`,
+          focus: "cards",
+          current: won,
+          goal: GOALS.win,
+        };
+      }
+      return {
+        lesson: "win",
+        kicker: "FELDAUSBILDUNG · SCHRITT 4",
+        title: "VERSTÄRKUNG EINSETZEN",
+        detail:
+          "Setze die ausgewählte Truppe im grünen versorgten Gebiet ein. Danach führt dich die Feld-Ausbildung wieder zum eigentlichen Siegesziel.",
+        focus: "arena",
+        current: won,
+        goal: GOALS.win,
+      };
+    }
     const owned = state.points.filter((point) => point.owner === "player").length;
     return {
       lesson: "win",

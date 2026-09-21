@@ -309,3 +309,67 @@ test("capture coaching recovers from a wiped army before pointing back to the ob
   assert.equal(hint?.title, "BODEN EROBERN");
   assert.equal(hint?.focus, "arena");
 });
+
+
+test("win coaching rebuilds a wiped army before resuming front or core guidance", () => {
+  const progress = normalizeLearning(null);
+  const match = new Match({ botEnabled: false });
+  match.state.stats.deployed = 3;
+  match.state.stats.captured = 1;
+  match.state.stats.abilities = 1;
+
+  let hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "VERSTÄRKUNG WÄHLEN");
+  assert.equal(hint?.focus, "cards");
+
+  hint = battleCoachHint(progress, match.state, "pulse");
+  assert.equal(hint?.title, "VERSTÄRKUNG WÄHLEN");
+  assert.equal(hint?.focus, "cards");
+
+  match.state.energy.player = 1;
+  hint = battleCoachHint(progress, match.state, "vanguard");
+  assert.equal(hint?.title, "ENERGIE SAMMELN");
+  assert.equal(hint?.focus, "cards");
+  assert.match(hint?.detail ?? "", /1,4s/);
+
+  match.state.energy.player = 2;
+  hint = battleCoachHint(progress, match.state, "vanguard");
+  assert.equal(hint?.title, "VERSTÄRKUNG EINSETZEN");
+  assert.equal(hint?.focus, "arena");
+
+  match.state.units.push({
+    id: 4001,
+    cardId: "vanguard",
+    team: "player",
+    x: 210,
+    y: 450,
+    hp: 125,
+    maxHp: 125,
+    radius: 10,
+    shield: 0,
+    damage: 16,
+    range: 20,
+    speed: 35,
+    interval: 1,
+    attackCooldown: 0,
+    healCooldown: 0,
+    shieldTime: 0,
+    rallyTime: 0,
+    slowTime: 0,
+    slowFactor: 1,
+  });
+
+  hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "FRONT WEITER SCHIEBEN");
+  assert.equal(hint?.focus, "arena");
+
+  for (const point of match.state.points.slice(0, 6)) point.owner = "player";
+  hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "CORE DURCHBRECHEN");
+  assert.equal(hint?.focus, "arena");
+
+  match.state.units[0].hp = 0;
+  hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "VERSTÄRKUNG WÄHLEN");
+  assert.equal(hint?.focus, "cards");
+});
