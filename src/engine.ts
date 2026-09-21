@@ -68,6 +68,8 @@ export const CAPTURE_SECONDS = 4.2;
 export const COMMANDER_COOLDOWN = COMMANDERS.atlas.cooldown;
 export const CORE_HP = 2300;
 export const CORE_TURRET_DAMAGE = 24;
+export const CORE_TURRET_RANGE = 160;
+export const CORE_TURRET_INTERVAL = 1;
 const STEP = 1 / 30;
 const COLUMN_X = [85, 210, 335];
 const ROW_Y = [150, 280, 410];
@@ -1472,7 +1474,9 @@ export class Match {
       const target = this.state.units
         .filter(
           (unit) =>
-            unit.team !== team && unit.hp > 0 && distance(core, unit) <= 160,
+            unit.team !== team &&
+            unit.hp > 0 &&
+            distance(core, unit) <= CORE_TURRET_RANGE,
         )
         .sort(
           (a, b) => distance(core, a) - distance(core, b) || a.id - b.id,
@@ -1480,7 +1484,7 @@ export class Match {
       if (target) {
         this.damageUnit(target, CORE_TURRET_DAMAGE, team);
         this.effect("shot", core.x, core.y, team, 0.25, target);
-        this.coreCooldown[team] = 1;
+        this.coreCooldown[team] = CORE_TURRET_INTERVAL;
       }
     }
   }

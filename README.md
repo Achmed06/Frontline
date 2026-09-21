@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.02
+## Current v1.03
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -626,4 +626,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - both specialist effects were already part of the effect model but were previously never produced by the simulation
 - regression coverage verifies Breaker shield removal/effect gating and Pioneer accelerated capture/effect gating
 - Breaker damage, shield break, Pioneer capture speed and all other balance values remain unchanged
+
+## v1.03 changes
+
+- Core turret damage, range and fire interval now live in explicit shared engine constants instead of mixing exported data with hidden magic numbers
+- the unchanged turret values are 24 damage, 160 range and a 1-second fire interval
+- the simulation consumes those shared values for targeting and cooldown timing
+- when an opposing live unit enters a Core turret's actual range, the arena now reveals a subtle defense perimeter around that Core
+- dedicated regression coverage verifies the exact range edge, out-of-range behavior, damage and repeat-fire timing
+- the iPhone workflow no longer hardcodes a specific release number when validating the packaged IPA; it compares the built app against the current Xcode release/build settings
+- release version is now v1.03 / package 1.3.0 / iOS 1.03 (103)
+- no Core turret balance values changed
 

@@ -69,8 +69,10 @@ jobs:
           test -s Frontline-unsigned.ipa
           VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Payload/App.app/Info.plist)
           BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' Payload/App.app/Info.plist)
-          test "$VERSION" = "1.02"
-          test "$BUILD" = "102"
+          EXPECTED_VERSION=$(xcodebuild -project ../../ios/App/App.xcodeproj -scheme App -configuration Release -showBuildSettings | awk '/ MARKETING_VERSION = / {print $3; exit}')
+          EXPECTED_BUILD=$(xcodebuild -project ../../ios/App/App.xcodeproj -scheme App -configuration Release -showBuildSettings | awk '/ CURRENT_PROJECT_VERSION = / {print $3; exit}')
+          test "$VERSION" = "$EXPECTED_VERSION"
+          test "$BUILD" = "$EXPECTED_BUILD"
           echo "Packaged Frontline $VERSION ($BUILD)"
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4

@@ -11,6 +11,9 @@ import {
   isValidDeck,
   type CardId,
   COMMANDER_COOLDOWN,
+  CORE_TURRET_DAMAGE,
+  CORE_TURRET_INTERVAL,
+  CORE_TURRET_RANGE,
   ENERGY_CAP,
   ENERGY_RATE,
   Match,
@@ -1229,5 +1232,38 @@ test("Pioneer accelerated capture emits its specialist completion effect", () =>
     ordinaryMatch.state.effects.some((effect) => effect.type === "pioneer"),
     false,
   );
+});
+
+test("core turret range, damage and fire interval come from shared constants", () => {
+  const match = quietMatch();
+  const core = match.state.cores.player;
+  const intruder = staticUnit(
+    match,
+    "enemy",
+    core.x,
+    core.y - CORE_TURRET_RANGE,
+  );
+  const outside = staticUnit(
+    match,
+    "enemy",
+    core.x + CORE_TURRET_RANGE + 1,
+    core.y,
+  );
+  const intruderStart = intruder.hp;
+  const outsideStart = outside.hp;
+
+  match.update(1 / 30);
+
+  assert.equal(intruderStart - intruder.hp, CORE_TURRET_DAMAGE);
+  assert.equal(outside.hp, outsideStart);
+
+  const afterFirstShot = intruder.hp;
+  match.update(CORE_TURRET_INTERVAL - 0.1);
+  assert.equal(intruder.hp, afterFirstShot);
+
+  match.update(0.2);
+  assert.equal(afterFirstShot - intruder.hp, CORE_TURRET_DAMAGE);
+  assert.equal(CORE_TURRET_RANGE, 160);
+  assert.equal(CORE_TURRET_INTERVAL, 1);
 });
 

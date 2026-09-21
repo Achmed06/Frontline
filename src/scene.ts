@@ -1,6 +1,11 @@
 import { ARENA_THEMES, type ArenaThemeId } from "./arena-themes";
 import Phaser from "phaser";
-import { abilityTargetPreview, Match, CARDS } from "./engine";
+import {
+  abilityTargetPreview,
+  Match,
+  CARDS,
+  CORE_TURRET_RANGE,
+} from "./engine";
 import { unitSvg } from "./art";
 
 const MINT = 0x41ffc1,
@@ -677,12 +682,31 @@ export class ArenaScene extends Phaser.Scene {
         Math.abs(effect.x - s.cores.player.x) < 2 &&
         Math.abs(effect.y - s.cores.player.y) < 2,
     );
+    const enemyCoreThreat = s.units.some(
+      (unit) =>
+        unit.team === "player" &&
+        unit.hp > 0 &&
+        Math.hypot(
+          unit.x - s.cores.enemy.x,
+          unit.y - s.cores.enemy.y,
+        ) <= CORE_TURRET_RANGE,
+    );
+    const playerCoreThreat = s.units.some(
+      (unit) =>
+        unit.team === "enemy" &&
+        unit.hp > 0 &&
+        Math.hypot(
+          unit.x - s.cores.player.x,
+          unit.y - s.cores.player.y,
+        ) <= CORE_TURRET_RANGE,
+    );
     this.drawCore(
       210,
       35,
       "enemy",
       s.cores.enemy.hp / s.cores.enemy.maxHp,
       enemyCoreHit ? enemyCoreHit.life / enemyCoreHit.maxLife : 0,
+      enemyCoreThreat,
     );
     this.drawCore(
       210,
@@ -690,6 +714,7 @@ export class ArenaScene extends Phaser.Scene {
       "player",
       s.cores.player.hp / s.cores.player.maxHp,
       playerCoreHit ? playerCoreHit.life / playerCoreHit.maxLife : 0,
+      playerCoreThreat,
     );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
@@ -1568,10 +1593,20 @@ export class ArenaScene extends Phaser.Scene {
     team: "player" | "enemy",
     fraction: number,
     hitAlpha = 0,
+    turretThreat = false,
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
     const destroyed = fraction <= 0;
+    if (turretThreat && !destroyed) {
+      const defensePulse = 0.5 + 0.5 * Math.sin(this.clock * 4);
+      g.fillStyle(color, 0.012 + defensePulse * 0.012);
+      g.fillCircle(x, y, CORE_TURRET_RANGE);
+      g.lineStyle(1.2, color, 0.13 + defensePulse * 0.08);
+      g.strokeCircle(x, y, CORE_TURRET_RANGE);
+      g.lineStyle(1, 0xffffff, 0.05 + defensePulse * 0.04);
+      g.strokeCircle(x, y, CORE_TURRET_RANGE - 5);
+    }
     if (destroyed && !this.brokenCores.has(team)) {
       this.brokenCores.add(team);
       this.cameras.main.shake(260, 0.0065, true);
