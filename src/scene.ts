@@ -27,7 +27,7 @@ export class ArenaScene extends Phaser.Scene {
     cardId: string | null;
     match: Match;
   } | null = null;
-  private ghost!: Phaser.GameObjects.Image;
+  private deploymentGhosts: Phaser.GameObjects.Image[] = [];
   private aimLabel!: Phaser.GameObjects.Text;
   private clock = 0;
   private reactedEffects = new Set<number>();
@@ -53,10 +53,18 @@ export class ArenaScene extends Phaser.Scene {
   create() {
     this.g = this.add.graphics();
     this.fx = this.add.graphics().setDepth(5);
-    this.ghost = this.add
-      .image(0, 0, "vanguard-player")
-      .setDepth(6)
-      .setVisible(false);
+    const maxDeploymentCount = Math.max(
+      1,
+      ...CARDS.filter((card) => card.kind === "unit").map(
+        (card) => card.count ?? 1,
+      ),
+    );
+    this.deploymentGhosts = Array.from({ length: maxDeploymentCount }, () =>
+      this.add
+        .image(0, 0, "vanguard-player")
+        .setDepth(6)
+        .setVisible(false),
+    );
     this.aimLabel = this.add
       .text(210, 65, "", {
         fontFamily: "monospace",
@@ -132,7 +140,7 @@ export class ArenaScene extends Phaser.Scene {
   private cancelAim() {
     this.aim = null;
     this.pointer = null;
-    this.ghost.setVisible(false);
+    for (const ghost of this.deploymentGhosts) ghost.setVisible(false);
     this.aimLabel.setVisible(false);
   }
 
@@ -1107,7 +1115,7 @@ export class ArenaScene extends Phaser.Scene {
         }
       }
     }
-    this.ghost.setVisible(false);
+    for (const ghost of this.deploymentGhosts) ghost.setVisible(false);
     this.aimLabel.setVisible(false);
     const selected = this.bridge.selected();
     if (selected && this.pointer && this.bridge.running()) {
@@ -1210,18 +1218,22 @@ export class ArenaScene extends Phaser.Scene {
             y < 115 ? y + 70 : y - 65,
           )
           .setVisible(true);
-        if (card.kind === "unit" && deployment.length === 1) {
-          const [point] = deployment;
-          this.ghost
-            .setTexture(`${card.id}-player`)
-            .setPosition(point.x, point.y - 3)
-            .setDisplaySize(
-              card.id === "bulwark" ? 45 : 36,
-              card.id === "bulwark" ? 45 : 36,
-            )
-            .setAlpha(0.55)
-            .setTint(valid ? MINT : CORAL)
-            .setVisible(true);
+        if (card.kind === "unit") {
+          const size =
+            card.id === "bulwark" ? 45 : card.id === "swarm" ? 28 : 36;
+          deployment.forEach((point, index) => {
+            const ghost = this.deploymentGhosts[index];
+            if (!ghost) return;
+            ghost
+              .setTexture(`${card.id}-player`)
+              .setPosition(point.x, point.y - 3)
+              .setDisplaySize(size, size)
+              .setAlpha(point.adjusted ? 0.48 : 0.55)
+              .setTint(
+                valid ? (point.adjusted ? NEUTRAL : MINT) : CORAL,
+              )
+              .setVisible(true);
+          });
         }
       }
       const previewColor = valid ? MINT : CORAL;

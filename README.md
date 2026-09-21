@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.93
+## Current v0.94
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -526,4 +526,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - committed unit deployment still consumes the exact resolved preview coordinates
 - regression coverage verifies both cross-column supply correction and board-edge correction while preserving unadjusted single-unit placements
 - deployment legality, Swarm spacing, unit counts, energy costs and all combat values remain unchanged
+
+## v0.94 changes
+
+- multi-unit deployment aiming now renders one real unit ghost for every member that will be inserted
+- Swarm therefore shows three recognizable drone silhouettes at the exact shared-preview spawn coordinates instead of relying only on abstract range circles
+- preview ghost sizes now match the live battlefield renderer, including the smaller Swarm drones and larger Bulwark silhouette
+- members corrected by supply or board limits use amber ghost tint while ordinary legal formation members remain mint
+- invalid deployment keeps the existing coral feedback across every projected member
+- all deployment ghosts are hidden together on aim cancel, selection change and normal redraw cleanup so stale formation silhouettes cannot remain on screen
+- gameplay, deployment coordinates, unit counts, energy costs and all combat values remain unchanged
 
