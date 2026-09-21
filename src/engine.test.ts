@@ -1066,14 +1066,37 @@ test("Pulse damage preview matches shield and health resolution", () => {
 test("Lancer core bonus comes from its card definition", () => {
   const match = quietMatch();
   const lancer = staticUnit(match, "player", 210, 145, "lancer");
-  lancer.attackCooldown = 0;
   const card = CARDS.find((item) => item.id === "lancer")!;
-  const expectedDamage = lancer.damage * (card.coreDamageMultiplier ?? 1);
+  Object.assign(lancer, {
+    damage: card.damage!,
+    range: card.range!,
+    attackCooldown: 0,
+  });
+  const expectedDamage = card.damage! * (card.coreDamageMultiplier ?? 1);
   const before = match.state.cores.enemy.hp;
 
   match.update(1 / 30);
 
+  assert.equal(expectedDamage, 76.80000000000001);
   assert.equal(before - match.state.cores.enemy.hp, expectedDamage);
   assert.equal(card.coreDamageMultiplier, 1.6);
+});
+
+test("Medic support timing and healing come from card data", () => {
+  const match = quietMatch();
+  const patient = staticUnit(match, "player", 200, 390);
+  const medic = staticUnit(match, "player", 230, 390, "medic");
+  const card = CARDS.find((item) => item.id === "medic")!;
+  patient.hp = 50;
+  medic.healCooldown = 0;
+
+  match.update(1 / 30);
+
+  assert.equal(card.heal, 19);
+  assert.equal(card.supportRange, 100);
+  assert.equal(card.supportInterval, 1.1);
+  assert.equal(card.followDistance, 65);
+  assert.equal(patient.hp, 50 + card.heal!);
+  assert.equal(medic.healCooldown, card.supportInterval);
 });
 

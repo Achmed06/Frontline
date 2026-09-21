@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.96
+## Current v0.97
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -554,4 +554,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the existing Lancer balance remains exactly 48 base damage multiplied by 1.6 when firing at a Core
 - dedicated regression coverage verifies that the real Core HP loss equals the Lancer card's configured multiplier
 - Lancer health, range, speed, fire interval, energy cost and all other combat values remain unchanged
+
+## v0.97 changes
+
+- Medic support healing is now defined on the Medic card: 19 HP, 100 support range, 1.1-second support interval and 65-unit follow distance
+- Medic runtime healing and ally-follow behavior consume those shared card values instead of separate hard-coded numbers
+- dedicated regression coverage verifies the exact configured Medic heal amount and cooldown applied by the real simulation
+- the v0.96 Lancer Core regression is hardened to restore the real 48 damage and 135 range after the static test helper neutralizes combat stats
+- the Lancer regression now proves an actual 76.8 Core hit from the configured 1.6 multiplier instead of allowing a zero-damage false positive
+- Medic and Lancer balance values remain unchanged
 

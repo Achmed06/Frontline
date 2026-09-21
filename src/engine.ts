@@ -30,6 +30,9 @@ export interface CardDefinition {
   hp?: number;
   damage?: number;
   heal?: number;
+  supportRange?: number;
+  supportInterval?: number;
+  followDistance?: number;
   rallyDuration?: number;
   range?: number;
   speed?: number;
@@ -194,6 +197,10 @@ export const CARDS: CardDefinition[] = [
     count: 1,
     interval: 1.15,
     radius: 9,
+    heal: 19,
+    supportRange: 100,
+    supportInterval: 1.1,
+    followDistance: 65,
   },
   {
     id: "pulse",
@@ -1235,6 +1242,7 @@ export class Match {
       unit.shieldTime = Math.max(0, unit.shieldTime - STEP);
       if (unit.shieldTime === 0) unit.shield = 0;
       if (unit.cardId === "medic" && unit.healCooldown <= 0) {
+        const card = CARDS.find((item) => item.id === unit.cardId)!;
         const patient = this.state.units
           .filter(
             (ally) =>
@@ -1242,13 +1250,16 @@ export class Match {
               ally.id !== unit.id &&
               ally.hp > 0 &&
               ally.hp < ally.maxHp &&
-              distance(unit, ally) < 100,
+              distance(unit, ally) < (card.supportRange ?? 0),
           )
           .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || a.id - b.id)[0];
         if (patient) {
-          patient.hp = Math.min(patient.maxHp, patient.hp + 19);
+          patient.hp = Math.min(
+            patient.maxHp,
+            patient.hp + (card.heal ?? 0),
+          );
           this.effect("heal", unit.x, unit.y, unit.team, 0.45, patient);
-          unit.healCooldown = 1.1;
+          unit.healCooldown = card.supportInterval ?? unit.interval;
         }
       }
       let target: Unit | undefined;
@@ -1382,6 +1393,7 @@ export class Match {
       }
     }
     if (unit.cardId === "medic") {
+      const card = CARDS.find((item) => item.id === unit.cardId)!;
       const allies = this.state.units.filter(
         (ally) =>
           ally.team === unit.team &&
@@ -1392,7 +1404,11 @@ export class Match {
       const ally = allies.sort(
         (a, b) => distance(a, unit) - distance(b, unit) || a.id - b.id,
       )[0];
-      if (ally && distance(unit, ally) > 65) return ally;
+      if (
+        ally &&
+        distance(unit, ally) > (card.followDistance ?? card.supportRange ?? 0)
+      )
+        return ally;
     }
     return target;
   }
