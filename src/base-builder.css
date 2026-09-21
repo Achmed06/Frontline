@@ -22,6 +22,7 @@
 .base-plot:hover .plot-ground, .base-plot:focus-visible .plot-ground { stroke: #eff9bc; stroke-width: 3; stroke-opacity: 1; }
 .editing .base-plot.empty .plot-ground { stroke: var(--base-accent); stroke-opacity: .65; stroke-dasharray: 4 3; }
 .base-beacon { animation: baseBeacon 2s ease-in-out infinite; }
+.base-convoy { filter: drop-shadow(0 2px 1px #07191a88); }
 @keyframes baseBeacon { 50% { opacity: .35; } }
 .construction-complete .base-plot.selected { animation: baseBuild .7s ease-out; transform-box: fill-box; transform-origin: bottom; }
 @keyframes baseBuild { 0% { opacity: .3; filter: brightness(2.3); } 100% { opacity: 1; filter: brightness(1); } }
@@ -48,4 +49,7 @@
 .builder-inspector .builder-feedback { min-height: 30px; margin-bottom: 0; font-size: 10px; }
 .builder-inspector .builder-location, .builder-max { font-size: 9px; letter-spacing: .7px; color: var(--base-accent); }
 .builder-fairplay { text-align: center; font-size: 10px; color: #8ba499; margin: 15px; }
-@media (prefers-reduced-motion: reduce) { .base-beacon, .construction-complete .base-plot.selected { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .base-beacon, .construction-complete .base-plot.selected { animation: none; }
+  .base-traffic { display: none; }
+}

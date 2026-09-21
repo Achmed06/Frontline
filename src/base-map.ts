@@ -1,9 +1,11 @@
 import { BASE_PROJECTS, type LearningProgress, type BaseProjectId } from "./headquarters";
 import {
   BASE_PLOT_COUNT,
+  BASE_ROOTS,
   COMMAND_PLOT,
   baseFacing,
   baseRoadEdges,
+  baseRoadRoute,
   resolvedBaseLayout,
   type BaseRoot,
 } from "./base-layout";
@@ -47,6 +49,21 @@ export function baseMapSvg(progress: LearningProgress, accent: string, options: 
         return `<circle cx="${point.x}" cy="${point.y}" r="6" fill="#6d795f" stroke="#303f39" stroke-width="2"/>`;
       }).join("")}</g>`
     : "";
+  const activeRoots = BASE_ROOTS.filter(
+    (root) => layout[root] !== undefined,
+  ).slice(0, 3);
+  const traffic = activeRoots.length
+    ? `<g class="base-traffic" pointer-events="none" aria-hidden="true">${activeRoots.map((root, index) => {
+        const route = baseRoadRoute(layout[root]!);
+        const path = route.map((plot, step) => {
+          const point = plotPosition(plot);
+          return `${step ? "L" : "M"}${point.x} ${point.y}`;
+        }).join("");
+        const duration = (4.4 + route.length * 0.35 + index * 0.55).toFixed(2);
+        const delay = (index * 1.15).toFixed(2);
+        return `<g class="base-convoy"><ellipse cx="0" cy="4" rx="9" ry="4" fill="#0b1e20" opacity=".35"/><rect x="-7" y="-5" width="14" height="9" rx="2" fill="#c9b66f" stroke="#f4e2a4" stroke-width="1"/><rect x="-4" y="-3" width="5" height="4" rx="1" fill="${accent}" opacity=".9"/><circle cx="-4" cy="5" r="2" fill="#1a2d2d"/><circle cx="4" cy="5" r="2" fill="#1a2d2d"/><animateMotion path="${path}" dur="${duration}s" begin="-${delay}s" repeatCount="indefinite" rotate="auto"/></g>`;
+      }).join("")}</g>`
+    : "";
   const plots = Array.from({ length: BASE_PLOT_COUNT }, (_, plot) => plot).sort((a, b) => plotPosition(a).y - plotPosition(b).y || a - b).map(plot => {
     const { x, y } = plotPosition(plot);
     const root = (Object.keys(layout) as BaseRoot[]).find(id => layout[id] === plot);
@@ -76,5 +93,5 @@ export function baseMapSvg(progress: LearningProgress, accent: string, options: 
             : "";
     return `<g class="base-plot ${root ? "occupied" : "empty"} ${selectedPlot ? "selected" : ""}" data-plot="${plot}" transform="translate(${x} ${y})" ${interactive ? `role="button" tabindex="0" aria-label="${name}${root ? (id === root ? ', Stufe 1' : ', Stufe 2') : ''}" aria-pressed="${selectedPlot}"` : ''}><path class="plot-ground" d="M-46 0 0-23 46 0 0 23Z" fill="${root || plot === COMMAND_PLOT ? '#647967' : (plot % 2 ? '#588069' : '#5e876c')}" stroke="${selectedPlot ? accent : '#9bb08a'}" stroke-opacity="${selectedPlot ? 1 : .22}" stroke-width="${selectedPlot ? 3 : 1}"/>${!root && plot !== COMMAND_PLOT ? `<path d="M-6 0h12M0-4v8" stroke="${placing ? accent : '#bdd5aa'}" stroke-width="2" opacity="${placing ? .9 : .35}"/>` : ""}${art}${root ? `<g transform="translate(0 21)"><rect x="-13" y="-5" width="26" height="12" rx="4" fill="#102e32" stroke="${accent}" stroke-width=".6"/><text text-anchor="middle" y="4" fill="#eaf2d6" font-size="8" font-family="sans-serif">${id === root ? 'I' : 'II'}</text></g>` : ""}</g>`;
   }).join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 380" class="base-world" role="group" aria-label="Deine Basis mit 25 Feldern. Gebäude oder freie Bauplätze antippen."><defs><linearGradient id="base-water" x2="0" y2="1"><stop stop-color="#214a55"/><stop offset="1" stop-color="#0e2c36"/></linearGradient></defs><rect width="560" height="380" fill="url(#base-water)"/><path d="m0 280 130-60m-80 130 160-80m225-210 115-55m-95 235 95-45" stroke="#90ccc3" stroke-opacity=".12" stroke-width="2"/><ellipse cx="280" cy="236" rx="268" ry="110" fill="#061e25" opacity=".35"/><path d="M13 197 280 332 547 197v21L280 357 13 218Z" fill="#334847"/><path d="M13 197 280 60 547 197 280 337Z" fill="#91a285" stroke="#bfd0a2" stroke-width="3"/><path d="M34 197 280 72 526 197 280 323Z" fill="#aeae83"/>${roads}${plots}<g fill="#365745" stroke="#799468"><path d="m29 245 12-33 12 33Z"/><path d="m492 125 12-33 12 33Z"/><path d="m473 115 10-26 10 26Z"/><path d="m63 138 11-30 11 30Z"/></g><path d="m244 342 36 18 36-18" fill="none" stroke="${accent}" stroke-width="3" opacity=".65"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 380" class="base-world" role="group" aria-label="Deine Basis mit 25 Feldern. Gebäude oder freie Bauplätze antippen."><defs><linearGradient id="base-water" x2="0" y2="1"><stop stop-color="#214a55"/><stop offset="1" stop-color="#0e2c36"/></linearGradient></defs><rect width="560" height="380" fill="url(#base-water)"/><path d="m0 280 130-60m-80 130 160-80m225-210 115-55m-95 235 95-45" stroke="#90ccc3" stroke-opacity=".12" stroke-width="2"/><ellipse cx="280" cy="236" rx="268" ry="110" fill="#061e25" opacity=".35"/><path d="M13 197 280 332 547 197v21L280 357 13 218Z" fill="#334847"/><path d="M13 197 280 60 547 197 280 337Z" fill="#91a285" stroke="#bfd0a2" stroke-width="3"/><path d="M34 197 280 72 526 197 280 323Z" fill="#aeae83"/>${roads}${traffic}${plots}<g fill="#365745" stroke="#799468"><path d="m29 245 12-33 12 33Z"/><path d="m492 125 12-33 12 33Z"/><path d="m473 115 10-26 10 26Z"/><path d="m63 138 11-30 11 30Z"/></g><path d="m244 342 36 18 36-18" fill="none" stroke="${accent}" stroke-width="3" opacity=".65"/></svg>`;
 }

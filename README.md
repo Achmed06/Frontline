@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.08
+## Current v1.09
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -693,4 +693,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - roads are renderer-only and do not create movement bonuses, build requirements, timers or combat effects
 - regression coverage verifies the exact default network, adjacency of every road segment, deduplication, command-center reachability and relocation updates
 - release: package 1.8.0 / v1.08 / iOS 1.08 (108)
+
+## v1.09 changes
+
+- the headquarters now feels active instead of static: up to three small supply convoys travel continuously between built structures and the command center
+- convoy paths use the exact same deterministic grid routes that generate the v1.08 road network, so vehicles never cut across terrain or ignore a relocated building
+- traffic selection is deterministic from the built base layout and requires no timers, currency or persistent simulation state
+- each convoy receives a stable route-dependent duration and staggered start so traffic does not stack into one visual blob
+- the lobby miniature and full builder both inherit the same live road activity from the saved layout
+- reduced-motion preference removes moving traffic entirely while keeping the road network and buildings visible
+- logistics activity is renderer-only and has no effect on construction, progression or combat
+- regression coverage verifies exact convoy routes, command-center termination, invalid-route rejection and adjacency of every movement segment
+- release: package 1.9.0 / v1.09 / iOS 1.09 (109)
 

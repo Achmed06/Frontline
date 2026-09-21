@@ -5,6 +5,7 @@ import {
   COMMAND_PLOT,
   baseFacing,
   baseRoadEdges,
+  baseRoadRoute,
   resolvedBaseLayout,
 } from './base-layout';
 import {
@@ -157,5 +158,27 @@ test('automatic base roads form one deterministic shared network to command', ()
 
   const moved = { ...layout, depot: 24 };
   assert.notDeepEqual(baseRoadEdges(moved), edges);
+});
+
+test('logistics routes follow the same deterministic road geometry', () => {
+  assert.deepEqual(baseRoadRoute(3), [3, 2, 7, COMMAND_PLOT]);
+  assert.deepEqual(baseRoadRoute(6), [6, 7, COMMAND_PLOT]);
+  assert.deepEqual(baseRoadRoute(18), [18, 17, COMMAND_PLOT]);
+  assert.deepEqual(baseRoadRoute(24), [24, 23, 22, 17, COMMAND_PLOT]);
+  assert.deepEqual(baseRoadRoute(COMMAND_PLOT), []);
+  assert.deepEqual(baseRoadRoute(-1), []);
+
+  for (const start of [3, 6, 18, 24]) {
+    const route = baseRoadRoute(start);
+    assert.equal(route[0], start);
+    assert.equal(route.at(-1), COMMAND_PLOT);
+    for (let index = 0; index < route.length - 1; index++) {
+      const a = route[index];
+      const b = route[index + 1];
+      const rowDistance = Math.abs(Math.floor(a / 5) - Math.floor(b / 5));
+      const colDistance = Math.abs((a % 5) - (b % 5));
+      assert.equal(rowDistance + colDistance, 1);
+    }
+  }
 });
 
