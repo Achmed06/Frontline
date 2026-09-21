@@ -50,6 +50,43 @@ export function baseFacing(
 ): BaseFacing {
   return facings?.[root] === 1 ? 1 : 0;
 }
+
+export type BaseRoadEdge = readonly [number, number];
+
+/** Deterministic road graph from every built root to the fixed command plot. */
+export function baseRoadEdges(layout: BaseLayout): BaseRoadEdge[] {
+  const edges = new Map<string, BaseRoadEdge>();
+  const add = (a: number, b: number) => {
+    const low = Math.min(a, b);
+    const high = Math.max(a, b);
+    edges.set(`${low}-${high}`, [low, high]);
+  };
+  for (const plot of Object.values(layout)) {
+    if (!validPlot(plot)) continue;
+    let current = plot;
+    let row = Math.floor(current / 5);
+    let col = current % 5;
+    const targetRow = Math.floor(COMMAND_PLOT / 5);
+    const targetCol = COMMAND_PLOT % 5;
+    while (col !== targetCol) {
+      const nextCol = col + Math.sign(targetCol - col);
+      const next = row * 5 + nextCol;
+      add(current, next);
+      current = next;
+      col = nextCol;
+    }
+    while (row !== targetRow) {
+      const nextRow = row + Math.sign(targetRow - row);
+      const next = nextRow * 5 + col;
+      add(current, next);
+      current = next;
+      row = nextRow;
+    }
+  }
+  return [...edges.values()].sort(
+    (a, b) => a[0] - b[0] || a[1] - b[1],
+  );
+}
 export function resolvedBaseLayout(built: readonly string[], saved?: BaseLayout): BaseLayout {
   const layout = normalizeBaseLayout(saved, built);
   const used = new Set(Object.values(layout));

@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.07
+## Current v1.08
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -682,4 +682,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - malformed or unbuilt facing entries are removed during normal save normalization
 - regression coverage verifies rotate, rotate-back-to-default, move, upgrade, JSON roundtrip and backup restore behavior
 - release: package 1.7.0 / v1.07 / iOS 1.07 (107)
+
+## v1.08 changes
+
+- the headquarters map now generates an automatic road network from every built structure to the fixed command center
+- roads follow the same 5×5 construction grid as building placement and update immediately when structures are relocated
+- shared route sections are deduplicated into one clean network instead of drawing overlapping duplicate roads
+- route geometry is deterministic and independent of render order, save history or building facing
+- intersections receive compact road nodes while a restrained center marking keeps the isometric base readable behind structures
+- roads are renderer-only and do not create movement bonuses, build requirements, timers or combat effects
+- regression coverage verifies the exact default network, adjacency of every road segment, deduplication, command-center reachability and relocation updates
+- release: package 1.8.0 / v1.08 / iOS 1.08 (108)
 

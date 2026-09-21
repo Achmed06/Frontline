@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeLearning, advanceLearning } from './headquarters';
-import { baseFacing, resolvedBaseLayout } from './base-layout';
+import {
+  COMMAND_PLOT,
+  baseFacing,
+  baseRoadEdges,
+  resolvedBaseLayout,
+} from './base-layout';
 import {
   canConstructOnPlot,
   canMoveBaseBuilding,
@@ -108,5 +113,49 @@ test('building facing is cosmetic, persistent and only valid for built roots', (
     facings: { depot: 1, training: 1, relay: 0, bogus: 1 },
   });
   assert.deepEqual(sanitized.facings, { depot: 1 });
+});
+
+test('automatic base roads form one deterministic shared network to command', () => {
+  const layout = resolvedBaseLayout(
+    ['depot', 'training', 'relay', 'workshop', 'honor'],
+  );
+  const edges = baseRoadEdges(layout);
+  assert.deepEqual(edges, [
+    [2, 3],
+    [2, 7],
+    [6, 7],
+    [7, 8],
+    [7, 12],
+    [12, 17],
+    [16, 17],
+    [17, 18],
+  ]);
+
+  const edgeKeys = new Set(edges.map(([a, b]) => `${a}-${b}`));
+  assert.equal(edgeKeys.size, edges.length);
+  for (const [a, b] of edges) {
+    const rowDistance = Math.abs(Math.floor(a / 5) - Math.floor(b / 5));
+    const colDistance = Math.abs((a % 5) - (b % 5));
+    assert.equal(rowDistance + colDistance, 1);
+  }
+
+  for (const start of Object.values(layout)) {
+    const seen = new Set([start]);
+    const queue = [start];
+    while (queue.length) {
+      const current = queue.shift()!;
+      for (const [a, b] of edges) {
+        const next = a === current ? b : b === current ? a : undefined;
+        if (next !== undefined && !seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    assert.equal(seen.has(COMMAND_PLOT), true);
+  }
+
+  const moved = { ...layout, depot: 24 };
+  assert.notDeepEqual(baseRoadEdges(moved), edges);
 });
 
