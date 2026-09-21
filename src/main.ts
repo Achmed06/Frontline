@@ -71,6 +71,7 @@ import {
   MATCH_DURATION,
   OVERTIME_DURATION,
   ENERGY_CAP,
+  ENERGY_RATE,
   TRAINING_CONTROL,
   type CardId,
 } from "./engine";
@@ -235,10 +236,23 @@ function selectCard(id: string) {
   selected = selected === id ? null : id;
   updateSelection();
   sound.play("select");
-  if (selected && match.state.energy.player < card.cost)
+  if (selected && match.state.energy.player < card.cost) {
+    const missing = card.cost - match.state.energy.player;
+    const wait = missing / ENERGY_RATE;
     showToast(
-      `Noch ${Math.ceil(card.cost - match.state.energy.player)} Energie nötig.`,
+      `Noch ${Math.ceil(missing)} Energie · bereit in ${energyWaitLabel(wait)}s.`,
     );
+  }
+}
+function selectedCardHint(card: (typeof CARDS)[number] | undefined): string {
+  if (!card) return "Karte wählen → halten, zielen, loslassen";
+  return card.kind === "ability"
+    ? "Halten zum Zielen · loslassen zum Wirken"
+    : card.description;
+}
+function energyWaitLabel(seconds: number): string {
+  const rounded = Math.max(0.1, Math.ceil(seconds * 10) / 10);
+  return rounded.toFixed(1).replace(".", ",");
 }
 function updateSelection() {
   for (const [id, b] of cardButtons) {
@@ -249,11 +263,9 @@ function updateSelection() {
   el("selected-name").textContent = c
     ? `${c.name} · ${c.role}`
     : "DEIN EINSATZDECK";
-  el("selected-hint").textContent = c
-    ? c.kind === "ability"
-      ? "Halten zum Zielen · loslassen zum Wirken"
-      : c.description
-    : "Karte wählen → halten, zielen, loslassen";
+  const selectedHint = el("selected-hint");
+  selectedHint.textContent = selectedCardHint(c);
+  selectedHint.classList.remove("waiting-energy");
   el("arena-tip").textContent = c
     ? c.kind === "ability"
       ? "FÄHIGKEIT: ZIEL ANTIPPEN"
@@ -724,6 +736,16 @@ function updateHud(force = false) {
   }
   el("energy").textContent = String(Math.floor(s.energy.player));
   el("energy-fill").style.width = `${(s.energy.player / ENERGY_CAP) * 100}%`;
+  const selectedCard = CARDS.find((card) => card.id === selected);
+  const selectedHint = el("selected-hint");
+  if (live && selectedCard && s.energy.player < selectedCard.cost) {
+    const wait = (selectedCard.cost - s.energy.player) / ENERGY_RATE;
+    selectedHint.textContent = `ENERGIE IN ${energyWaitLabel(wait)}s`;
+    selectedHint.classList.add("waiting-energy");
+  } else {
+    selectedHint.textContent = selectedCardHint(selectedCard);
+    selectedHint.classList.remove("waiting-energy");
+  }
   el("territory-count").textContent =
     `${s.points.filter((p) => p.owner === "player").length} / 9 PUNKTE`;
   if (!selected) {

@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.80
+## Current v0.81
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -384,3 +384,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - enemy ATLAS shields now use the enemy team color instead of incorrectly appearing in the player's mint color
 - rally keeps its neutral gold tempo language and slowing keeps its blue control language
 - status pips are renderer-only and do not alter shield strength, movement, attack speed, slow duration or any combat rule
+
+
+## v0.81 changes
+
+- selecting an unaffordable card now shows a live energy-ready countdown directly in the persistent selection hint
+- the countdown derives from the real current energy value, card cost and the existing 0.72 energy-per-second regeneration rate
+- the hint updates continuously and automatically returns to the card's normal tactical description as soon as the card becomes affordable
+- the initial insufficient-energy toast now also reports the estimated ready time instead of only the rounded missing-energy amount
+- the waiting state receives a restrained amber emphasis so it reads as resource timing rather than an error
+- energy generation, card costs, deployment validation and all combat rules remain unchanged

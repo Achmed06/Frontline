@@ -508,6 +508,11 @@ h1 em {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.selection-info span.waiting-energy {
+  color: #e2c06d;
+  font-weight: 700;
+  letter-spacing: 0.45px;
+}
 .cards {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
