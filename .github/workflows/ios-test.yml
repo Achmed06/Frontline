@@ -2,7 +2,7 @@
 name: iPhone test build
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "codex/frontline-v104-turret-targets"]
     paths:
       - "src/**"
       - "public/**"

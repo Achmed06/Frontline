@@ -1,3 +1,5 @@
+import { renderBaseBuilder } from "./base-builder";
+import { baseMapSvg } from "./base-map";
 import { renderBackupMenu } from "./save-backup-menu";
 import { selectedCardHint } from "./card-hints";
 import { initializeStore, renderStore, supporterOwned } from "./store";
@@ -21,11 +23,9 @@ import {
   completedLessons,
   styleUnlocked,
   advanceLearning,
-  headquartersSvg,
   BASE_PROJECTS,
   baseProjectBuilt,
   baseProjectProgress,
-  buildBaseProject,
   type BaseProjectId,
   type BaseProjectMetrics,
   type BaseStyle,
@@ -1174,15 +1174,8 @@ function updateHeadquarters() {
   const next = BASE_STAGES[stage + 1];
   const displayStyle = styleUnlocked(learningProgress.style, learningProgress, wins, supporterOwned) ? learningProgress.style : "field";
   const style = BASE_STYLES[displayStyle];
-  const projects = learningProgress.projects ?? [];
-  const garrisonIds = headquartersGarrison().map((entry) => entry.card.id);
   el("lobby").dataset.baseStyle = displayStyle;
-  el("hq-mini-art").innerHTML = headquartersSvg(
-    stage,
-    style.color,
-    projects,
-    garrisonIds,
-  );
+  el("hq-mini-art").innerHTML = baseMapSvg(learningProgress, style.color, { interactive: false, stage });
   el("hq-name").textContent = BASE_STAGES[stage].name;
   el("hq-progress-fill").style.width = `${next ? Math.min(100, ((wins - BASE_STAGES[stage].wins) / (next.wins - BASE_STAGES[stage].wins)) * 100) : 100}%`;
   const readyProjects = BASE_PROJECTS.filter(
@@ -1207,17 +1200,35 @@ function updateHeadquarters() {
     LESSONS.find((l) => learningProgress.counts[l.id] < l.goal)?.name ??
     "Aurora freigeschaltet · Jetzt ausrüsten";
 }
-function openHeadquarters() {
+function openHeadquarters(initial?: BaseProjectId) {
+  if (active) return;
+  const metrics = headquartersMetrics();
+  const style = styleUnlocked(learningProgress.style, learningProgress, metrics.wins, supporterOwned) ? learningProgress.style : "field";
+  showModal("");
+  renderBaseBuilder(el("modal-content"), {
+    progress: () => learningProgress,
+    metrics,
+    accent: BASE_STYLES[style].color,
+    initial,
+    commit: next => {
+      if (!saveLearning(next)) return false;
+      learningProgress = next;
+      updateHeadquarters();
+      return true;
+    },
+    close: () => { el("modal").hidden = true; el("headquarters").focus(); },
+    details: openHeadquartersDetails,
+  });
+}
+function openHeadquartersDetails() {
   if (active) return;
   const metrics = headquartersMetrics();
   const wins = metrics.wins;
   const stage = baseStage(wins);
   const nextStage = BASE_STAGES[stage + 1];
   const displayStyle = styleUnlocked(learningProgress.style, learningProgress, wins, supporterOwned) ? learningProgress.style : "field";
-  const projects = learningProgress.projects ?? [];
-  const garrisonIds = headquartersGarrison().map((entry) => entry.card.id);
   showModal(
-    `<div class="eyebrow">DEINE BLEIBENDE FRONT</div><h2>${BASE_STAGES[stage].name}</h2><div class="hq-art">${headquartersSvg(stage, BASE_STYLES[displayStyle].color, projects, garrisonIds)}</div><p>${BASE_STAGES[stage].description}</p>${nextStage ? `<details class="hq-next-preview"><summary>NÄCHSTER AUSBAU · ${nextStage.name} · Noch ${nextStage.wins - wins} ${nextStage.wins - wins === 1 ? "Sieg" : "Siege"}</summary><div class="hq-art">${headquartersSvg(stage + 1, BASE_STYLES[displayStyle].color, projects, garrisonIds)}</div><p>${nextStage.description}</p><small>VORSCHAU · ${nextStage.wins} verschiedene Kampagneneinsätze gewinnen.</small></details>` : '<div class="learning-reward"><b>KOMMANDOZITADELLE VOLLSTÄNDIG</b><p>Alle Ausbaustufen erreicht. Deine Basis zeigt deinen gesamten Feldzug.</p></div>'}<p>Deine Basis wächst auf zwei Arten: Feldzugstufen entstehen durch verschiedene Siege. Bauprojekte errichtest du selbst, sobald du ihre Spielziele erreicht hast. Alles bleibt kosmetisch und verändert keine Kampfwerte.</p><div class="hq-stages">${BASE_STAGES.map((item, i) => `<span class="${i <= stage ? "built" : ""}"><b>${i <= stage ? "✓" : item.wins}</b>${item.name}</span>`).join("")}</div><h3>Bauprojekte</h3><div class="hq-projects">${BASE_PROJECTS.map((project, index) => { const state = baseProjectProgress(project.id, metrics); const built = baseProjectBuilt(learningProgress, project.id); const prerequisite = project.requires as BaseProjectId | null; const prerequisiteBuilt = prerequisite === null || baseProjectBuilt(learningProgress, prerequisite); const ready = state.ready && prerequisiteBuilt; const prerequisiteName = prerequisite === null ? "" : BASE_PROJECTS.find((item) => item.id === prerequisite)?.name ?? prerequisite; return `<article data-base-project-card="${project.id}" class="hq-project ${built ? "built" : ready ? "ready" : "locked"}"><div class="hq-project-head"><span>${String(index + 1).padStart(2, "0")}</span><b>${built ? "GEBAUT" : ready ? "BEREIT ZUM BAUEN" : prerequisiteBuilt ? "PROJEKT GESPERRT" : "BAUKETTE GESPERRT"}</b></div><h4>${project.name}</h4><p>${project.description}</p><div class="hq-project-progress"><i style="width:${Math.min(100, (state.current / state.goal) * 100)}%"></i></div><small>${Math.min(state.current, state.goal)}/${state.goal} ${baseMetricLabel(project.metric)}${prerequisiteName ? ` · Benötigt ${prerequisiteName}` : ""}</small>${built ? '<button class="secondary" disabled>GEBAUT ✓</button>' : ready ? `<button class="primary" data-base-project="${project.id}">JETZT BAUEN ↗</button>` : `<button class="secondary" disabled>${prerequisiteBuilt ? "NOCH NICHT BEREIT" : `ERST ${prerequisiteName.toUpperCase()} BAUEN`}</button>`}</article>`; }).join("")}</div><h3>Deine Garnison</h3>${baseProjectBuilt(learningProgress, "training") ? (() => { const garrison = headquartersGarrison(); return garrison.length ? `<div class="hq-garrison">${garrison.map(({ card, mastery: points }) => `<article data-mastery="${masteryRank(points).frame}"><div>${unitSvg(card.id)}</div><b>${card.name}</b><small>${masteryLabel(mastery, card.id)}</small></article>`).join("")}</div><p class="hq-garrison-note">Deine meistgenutzten Einheiten trainieren hier. Die Anzeige folgt deiner Mastery und verändert keine Kampfwerte.</p>` : '<div class="hq-garrison-empty"><b>TRAININGSPLATZ BEREIT</b><p>Setze Einheiten in Gefechten häufiger ein. Sobald sie Mastery sammeln, erscheinen sie hier.</p></div>'; })() : '<div class="hq-garrison-empty locked"><b>GARNISON NOCH GESPERRT</b><p>Baue zuerst den Trainingsplatz. Danach ziehen deine gemeisterten Einheiten sichtbar in die Basis ein.</p></div>'}<h3>Ehrenhof</h3>${baseProjectBuilt(learningProgress, "honor") ? (() => { const honors = baseHonors(campaignProgress, dailyHistory, mastery); return `<div class="hq-honors">${honors.map((honor, index) => `<article class="${honor.unlocked ? "unlocked" : "locked"}"><span>${honor.unlocked ? "◆" : String(index + 1).padStart(2, "0")}</span><div><b>${honor.name}</b><p>${honor.detail}</p><small>${honor.current}/${honor.goal}</small></div></article>`).join("")}</div><p class="hq-honor-note">${honors.filter((honor) => honor.unlocked).length}/${honors.length} Auszeichnungen freigeschaltet. Trophäen sind rein kosmetisch.</p>`; })() : '<div class="hq-garrison-empty locked"><b>EHRENHOF NOCH NICHT GEBAUT</b><p>Errichte zuerst den Ehrenhof. Danach werden große Feldzug-, Tagesfront- und Mastery-Erfolge hier dauerhaft sichtbar.</p></div>'}<h3>Deine Gestaltung</h3><div class="hq-styles">${(Object.keys(BASE_STYLES) as BaseStyle[]).map((id) => `<button data-base-style="${id}" class="${id === learningProgress.style ? "selected" : ""}" ${styleUnlocked(id, learningProgress, wins, supporterOwned) ? "" : "disabled"}><i style="background:${BASE_STYLES[id].color}"></i><b>${BASE_STYLES[id].name}</b><small>${styleUnlocked(id, learningProgress, wins, supporterOwned) ? (id === learningProgress.style ? "AUSGERÜSTET" : "AUSRÜSTEN") : BASE_STYLES[id].requirement}</small></button>`).join("")}</div><button id="hq-store" class="primary">KOMMANDOGOLD ANSEHEN</button><button id="hq-close" class="secondary">Zur Basis</button>`,
+    `<div class="eyebrow">DEINE BLEIBENDE FRONT</div><h2>${BASE_STAGES[stage].name}</h2><div class="hq-art">${baseMapSvg(learningProgress, BASE_STYLES[displayStyle].color, { interactive: false, stage })}</div><p>${BASE_STAGES[stage].description}</p>${nextStage ? `<details class="hq-next-preview"><summary>NÄCHSTER AUSBAU · ${nextStage.name} · Noch ${nextStage.wins - wins} ${nextStage.wins - wins === 1 ? "Sieg" : "Siege"}</summary><div class="hq-art">${baseMapSvg(learningProgress, BASE_STYLES[displayStyle].color, { interactive: false, stage: stage + 1 })}</div><p>${nextStage.description}</p><small>VORSCHAU · ${nextStage.wins} verschiedene Kampagneneinsätze gewinnen.</small></details>` : '<div class="learning-reward"><b>KOMMANDOZITADELLE VOLLSTÄNDIG</b><p>Alle Ausbaustufen erreicht. Deine Basis zeigt deinen gesamten Feldzug.</p></div>'}<p>Deine Basis wächst auf zwei Arten: Feldzugstufen entstehen durch verschiedene Siege. Bauprojekte errichtest du selbst, sobald du ihre Spielziele erreicht hast. Alles bleibt kosmetisch und verändert keine Kampfwerte.</p><div class="hq-stages">${BASE_STAGES.map((item, i) => `<span class="${i <= stage ? "built" : ""}"><b>${i <= stage ? "✓" : item.wins}</b>${item.name}</span>`).join("")}</div><h3>Bauprojekte</h3><div class="hq-projects">${BASE_PROJECTS.map((project, index) => { const state = baseProjectProgress(project.id, metrics); const built = baseProjectBuilt(learningProgress, project.id); const prerequisite = project.requires as BaseProjectId | null; const prerequisiteBuilt = prerequisite === null || baseProjectBuilt(learningProgress, prerequisite); const ready = state.ready && prerequisiteBuilt; const prerequisiteName = prerequisite === null ? "" : BASE_PROJECTS.find((item) => item.id === prerequisite)?.name ?? prerequisite; return `<article data-base-project-card="${project.id}" class="hq-project ${built ? "built" : ready ? "ready" : "locked"}"><div class="hq-project-head"><span>${String(index + 1).padStart(2, "0")}</span><b>${built ? "GEBAUT" : ready ? "BEREIT ZUM BAUEN" : prerequisiteBuilt ? "PROJEKT GESPERRT" : "BAUKETTE GESPERRT"}</b></div><h4>${project.name}</h4><p>${project.description}</p><div class="hq-project-progress"><i style="width:${Math.min(100, (state.current / state.goal) * 100)}%"></i></div><small>${Math.min(state.current, state.goal)}/${state.goal} ${baseMetricLabel(project.metric)}${prerequisiteName ? ` · Benötigt ${prerequisiteName}` : ""}</small>${built ? '<button class="secondary" disabled>GEBAUT ✓</button>' : ready ? `<button class="primary" data-base-project="${project.id}">JETZT BAUEN ↗</button>` : `<button class="secondary" disabled>${prerequisiteBuilt ? "NOCH NICHT BEREIT" : `ERST ${prerequisiteName.toUpperCase()} BAUEN`}</button>`}</article>`; }).join("")}</div><h3>Deine Garnison</h3>${baseProjectBuilt(learningProgress, "training") ? (() => { const garrison = headquartersGarrison(); return garrison.length ? `<div class="hq-garrison">${garrison.map(({ card, mastery: points }) => `<article data-mastery="${masteryRank(points).frame}"><div>${unitSvg(card.id)}</div><b>${card.name}</b><small>${masteryLabel(mastery, card.id)}</small></article>`).join("")}</div><p class="hq-garrison-note">Deine meistgenutzten Einheiten trainieren hier. Die Anzeige folgt deiner Mastery und verändert keine Kampfwerte.</p>` : '<div class="hq-garrison-empty"><b>TRAININGSPLATZ BEREIT</b><p>Setze Einheiten in Gefechten häufiger ein. Sobald sie Mastery sammeln, erscheinen sie hier.</p></div>'; })() : '<div class="hq-garrison-empty locked"><b>GARNISON NOCH GESPERRT</b><p>Baue zuerst den Trainingsplatz. Danach ziehen deine gemeisterten Einheiten sichtbar in die Basis ein.</p></div>'}<h3>Ehrenhof</h3>${baseProjectBuilt(learningProgress, "honor") ? (() => { const honors = baseHonors(campaignProgress, dailyHistory, mastery); return `<div class="hq-honors">${honors.map((honor, index) => `<article class="${honor.unlocked ? "unlocked" : "locked"}"><span>${honor.unlocked ? "◆" : String(index + 1).padStart(2, "0")}</span><div><b>${honor.name}</b><p>${honor.detail}</p><small>${honor.current}/${honor.goal}</small></div></article>`).join("")}</div><p class="hq-honor-note">${honors.filter((honor) => honor.unlocked).length}/${honors.length} Auszeichnungen freigeschaltet. Trophäen sind rein kosmetisch.</p>`; })() : '<div class="hq-garrison-empty locked"><b>EHRENHOF NOCH NICHT GEBAUT</b><p>Errichte zuerst den Ehrenhof. Danach werden große Feldzug-, Tagesfront- und Mastery-Erfolge hier dauerhaft sichtbar.</p></div>'}<h3>Deine Gestaltung</h3><div class="hq-styles">${(Object.keys(BASE_STYLES) as BaseStyle[]).map((id) => `<button data-base-style="${id}" class="${id === learningProgress.style ? "selected" : ""}" ${styleUnlocked(id, learningProgress, wins, supporterOwned) ? "" : "disabled"}><i style="background:${BASE_STYLES[id].color}"></i><b>${BASE_STYLES[id].name}</b><small>${styleUnlocked(id, learningProgress, wins, supporterOwned) ? (id === learningProgress.style ? "AUSGERÜSTET" : "AUSRÜSTEN") : BASE_STYLES[id].requirement}</small></button>`).join("")}</div><button id="hq-store" class="primary">KOMMANDOGOLD ANSEHEN</button><button id="hq-close" class="secondary">Zur Basis</button>`,
   );
   el("modal-content")
     .querySelectorAll<HTMLButtonElement>("[data-base-project]")
@@ -1226,23 +1237,7 @@ function openHeadquarters() {
         const id = button.dataset.baseProject as BaseProjectId;
         const project = BASE_PROJECTS.find((item) => item.id === id);
         if (!project) return;
-        const next = buildBaseProject(learningProgress, id, headquartersMetrics());
-        if (next === learningProgress) return;
-        learningProgress = next;
-        const saved = saveLearning(learningProgress);
-        updateHeadquarters();
-        openHeadquarters();
-        el("modal-content")
-          .querySelector<HTMLElement>(`[data-base-project-card="${id}"]`)
-          ?.classList.add("just-built");
-        el("modal-content")
-          .querySelector<HTMLElement>(".hq-art")
-          ?.classList.add("build-flash");
-        showToast(
-          saved
-            ? `${project.name} gebaut. Deine Basis hat sich verändert.`
-            : `${project.name} für diese Sitzung gebaut.`,
-        );
+        openHeadquarters(id);
       };
     });
   el("modal-content")
@@ -1260,7 +1255,7 @@ function openHeadquarters() {
     });
   el("hq-store").onclick = () => {
     showModal("");
-    renderStore(el("modal-content"), stage, openHeadquarters, () => {
+    renderStore(el("modal-content"), stage, () => openHeadquarters(), () => {
       if (!supporterOwned) return;
       learningProgress.style = "supporter";
       saveLearning(learningProgress);
@@ -1295,7 +1290,7 @@ el("save-backup").onclick = () => {
   renderBackupMenu(el("modal-content"), () => { el("modal").hidden = true; el("save-backup").focus(); });
   el("backup-export").focus({ preventScroll: true });
 };
-el("headquarters").onclick = openHeadquarters;
+el("headquarters").onclick = () => openHeadquarters();
 el("learning").onclick = openLearning;
 function renderCommander(id: CommanderId) {
   const definition = COMMANDERS[id];

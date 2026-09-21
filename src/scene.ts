@@ -5,6 +5,8 @@ import {
   Match,
   CARDS,
   CORE_TURRET_RANGE,
+  coreTurretTarget,
+  type Unit,
 } from "./engine";
 import { unitSvg } from "./art";
 
@@ -682,31 +684,15 @@ export class ArenaScene extends Phaser.Scene {
         Math.abs(effect.x - s.cores.player.x) < 2 &&
         Math.abs(effect.y - s.cores.player.y) < 2,
     );
-    const enemyCoreThreat = s.units.some(
-      (unit) =>
-        unit.team === "player" &&
-        unit.hp > 0 &&
-        Math.hypot(
-          unit.x - s.cores.enemy.x,
-          unit.y - s.cores.enemy.y,
-        ) <= CORE_TURRET_RANGE,
-    );
-    const playerCoreThreat = s.units.some(
-      (unit) =>
-        unit.team === "enemy" &&
-        unit.hp > 0 &&
-        Math.hypot(
-          unit.x - s.cores.player.x,
-          unit.y - s.cores.player.y,
-        ) <= CORE_TURRET_RANGE,
-    );
+    const enemyCoreTarget = coreTurretTarget(s, "enemy");
+    const playerCoreTarget = coreTurretTarget(s, "player");
     this.drawCore(
       210,
       35,
       "enemy",
       s.cores.enemy.hp / s.cores.enemy.maxHp,
       enemyCoreHit ? enemyCoreHit.life / enemyCoreHit.maxLife : 0,
-      enemyCoreThreat,
+      enemyCoreTarget,
     );
     this.drawCore(
       210,
@@ -714,7 +700,7 @@ export class ArenaScene extends Phaser.Scene {
       "player",
       s.cores.player.hp / s.cores.player.maxHp,
       playerCoreHit ? playerCoreHit.life / playerCoreHit.maxLife : 0,
-      playerCoreThreat,
+      playerCoreTarget,
     );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
@@ -1593,12 +1579,12 @@ export class ArenaScene extends Phaser.Scene {
     team: "player" | "enemy",
     fraction: number,
     hitAlpha = 0,
-    turretThreat = false,
+    turretTarget?: Unit,
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
     const destroyed = fraction <= 0;
-    if (turretThreat && !destroyed) {
+    if (turretTarget && !destroyed) {
       const defensePulse = 0.5 + 0.5 * Math.sin(this.clock * 4);
       g.fillStyle(color, 0.012 + defensePulse * 0.012);
       g.fillCircle(x, y, CORE_TURRET_RANGE);
@@ -1606,6 +1592,20 @@ export class ArenaScene extends Phaser.Scene {
       g.strokeCircle(x, y, CORE_TURRET_RANGE);
       g.lineStyle(1, 0xffffff, 0.05 + defensePulse * 0.04);
       g.strokeCircle(x, y, CORE_TURRET_RANGE - 5);
+      // A thin sight line and open brackets distinguish targeting from shields.
+      g.lineStyle(1, color, 0.24);
+      g.lineBetween(x, y, turretTarget.x, turretTarget.y);
+      const fx = this.fx;
+      const r = Math.max(24, turretTarget.radius + 10);
+      fx.lineStyle(2, color, 0.65 + defensePulse * 0.2);
+      for (const sx of [-1, 1]) {
+        for (const sy of [-1, 1]) {
+          const tx = turretTarget.x + sx * r;
+          const ty = turretTarget.y + sy * r;
+          fx.lineBetween(tx, ty, tx - sx * 7, ty);
+          fx.lineBetween(tx, ty, tx, ty - sy * 7);
+        }
+      }
     }
     if (destroyed && !this.brokenCores.has(team)) {
       this.brokenCores.add(team);

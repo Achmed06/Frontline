@@ -14,6 +14,7 @@ import {
   CORE_TURRET_DAMAGE,
   CORE_TURRET_INTERVAL,
   CORE_TURRET_RANGE,
+  coreTurretTarget,
   ENERGY_CAP,
   ENERGY_RATE,
   Match,
@@ -1267,3 +1268,49 @@ test("core turret range, damage and fire interval come from shared constants", (
   assert.equal(CORE_TURRET_INTERVAL, 1);
 });
 
+
+
+test("turret preview and fire select the nearest live enemy with stable ties", () => {
+  const match = quietMatch();
+  const core = match.state.cores.player;
+  const first = staticUnit(match, "enemy", core.x - 40, core.y - 80);
+  match.state.energy.enemy = ENERGY_CAP;
+  const second = staticUnit(match, "enemy", core.x + 40, core.y - 80);
+  const ally = staticUnit(match, "player", core.x, core.y - 50);
+  const dead = { ...first, id: 999, x: core.x, y: core.y - 60, hp: 0 };
+  match.state.units = [second, dead, ally, first];
+  assert.equal(coreTurretTarget(match.state, "player"), first);
+  const before = first.hp;
+  match.update(1 / 30);
+  assert.equal(first.hp, before - CORE_TURRET_DAMAGE);
+  assert.equal(second.hp, second.maxHp);
+
+  first.hp = 0;
+  assert.equal(coreTurretTarget(match.state, "player"), second);
+  second.y = core.y - CORE_TURRET_RANGE - 1;
+  assert.equal(coreTurretTarget(match.state, "player"), undefined);
+  second.x = core.x;
+  second.y = core.y - CORE_TURRET_RANGE;
+  assert.equal(coreTurretTarget(match.state, "player"), second);
+  match.state.phase = "ended";
+  assert.equal(coreTurretTarget(match.state, "player"), undefined);
+});
+
+test("a Core destroyed by a unit cannot fire back later in the same tick", () => {
+  for (const team of ["player", "enemy"] as const) {
+    const match = quietMatch();
+    const defender = team === "player" ? "enemy" : "player";
+    const core = match.state.cores[defender];
+    const unit = staticUnit(match, team, core.x, defender === "enemy" ? 90 : 470);
+    Object.assign(unit, { damage: 50, range: 100, attackCooldown: 0 });
+    core.hp = 1;
+    const before = unit.hp;
+    match.update(1 / 30);
+    assert.equal(core.hp, 0);
+    assert.equal(match.state.winner, team);
+    assert.equal(unit.hp, before);
+    assert.equal(coreTurretTarget(match.state, defender), undefined);
+    assert.equal(match.state.effects.some(effect =>
+      effect.type === "shot" && effect.x === core.x && effect.y === core.y), false);
+  }
+});

@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.03
+## Current v1.05
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -638,3 +638,25 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - release version is now v1.03 / package 1.3.0 / iOS 1.03 (103)
 - no Core turret balance values changed
 
+
+## v1.04 changes
+
+- Core turrets now share one deterministic target selector with the arena renderer
+- a thin sight line and open corner brackets reveal the closest live enemy currently targeted by each Core, including during reload
+- target selection ignores allies, defeated units, destroyed Cores and ended matches; equal-distance ties use the unit ID
+- destroyed Cores can no longer retaliate after taking lethal unit damage in the same simulation tick
+- regression coverage checks actual fire against the preview target, ties, retargeting, range boundaries and lethal Core attacks for both teams
+- turret damage, range and fire interval remain unchanged
+- release version is v1.04 / package 1.4.0 / iOS 1.04 (104)
+
+## v1.05 changes
+
+- Headquarters now opens a mobile isometric construction map with 25 plots, a fixed central command building, zoom and selectable structures
+- Five building families can be placed on free plots, relocated and expanded into their existing second-tier projects
+- Buildings have distinct original vector artwork; the command structure gains visible additions with campaign stage
+- Every placement and relocation requires confirmation; occupied plots and the command plot cannot be built over
+- Existing campaign, mastery and learning requirements still unlock construction, with no new currency, timers or combat advantages
+- Saved layouts persist across matches and portable backups; older saves receive a collision-free default arrangement without losing projects
+- If saving fails, construction is not committed in memory and the existing base is preserved
+- The lobby miniature now shows the actual saved arrangement
+- Release: package 1.5.0 / v1.05 / iOS 1.05 (105)

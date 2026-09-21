@@ -445,6 +445,24 @@ export interface MatchState {
   };
 }
 
+/** The next turret target, shared by combat and the arena targeting indicator. */
+export function coreTurretTarget(state: MatchState, team: Team): Unit | undefined {
+  const core = state.cores[team];
+  if (core.hp <= 0 || state.phase === "ended") return undefined;
+  let target: Unit | undefined;
+  let nearest = Infinity;
+  for (const unit of state.units) {
+    if (unit.team === team || unit.hp <= 0) continue;
+    const d = distance(core, unit);
+    if (d > CORE_TURRET_RANGE) continue;
+    if (d < nearest || (d === nearest && (!target || unit.id < target.id))) {
+      target = unit;
+      nearest = d;
+    }
+  }
+  return target;
+}
+
 export interface PlayResult {
   ok: boolean;
   message: string;
@@ -1471,16 +1489,7 @@ export class Match {
       this.coreCooldown[team] = Math.max(0, this.coreCooldown[team] - STEP);
       if (this.coreCooldown[team] > 0) continue;
       const core = this.state.cores[team];
-      const target = this.state.units
-        .filter(
-          (unit) =>
-            unit.team !== team &&
-            unit.hp > 0 &&
-            distance(core, unit) <= CORE_TURRET_RANGE,
-        )
-        .sort(
-          (a, b) => distance(core, a) - distance(core, b) || a.id - b.id,
-        )[0];
+      const target = coreTurretTarget(this.state, team);
       if (target) {
         this.damageUnit(target, CORE_TURRET_DAMAGE, team);
         this.effect("shot", core.x, core.y, team, 0.25, target);

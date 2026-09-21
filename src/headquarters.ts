@@ -1,3 +1,4 @@
+import { normalizeBaseLayout, type BaseLayout } from "./base-layout";
 /** New permanent learning rewards; headquarters growth derives from campaign wins. */
 import type { CardId, MatchState } from "./engine";
 export const LESSONS = [
@@ -122,6 +123,7 @@ export type LearningProgress = {
   style: BaseStyle;
   lastMatch: string;
   projects?: BaseProjectId[];
+  layout?: BaseLayout;
 };
 export const BASE_STAGES = [
   {
@@ -218,6 +220,8 @@ export function normalizeLearning(value: unknown): LearningProgress {
         valid.has(id),
       );
   }
+  const layout = normalizeBaseLayout(source.layout, result.projects ?? []);
+  if (Object.keys(layout).length) result.layout = layout;
   return result;
 }
 export function completedLessons(progress: LearningProgress): number {
