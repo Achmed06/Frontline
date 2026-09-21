@@ -36,8 +36,10 @@ export type CommanderId = keyof typeof COMMANDERS;
 export type CommanderUnitState = {
   team: "player" | "enemy";
   hp: number;
+  maxHp: number;
   shieldTime: number;
   rallyTime: number;
+  slowTime: number;
 };
 export function isCommanderId(value: unknown): value is CommanderId {
   return value === "atlas" || value === "lyra" || value === "nova";
@@ -59,6 +61,20 @@ export function commanderActiveSeconds(
   return active;
 }
 
+export function commanderHasValidTarget(
+  commander: CommanderId,
+  units: readonly CommanderUnitState[],
+  team: "player" | "enemy" = "player",
+): boolean {
+  return units.some((unit) => {
+    if (unit.team !== team || unit.hp <= 0) return false;
+    if (commander === "atlas") return true;
+    if (commander === "nova")
+      return unit.rallyTime < COMMANDERS.nova.duration;
+    return unit.hp < unit.maxHp || unit.slowTime > 0;
+  });
+}
+
 export function commanderStatusText(
   commander: CommanderId,
   cooldown: number,
@@ -68,5 +84,7 @@ export function commanderStatusText(
   const active = commanderActiveSeconds(commander, units, team);
   if (active > 0) return `AKTIV ${Math.ceil(active)}s`;
   if (cooldown > 0) return `${Math.ceil(cooldown)}s`;
-  return "BEREIT";
+  return commanderHasValidTarget(commander, units, team)
+    ? "BEREIT"
+    : "KEIN ZIEL";
 }

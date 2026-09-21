@@ -35,6 +35,7 @@ import { baseHonors } from "./honors";
 import {
   COMMANDERS,
   commanderActiveSeconds,
+  commanderHasValidTarget,
   commanderStatusText,
   type CommanderId,
 } from "./commanders";
@@ -748,7 +749,13 @@ function updateHud(force = false) {
   const commanderActive = live
     ? commanderActiveSeconds(match.commanders.player, s.units, "player")
     : 0;
-  const commanderReady = live && s.commanderCooldown <= 0;
+  const commanderHasTarget = commanderHasValidTarget(
+    match.commanders.player,
+    s.units,
+    "player",
+  );
+  const commanderReady =
+    live && s.commanderCooldown <= 0 && commanderHasTarget;
   if (
     active &&
     !ended &&
@@ -788,9 +795,24 @@ function updateHud(force = false) {
   const enemyStatusEl = el("enemy-commander-status");
   enemyStatusEl.textContent = enemyCommanderStatus;
   enemyStatusEl.classList.toggle("active", enemyCommanderActive > 0);
+  const enemyCommanderHasTarget = commanderHasValidTarget(
+    match.commanders.enemy,
+    s.units,
+    "enemy",
+  );
   enemyStatusEl.classList.toggle(
     "ready",
-    live && s.enemyCommanderCooldown <= 0 && enemyCommanderActive <= 0,
+    live &&
+      s.enemyCommanderCooldown <= 0 &&
+      enemyCommanderActive <= 0 &&
+      enemyCommanderHasTarget,
+  );
+  enemyStatusEl.classList.toggle(
+    "blocked",
+    live &&
+      s.enemyCommanderCooldown <= 0 &&
+      enemyCommanderActive <= 0 &&
+      !enemyCommanderHasTarget,
   );
   el("commander-status").textContent = commanderStatusText(
     match.commanders.player,
@@ -800,6 +822,13 @@ function updateHud(force = false) {
   );
   commanderButton.disabled = !commanderReady;
   commanderButton.classList.toggle("active", commanderActive > 0);
+  commanderButton.classList.toggle(
+    "no-target",
+    live &&
+      s.commanderCooldown <= 0 &&
+      commanderActive <= 0 &&
+      !commanderHasTarget,
+  );
   commanderButton.classList.toggle("ready", commanderReady);
   commanderButton.classList.toggle(
     "just-ready",

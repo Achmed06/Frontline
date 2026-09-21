@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.75
+## Current v0.76
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -330,3 +330,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - LYRA correctly skips an artificial active state and moves directly into cooldown
 - the persistent HUD state complements the existing short enemy-Commander warning banner
 - Commander abilities, cooldowns, AI behavior and combat values are unchanged
+
+
+## v0.76 changes
+
+- Commander readiness now reflects whether the ability can actually affect a valid target
+- ATLAS requires at least one living allied unit before the button reports BEREIT
+- NOVA requires at least one living allied unit that is not already at the full Commander rally duration
+- LYRA reports BEREIT only when a living allied unit is wounded or slowed
+- zero cooldown without a usable target is shown as KEIN ZIEL instead of a false ready state
+- the player Commander button is disabled and visually muted while no valid target exists
+- the opposing Commander HUD uses the same target-aware readiness rules
+- Commander effects, cooldowns, AI behavior and combat values are unchanged

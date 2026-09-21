@@ -278,6 +278,9 @@ h1 em {
   color: #ffd0c5;
   text-shadow: 0 0 8px #ff684f66;
 }
+#enemy-commander-status.blocked {
+  color: #8c7772;
+}
 .core-info.enemy {
   text-align: right;
 }
@@ -620,6 +623,9 @@ h1 em {
 }
 .commander-btn:disabled:not(.active) {
   opacity: 0.5;
+}
+.commander-btn.no-target > span:nth-last-child(2) {
+  color: #c7aa72;
 }
 .commander-btn.active {
   opacity: 1;

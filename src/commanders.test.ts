@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Match, DEFAULT_DECK } from "./engine";
-import { commanderActiveSeconds, commanderStatusText } from "./commanders";
+import {
+  COMMANDERS,
+  commanderActiveSeconds,
+  commanderHasValidTarget,
+  commanderStatusText,
+} from "./commanders";
 import { newSeries, normalizeSeries, chooseSeriesRoute } from "./series";
 
 test("LYRA heals and cleanses only living allies, never wastes cooldown on a full healthy army", () => {
@@ -43,10 +48,10 @@ test("series retains commander choice and migrates legacy saves to ATLAS", () =>
 
 test("commander active timer reflects only the live team-wide duration", () => {
   const units = [
-    { team: "player" as const, hp: 100, shieldTime: 4.2, rallyTime: 0 },
-    { team: "player" as const, hp: 80, shieldTime: 2.4, rallyTime: 5.1 },
-    { team: "enemy" as const, hp: 100, shieldTime: 5.8, rallyTime: 5.9 },
-    { team: "player" as const, hp: 0, shieldTime: 6, rallyTime: 6 },
+    { team: "player" as const, hp: 100, maxHp: 100, shieldTime: 4.2, rallyTime: 0, slowTime: 0 },
+    { team: "player" as const, hp: 80, maxHp: 100, shieldTime: 2.4, rallyTime: 5.1, slowTime: 0 },
+    { team: "enemy" as const, hp: 100, maxHp: 100, shieldTime: 5.8, rallyTime: 5.9, slowTime: 0 },
+    { team: "player" as const, hp: 0, maxHp: 100, shieldTime: 6, rallyTime: 6, slowTime: 0 },
   ];
   assert.equal(commanderActiveSeconds("atlas", units), 4.2);
   assert.equal(commanderActiveSeconds("nova", units), 5.1);
@@ -56,11 +61,35 @@ test("commander active timer reflects only the live team-wide duration", () => {
 
 test("commander status text prioritizes active effect, then cooldown, then ready", () => {
   const units = [
-    { team: "player" as const, hp: 100, shieldTime: 4.2, rallyTime: 0 },
-    { team: "enemy" as const, hp: 100, shieldTime: 0, rallyTime: 5.1 },
+    { team: "player" as const, hp: 100, maxHp: 100, shieldTime: 4.2, rallyTime: 0, slowTime: 0 },
+    { team: "enemy" as const, hp: 100, maxHp: 100, shieldTime: 0, rallyTime: 5.1, slowTime: 0 },
   ];
   assert.equal(commanderStatusText("atlas", 28.4, units), "AKTIV 5s");
   assert.equal(commanderStatusText("lyra", 12.2, units), "13s");
   assert.equal(commanderStatusText("nova", 0, units, "enemy"), "AKTIV 6s");
-  assert.equal(commanderStatusText("atlas", 0, [], "enemy"), "BEREIT");
+  assert.equal(commanderStatusText("atlas", 0, [], "enemy"), "KEIN ZIEL");
+});
+
+test("commander readiness requires a real target instead of only zero cooldown", () => {
+  const healthy = [
+    { team: "player" as const, hp: 120, maxHp: 120, shieldTime: 0, rallyTime: 0, slowTime: 0 },
+  ];
+  assert.equal(commanderHasValidTarget("atlas", healthy), true);
+  assert.equal(commanderHasValidTarget("nova", healthy), true);
+  assert.equal(commanderHasValidTarget("lyra", healthy), false);
+  assert.equal(commanderStatusText("lyra", 0, healthy), "KEIN ZIEL");
+
+  const wounded = [{ ...healthy[0], hp: 70 }];
+  assert.equal(commanderHasValidTarget("lyra", wounded), true);
+  assert.equal(commanderStatusText("lyra", 0, wounded), "BEREIT");
+
+  const slowed = [{ ...healthy[0], slowTime: 2.5 }];
+  assert.equal(commanderHasValidTarget("lyra", slowed), true);
+
+  const boosted = [{ ...healthy[0], rallyTime: COMMANDERS.nova.duration }];
+  assert.equal(commanderHasValidTarget("nova", boosted), false);
+  assert.equal(commanderStatusText("nova", 0, boosted), "KEIN ZIEL");
+
+  const dead = [{ ...healthy[0], hp: 0 }];
+  assert.equal(commanderHasValidTarget("atlas", dead), false);
 });
