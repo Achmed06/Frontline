@@ -88,7 +88,7 @@ test("commander readiness requires a real target instead of only zero cooldown",
 
   const boosted = [{ ...healthy[0], rallyTime: COMMANDERS.nova.duration }];
   assert.equal(commanderHasValidTarget("nova", boosted), false);
-  assert.equal(commanderStatusText("nova", 0, boosted), "KEIN ZIEL");
+  assert.equal(commanderStatusText("nova", 0, boosted), "AKTIV 6s");
 
   const dead = [{ ...healthy[0], hp: 0 }];
   assert.equal(commanderHasValidTarget("atlas", dead), false);
