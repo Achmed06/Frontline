@@ -788,6 +788,7 @@ test("ability target preview matches tactical validation targets and Pulse Core 
     390,
   );
   assert.deepEqual(preview.unitIds, [enemy.id]);
+  match.state.energy.player = 1;
   assert.equal(match.validatePlay("player", "stasis", 210, 390).ok, false);
   match.state.energy.player = 10;
   assert.equal(match.validatePlay("player", "stasis", 210, 390).ok, true);
