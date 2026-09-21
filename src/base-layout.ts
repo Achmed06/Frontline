@@ -2,6 +2,8 @@
 export const BASE_ROOTS = ["depot", "training", "relay", "workshop", "honor"] as const;
 export type BaseRoot = typeof BASE_ROOTS[number];
 export type BaseLayout = Partial<Record<BaseRoot, number>>;
+export type BaseFacing = 0 | 1;
+export type BaseFacings = Partial<Record<BaseRoot, BaseFacing>>;
 export const BASE_PLOT_COUNT = 25;
 export const COMMAND_PLOT = 12;
 export const DEFAULT_PLOTS: Record<BaseRoot, number> = {
@@ -23,6 +25,30 @@ export function normalizeBaseLayout(value: unknown, built: readonly string[]): B
     }
   }
   return layout;
+}
+
+/** Facing 0 is the default and omitted from saves; only explicit mirrored roots persist. */
+export function normalizeBaseFacings(
+  value: unknown,
+  built: readonly string[],
+): BaseFacings {
+  const facings: BaseFacings = {};
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return facings;
+  for (const id of BASE_ROOTS)
+    if (
+      built.includes(id) &&
+      (value as Record<string, unknown>)[id] === 1
+    )
+      facings[id] = 1;
+  return facings;
+}
+
+export function baseFacing(
+  facings: BaseFacings | undefined,
+  root: BaseRoot,
+): BaseFacing {
+  return facings?.[root] === 1 ? 1 : 0;
 }
 export function resolvedBaseLayout(built: readonly string[], saved?: BaseLayout): BaseLayout {
   const layout = normalizeBaseLayout(saved, built);

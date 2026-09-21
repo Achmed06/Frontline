@@ -7,6 +7,7 @@ import {
 } from "./headquarters";
 import {
   BASE_ROOTS,
+  baseFacing,
   resolvedBaseLayout,
   validPlot,
   type BaseRoot,
@@ -99,4 +100,18 @@ export function moveBaseBuilding(
   if (!canMoveBaseBuilding(progress, root, plot)) return progress;
   const layout = resolvedBaseLayout(progress.projects!, progress.layout);
   return { ...progress, layout: { ...layout, [root]: plot } };
+}
+
+export function rotateBaseBuilding(
+  progress: LearningProgress,
+  root: BaseRoot,
+): LearningProgress {
+  if (!progress.projects?.includes(root)) return progress;
+  const facings = { ...(progress.facings ?? {}) };
+  if (baseFacing(progress.facings, root) === 0) facings[root] = 1;
+  else delete facings[root];
+  return {
+    ...progress,
+    ...(Object.keys(facings).length ? { facings } : { facings: undefined }),
+  };
 }

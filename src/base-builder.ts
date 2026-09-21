@@ -1,11 +1,18 @@
 import { BASE_PROJECTS, BASE_STAGES, baseStage, baseProjectProgress, type BaseProjectId, type BaseProjectMetrics, type LearningProgress } from "./headquarters";
-import { BASE_ROOTS, COMMAND_PLOT, resolvedBaseLayout, type BaseRoot } from "./base-layout";
+import {
+  BASE_ROOTS,
+  COMMAND_PLOT,
+  baseFacing,
+  resolvedBaseLayout,
+  type BaseRoot,
+} from "./base-layout";
 import {
   canConstructOnPlot,
   canMoveBaseBuilding,
   constructOnPlot,
   moveBaseBuilding,
   projectRoot,
+  rotateBaseBuilding,
   visibleProject,
 } from "./base-construction";
 import { baseMapSvg, buildingArt } from "./base-map";
@@ -60,8 +67,8 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
         return `<button data-building="${shown}" class="${root === id ? 'selected' : ''}" aria-pressed="${root === id}"><svg viewBox="-48 -85 96 115" aria-hidden="true">${buildingArt(shown, options.accent)}</svg><b>${id === 'depot' ? 'DEPOT' : id === 'training' ? 'TRAINING' : id === 'relay' ? 'SIGNAL' : id === 'workshop' ? 'WERKSTATT' : 'EHRENHOF'}</b><small>${owned ? shown === id ? 'STUFE 1' : 'STUFE 2' : available ? 'BAUBEREIT' : 'GESPERRT'}</small></button>`;
       }).join('')}</div>
       <article class="builder-inspector"><div class="builder-inspector-title"><div><span class="builder-eyebrow">${mode === 'move' ? 'GEBÄUDE VERSETZEN' : built ? `GEBAUT / STUFE ${tier}` : isExpansion ? 'AUSBAU / STUFE 2' : 'BAUPROJEKT / STUFE 1'}</span><h3>${project.name}</h3></div><span class="builder-level">${built ? '0' + tier : '+'}</span></div><p>${project.description}</p>
-      ${!built ? `<div class="builder-requirement"><span>${metricNames[project.metric]}</span><b>${Math.min(status.current, status.goal)} / ${status.goal}</b><i><em style="width:${Math.min(100, status.current / status.goal * 100)}%"></em></i></div>${!prerequisite ? `<p>Zuerst ${BASE_PROJECTS.find(p => p.id === project.requires)!.name} bauen.</p>` : ''}` : `<p class="builder-location">BAUPLATZ ${(layout[root] ?? 0) + 1} · DAUERHAFT IN DEINER BASIS</p>`}
-      <div class="builder-actions">${mode !== 'inspect' ? `<button class="primary" data-action="confirm" ${!canPlace || mode === 'place' && !ready ? 'disabled' : ''}>${mode === 'move' ? 'HIER PLATZIEREN' : isExpansion ? 'AUSBAU BESTÄTIGEN' : 'HIER BAUEN'}${chosen === undefined ? '' : ` · FELD ${chosen + 1}`}</button><button class="secondary" data-action="cancel">Abbrechen</button>` : built ? `<button class="secondary" data-action="move">VERSETZEN</button>${upgrade && !progress.projects?.includes(upgrade.id) ? '<button class="primary" data-action="upgrade">AUSBAU ANSEHEN ↗</button>' : '<span class="builder-max">MAXIMALE STUFE ✓</span>'}` : `<button class="primary" data-action="place" ${!ready ? 'disabled' : ''}>${ready ? isExpansion ? 'AUSBAU VORBEREITEN' : 'BAUPLATZ WÄHLEN ↗' : 'SPIELZIEL NOCH OFFEN'}</button>`}</div>
+      ${!built ? `<div class="builder-requirement"><span>${metricNames[project.metric]}</span><b>${Math.min(status.current, status.goal)} / ${status.goal}</b><i><em style="width:${Math.min(100, status.current / status.goal * 100)}%"></em></i></div>${!prerequisite ? `<p>Zuerst ${BASE_PROJECTS.find(p => p.id === project.requires)!.name} bauen.</p>` : ''}` : `<p class="builder-location">BAUPLATZ ${(layout[root] ?? 0) + 1} · AUSRICHTUNG ${baseFacing(progress.facings, root) === 1 ? '↖' : '↗'} · DAUERHAFT GESPEICHERT</p>`}
+      <div class="builder-actions">${mode !== 'inspect' ? `<button class="primary" data-action="confirm" ${!canPlace || mode === 'place' && !ready ? 'disabled' : ''}>${mode === 'move' ? 'HIER PLATZIEREN' : isExpansion ? 'AUSBAU BESTÄTIGEN' : 'HIER BAUEN'}${chosen === undefined ? '' : ` · FELD ${chosen + 1}`}</button><button class="secondary" data-action="cancel">Abbrechen</button>` : built ? `<button class="secondary" data-action="move">VERSETZEN</button><button class="secondary" data-action="rotate" aria-label="${project.name} drehen">DREHEN ↻</button>${upgrade && !progress.projects?.includes(upgrade.id) ? '<button class="primary" data-action="upgrade">AUSBAU ↗</button>' : '<span class="builder-max">MAX ✓</span>'}` : `<button class="primary" data-action="place" ${!ready ? 'disabled' : ''}>${ready ? isExpansion ? 'AUSBAU VORBEREITEN' : 'BAUPLATZ WÄHLEN ↗' : 'SPIELZIEL NOCH OFFEN'}</button>`}</div>
       <p class="builder-feedback" role="status" aria-live="polite">${message || (mode !== 'inspect' ? 'Erst mit Bestätigung wird deine Basis geändert.' : 'Bauen und Versetzen sind kostenlos. Freischaltungen verdienst du im Spiel.')}</p></article>
       <p class="builder-fairplay">Deine Basis, dein Aufbau. Gleiche Kampfwerte für alle.</p></section>`;
     container.querySelectorAll<HTMLElement>('[data-building]').forEach(button => button.onclick = () => {
@@ -126,6 +133,22 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
       if (action === 'upgrade' && upgrade) { selected = upgrade.id; message = ''; }
       if (action === 'place') { mode = 'place'; chosen = isExpansion ? layout[root] : chosen; message = ''; }
       if (action === 'move') { mode = 'move'; chosen = undefined; message = ''; }
+      if (action === 'rotate') {
+        const current = options.progress();
+        const next = rotateBaseBuilding(current, root);
+        if (next === current) {
+          message = 'Dieses Gebäude kann noch nicht gedreht werden.';
+          draw();
+          return;
+        }
+        if (!options.commit(next)) {
+          message = 'Speichern nicht möglich. Die bisherige Ausrichtung bleibt erhalten.';
+          draw();
+          return;
+        }
+        message = `${project.name} gedreht und gespeichert.`;
+        justBuilt = false;
+      }
       if (action === 'confirm' && chosen !== undefined) {
         const current = options.progress();
         const next = mode === 'move' ? moveBaseBuilding(current, root, chosen) : constructOnPlot(current, selected, chosen, options.metrics);

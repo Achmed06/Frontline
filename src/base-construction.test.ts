@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeLearning, advanceLearning } from './headquarters';
-import { resolvedBaseLayout } from './base-layout';
+import { baseFacing, resolvedBaseLayout } from './base-layout';
 import {
   canConstructOnPlot,
   canMoveBaseBuilding,
   constructOnPlot,
   moveBaseBuilding,
+  rotateBaseBuilding,
   visibleProject,
 } from './base-construction';
 import { Match } from './engine';
@@ -75,5 +76,37 @@ test('placement helpers expose the exact rules used by the mobile builder', () =
   assert.equal(canMoveBaseBuilding(depot, 'depot', 6), false);
   assert.equal(canMoveBaseBuilding(depot, 'depot', 12), false);
   assert.equal(canMoveBaseBuilding(depot, 'depot', 7), true);
+});
+
+test('building facing is cosmetic, persistent and only valid for built roots', () => {
+  const empty = normalizeLearning(null);
+  assert.equal(rotateBaseBuilding(empty, 'depot'), empty);
+
+  let base = constructOnPlot(empty, 'depot', 7, metrics);
+  assert.equal(baseFacing(base.facings, 'depot'), 0);
+
+  base = rotateBaseBuilding(base, 'depot');
+  assert.equal(baseFacing(base.facings, 'depot'), 1);
+  assert.deepEqual(base.facings, { depot: 1 });
+
+  const moved = moveBaseBuilding(base, 'depot', 20);
+  assert.equal(baseFacing(moved.facings, 'depot'), 1);
+
+  const upgraded = constructOnPlot(moved, 'supplyhub', 20, metrics);
+  assert.equal(baseFacing(upgraded.facings, 'depot'), 1);
+
+  const roundtrip = normalizeLearning(JSON.parse(JSON.stringify(upgraded)));
+  assert.deepEqual(roundtrip, upgraded);
+
+  const restoredDefault = rotateBaseBuilding(upgraded, 'depot');
+  assert.equal(baseFacing(restoredDefault.facings, 'depot'), 0);
+  assert.equal(restoredDefault.facings, undefined);
+
+  const sanitized = normalizeLearning({
+    projects: ['depot'],
+    layout: { depot: 7 },
+    facings: { depot: 1, training: 1, relay: 0, bogus: 1 },
+  });
+  assert.deepEqual(sanitized.facings, { depot: 1 });
 });
 

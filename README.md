@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.06
+## Current v1.07
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -670,4 +670,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - construction and relocation availability are now shared pure helpers used by both the UI and the mutation functions, preventing preview/commit rule drift
 - regression coverage checks command-plot rejection, occupied plots, progression requirements, upgrade location rules and move availability through the same helpers
 - release: package 1.6.0 / v1.06 / iOS 1.06 (106)
+
+## v1.07 changes
+
+- every player-built headquarters structure now has a persistent two-way isometric facing
+- built structures can be rotated directly from the mobile inspector with one DREHEN action; the new facing is saved immediately and rolls back safely if storage fails
+- facing is cosmetic only and never changes construction requirements, progression, combat values or occupied plots
+- relocation, upgrades, later matches and the lobby miniature preserve each building's facing
+- portable save backup and restore now preserve facing together with project progression and plot positions
+- old saves remain unchanged because the default facing is implicit and adds no new required save field
+- malformed or unbuilt facing entries are removed during normal save normalization
+- regression coverage verifies rotate, rotate-back-to-default, move, upgrade, JSON roundtrip and backup restore behavior
+- release: package 1.7.0 / v1.07 / iOS 1.07 (107)
 

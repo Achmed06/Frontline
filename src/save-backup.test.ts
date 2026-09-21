@@ -68,8 +68,12 @@ test('legacy v1 backup imports and migrates with an empty daily history', () => 
   assert.deepEqual(readDailyHistory(), []);
 }));
 
-test('base plot positions and upgrades survive portable backup restore', () => withStorage(store => {
-  const learning = normalizeLearning({ projects: ['depot', 'supplyhub', 'training'], layout: { depot: 20, training: 8 } });
+test('base plot positions, upgrades and facing survive portable backup restore', () => withStorage(store => {
+  const learning = normalizeLearning({
+    projects: ['depot', 'supplyhub', 'training'],
+    layout: { depot: 20, training: 8 },
+    facings: { depot: 1 },
+  });
   saveLearning(learning);
   const backup = createBackup();
   saveLearning(normalizeLearning(null));
