@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.82
+## Current v0.83
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -405,3 +405,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - when the Commander has no valid target, the lesson keeps focus on tactical cards and explains why
 - dedicated tests cover no-target, LYRA and NOVA coaching states
 - learning progress, Commander effects, cooldowns and combat rules remain unchanged
+
+
+## v0.83 changes
+
+- first-session deployment coaching now checks the selected unit's real energy cost before directing the player into the arena
+- an unaffordable selected unit shows ENERGIE SAMMELN instead of highlighting an action that the live match would reject
+- the coach estimates readiness from the same current energy value, card cost and 0.72 energy-per-second regeneration used by the match
+- once the unit becomes affordable, the coach automatically returns to TRUPPE EINSETZEN and arena focus
+- tactic cards still correctly route the player back to choosing a troop for the deployment lesson
+- dedicated tests cover low-energy, exact-cost and tactic-card states
+- card costs, energy regeneration, deployment validation and all combat rules remain unchanged

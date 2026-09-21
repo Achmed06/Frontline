@@ -1,4 +1,4 @@
-import { CARDS, type MatchState } from "./engine";
+import { CARDS, ENERGY_RATE, type MatchState } from "./engine";
 import {
   commanderHasValidTarget,
   type CommanderId,
@@ -50,14 +50,31 @@ export function battleCoachHint(
   const deployed = total(progress, state, "deploy");
   if (deployed < GOALS.deploy) {
     const selected = CARDS.find((card) => card.id === selectedCardId);
-    const unitSelected = selected?.kind === "unit";
-    if (!unitSelected) {
+    if (!selected || selected.kind !== "unit") {
       return {
         lesson: "deploy",
         kicker: "FELDAUSBILDUNG · SCHRITT 1",
         title: deployed ? "NÄCHSTE TRUPPE WÄHLEN" : "TRUPPE WÄHLEN",
         detail:
           "Tippe unten auf eine Einheitenkarte. Die Zahl am Kartenrand sind ihre Energiekosten.",
+        focus: "cards",
+        current: deployed,
+        goal: GOALS.deploy,
+      };
+    }
+    if (state.energy.player + 1e-8 < selected.cost) {
+      const wait =
+        Math.ceil(
+          ((selected.cost - state.energy.player) / ENERGY_RATE) * 10,
+        ) / 10;
+      const waitLabel = Math.max(0.1, wait)
+        .toFixed(1)
+        .replace(".", ",");
+      return {
+        lesson: "deploy",
+        kicker: "FELDAUSBILDUNG · SCHRITT 1",
+        title: "ENERGIE SAMMELN",
+        detail: `${selected.name} kostet ${selected.cost} Energie. Bereit in ${waitLabel}s. Sobald genug Energie da ist, führt dich die Feld-Ausbildung wieder in die Arena.`,
         focus: "cards",
         current: deployed,
         goal: GOALS.deploy,

@@ -12,6 +12,13 @@ test("battle coach guides the existing learning path without changing combat", (
   assert.equal(hint?.title, "TRUPPE WÄHLEN");
   assert.equal(hint?.focus, "cards");
 
+  match.state.energy.player = 1;
+  hint = battleCoachHint(progress, match.state, "vanguard");
+  assert.equal(hint?.title, "ENERGIE SAMMELN");
+  assert.equal(hint?.focus, "cards");
+  assert.match(hint?.detail ?? "", /1,4s/);
+
+  match.state.energy.player = 2;
   hint = battleCoachHint(progress, match.state, "vanguard");
   assert.equal(hint?.title, "TRUPPE EINSETZEN");
   assert.equal(hint?.focus, "arena");
@@ -121,4 +128,26 @@ test("battle coach never highlights an unusable commander", () => {
   unit.rallyTime = 2;
   hint = battleCoachHint(progress, match.state, null, "nova");
   assert.equal(hint?.title, "KOMMANDANTENFÄHIGKEIT NUTZEN");
+});
+
+
+test("battle coach uses the live card cost and energy rate before directing deployment", () => {
+  const progress = normalizeLearning(null);
+  const match = new Match({ botEnabled: false });
+
+  match.state.energy.player = 3.2;
+  let hint = battleCoachHint(progress, match.state, "bulwark");
+  assert.equal(hint?.title, "ENERGIE SAMMELN");
+  assert.equal(hint?.focus, "cards");
+  assert.match(hint?.detail ?? "", /1,2s/);
+
+  match.state.energy.player = 4;
+  hint = battleCoachHint(progress, match.state, "bulwark");
+  assert.equal(hint?.title, "TRUPPE EINSETZEN");
+  assert.equal(hint?.focus, "arena");
+
+  match.state.energy.player = 0;
+  hint = battleCoachHint(progress, match.state, "pulse");
+  assert.equal(hint?.title, "TRUPPE WÄHLEN");
+  assert.equal(hint?.focus, "cards");
 });
