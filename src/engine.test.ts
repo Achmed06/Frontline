@@ -937,3 +937,46 @@ test("Rally preview reports exact healing and tempo changes", () => {
   assert.equal(hurt.hp, hurt.maxHp - 35);
 });
 
+test("Stasis preview distinguishes effective refreshes from fully applied slow", () => {
+  const match = new Match({
+    playerDeck: tacticalDeck,
+    botEnabled: false,
+  });
+  const fresh = staticUnit(match, "enemy", 185, 280);
+  const refresh = staticUnit(match, "enemy", 210, 280);
+  const full = staticUnit(match, "enemy", 235, 280);
+  refresh.slowTime = 2;
+  refresh.slowFactor = 0.6;
+  full.slowTime = 4;
+  full.slowFactor = 0.6;
+  match.state.energy.player = 10;
+
+  const preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "stasis",
+    210,
+    280,
+  );
+  assert.deepEqual(preview.unitIds, [fresh.id, refresh.id, full.id]);
+  assert.deepEqual(
+    preview.slows.map((slow) => ({
+      unitId: slow.unitId,
+      slowTime: slow.slowTime,
+      slowFactor: slow.slowFactor,
+      changed: slow.changed,
+    })),
+    [
+      { unitId: fresh.id, slowTime: 4, slowFactor: 0.6, changed: true },
+      { unitId: refresh.id, slowTime: 4, slowFactor: 0.6, changed: true },
+      { unitId: full.id, slowTime: 4, slowFactor: 0.6, changed: false },
+    ],
+  );
+
+  assert.ok(match.play("player", "stasis", 210, 280).ok);
+  for (const unit of [fresh, refresh, full]) {
+    assert.equal(unit.slowTime, 4);
+    assert.equal(unit.slowFactor, 0.6);
+  }
+});
+

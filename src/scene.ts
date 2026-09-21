@@ -1140,6 +1140,10 @@ export class ArenaScene extends Phaser.Scene {
         affectedUnits > 0 &&
         totalHealing === 0 &&
         tempoUnits === 0;
+      const stasisWasted =
+        card.id === "stasis" &&
+        affectedUnits > 0 &&
+        (abilityTargets?.slows.every((slow) => !slow.changed) ?? false);
       const outcomeSummary =
         card.id === "pulse"
           ? [
@@ -1156,7 +1160,18 @@ export class ArenaScene extends Phaser.Scene {
               ]
                 .filter(Boolean)
                 .join(" · ")
-            : "";
+            : card.id === "stasis"
+              ? [
+                  abilityTargets?.slows.filter((slow) => slow.changed).length
+                    ? `WIRKSAM ${abilityTargets.slows.filter((slow) => slow.changed).length}`
+                    : "",
+                  abilityTargets?.slows.filter((slow) => !slow.changed).length
+                    ? `BEREITS VOLL ${abilityTargets.slows.filter((slow) => !slow.changed).length}`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "";
       if (this.aim) {
         const actionText =
           card.kind === "ability"
@@ -1167,7 +1182,7 @@ export class ArenaScene extends Phaser.Scene {
           .setColor(
             valid
               ? card.kind === "ability" &&
-                (affectedCount === 0 || rallyWasted)
+                (affectedCount === 0 || rallyWasted || stasisWasted)
                 ? "#ffd37a"
                 : "#83ffcf"
               : "#ff927c",
@@ -1272,6 +1287,19 @@ export class ArenaScene extends Phaser.Scene {
               target.y + mark * 0.55,
               target.x + mark * 0.55,
               target.y + mark * 0.25,
+            );
+          }
+          const slow = abilityTargets?.slows.find(
+            (result) => result.unitId === target.id,
+          );
+          if (slow && !slow.changed) {
+            const mark = target.radius + 17;
+            fx.lineStyle(1.8, NEUTRAL, 0.8);
+            fx.lineBetween(
+              target.x - mark * 0.45,
+              target.y,
+              target.x + mark * 0.45,
+              target.y,
             );
           }
         }

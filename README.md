@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.90
+## Current v0.91
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -493,4 +493,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Rally execution consumes the shared preview deltas, keeping the displayed healing result and the committed combat result aligned
 - dedicated regression coverage verifies capped healing, full-health targets and already-active tempo states
 - Rally healing, tempo duration, radius, energy cost and all other combat values remain unchanged
+
+## v0.91 changes
+
+- Stasis aiming now distinguishes targets whose slow state will actually change from targets already carrying the full Stasis effect
+- the aiming label reports WIRKSAM and BEREITS VOLL counts instead of presenting every target as equally valuable
+- a Stasis cast aimed only at already fully slowed enemies remains legal but is surfaced in amber to warn about a low-value timing window
+- fully saturated Stasis targets receive a compact neutral marker while targets that will be newly slowed or refreshed retain the normal blue targeting emphasis
+- Stasis preview computes the exact post-cast slow duration and slow factor for each target
+- Stasis execution now consumes those shared preview outcomes, preventing preview and committed crowd-control state from drifting apart
+- dedicated regression coverage includes a fresh target, a partially expired slow and an already fully applied Stasis target
+- Stasis duration, slow factor, radius, energy cost and all other combat values remain unchanged
 

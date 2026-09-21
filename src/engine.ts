@@ -441,6 +441,13 @@ export type AbilityTargetHealing = {
   amount: number;
 };
 
+export type AbilityTargetSlow = {
+  unitId: number;
+  slowTime: number;
+  slowFactor: number;
+  changed: boolean;
+};
+
 export type AbilityTargetPreview = {
   unitIds: number[];
   core: boolean;
@@ -448,6 +455,7 @@ export type AbilityTargetPreview = {
   coreLethal: boolean;
   healing: AbilityTargetHealing[];
   tempoUnitIds: number[];
+  slows: AbilityTargetSlow[];
   movements: AbilityTargetMovement[];
 };
 
@@ -472,6 +480,7 @@ export function abilityTargetPreview(
       coreLethal: false,
       healing: [],
       tempoUnitIds: [],
+      slows: [],
       movements: [],
     };
 
@@ -545,6 +554,27 @@ export function abilityTargetPreview(
           .filter((unit) => unit.rallyTime < (card.rallyDuration ?? 0))
           .map((unit) => unit.id)
       : [];
+  const slows =
+    card.id === "stasis"
+      ? targets.map((unit) => {
+          const slowTime = Math.max(
+            unit.slowTime,
+            card.slowDuration ?? unit.slowTime,
+          );
+          const slowFactor = Math.min(
+            unit.slowFactor,
+            card.slowFactor ?? unit.slowFactor,
+          );
+          return {
+            unitId: unit.id,
+            slowTime,
+            slowFactor,
+            changed:
+              slowTime > unit.slowTime + 1e-8 ||
+              slowFactor < unit.slowFactor - 1e-8,
+          };
+        })
+      : [];
 
   return {
     unitIds: targets.map((unit) => unit.id),
@@ -553,6 +583,7 @@ export function abilityTargetPreview(
     coreLethal,
     healing,
     tempoUnitIds,
+    slows,
     movements,
   };
 }
@@ -781,6 +812,11 @@ export class Match {
       ),
     );
     const tempoUnitIds = new Set(targetPreview?.tempoUnitIds ?? []);
+    const targetSlows = new Map(
+      (targetPreview?.slows ?? []).map(
+        (slow) => [slow.unitId, slow] as const,
+      ),
+    );
     const targetMovements = new Map(
       (targetPreview?.movements ?? []).map(
         (movement) => [movement.unitId, movement] as const,
@@ -863,8 +899,10 @@ export class Match {
       for (const unit of this.state.units) {
         if (!targetIds.has(unit.id)) continue;
         if (card.id === "stasis") {
-          unit.slowTime = Math.max(unit.slowTime, card.slowDuration!);
-          unit.slowFactor = Math.min(unit.slowFactor, card.slowFactor!);
+          const slow = targetSlows.get(unit.id);
+          if (!slow) continue;
+          unit.slowTime = slow.slowTime;
+          unit.slowFactor = slow.slowFactor;
         } else {
           const movement = targetMovements.get(unit.id);
           if (!movement) continue;
