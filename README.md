@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.03
+## Current v1.04
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -638,3 +638,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - release version is now v1.03 / package 1.3.0 / iOS 1.03 (103)
 - no Core turret balance values changed
 
+
+## v1.04 changes
+
+- Core turrets now share one deterministic target selector with the arena renderer
+- a thin sight line and open corner brackets reveal the closest live enemy currently targeted by each Core, including during reload
+- target selection ignores allies, defeated units, destroyed Cores and ended matches; equal-distance ties use the unit ID
+- destroyed Cores can no longer retaliate after taking lethal unit damage in the same simulation tick
+- regression coverage checks actual fire against the preview target, ties, retargeting, range boundaries and lethal Core attacks for both teams
+- turret damage, range and fire interval remain unchanged
+- release version is v1.04 / package 1.4.0 / iOS 1.04 (104)
