@@ -4,6 +4,7 @@ import { Match, DEFAULT_DECK } from "./engine";
 import {
   COMMANDERS,
   commanderActiveSeconds,
+  commanderCooldownProgress,
   commanderHasValidTarget,
   commanderStatusText,
   commanderUnavailableText,
@@ -96,4 +97,15 @@ test("commander readiness requires a real target instead of only zero cooldown",
   assert.equal(commanderHasValidTarget("atlas", dead), false);
   assert.equal(commanderStatusText("atlas", 0, dead), "TRUPP FEHLT");
   assert.equal(commanderUnavailableText("nova", dead), "TRUPP FEHLT");
+});
+
+
+test("commander cooldown progress is clamped and reaches one at readiness", () => {
+  assert.equal(commanderCooldownProgress(30, 30), 0);
+  assert.equal(commanderCooldownProgress(15, 30), 0.5);
+  assert.equal(commanderCooldownProgress(0, 30), 1);
+  assert.equal(commanderCooldownProgress(-2, 30), 1);
+  assert.equal(commanderCooldownProgress(40, 30), 0);
+  assert.equal(commanderCooldownProgress(5, 0), 0);
+  assert.equal(commanderCooldownProgress(0, 0), 1);
 });

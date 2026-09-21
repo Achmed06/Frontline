@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.77
+## Current v0.78
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -354,3 +354,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - ATLAS and NOVA can surface readiness when the first usable allied unit enters the field
 - initial match setup remains quiet because readiness flashing starts only after combat time has advanced
 - Commander effects, cooldowns, AI behavior and combat values are unchanged
+
+
+## v0.78 changes
+
+- the player Commander button now carries a thin cooldown-progress rail along its bottom edge
+- the rail starts empty when the ability enters cooldown and fills continuously toward readiness
+- ready and no-target states keep a full rail because the cooldown itself is complete
+- active-duration, target-aware readiness and contextual availability text remain unchanged
+- cooldown progress is derived from the real Commander cooldown and clamped defensively
+- the progress rail is purely presentational and does not alter Commander timing, effects or combat values

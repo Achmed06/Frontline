@@ -86,6 +86,15 @@ export function commanderUnavailableText(
   return "KEIN ZIEL";
 }
 
+export function commanderCooldownProgress(
+  cooldown: number,
+  totalCooldown: number,
+): number {
+  if (!Number.isFinite(cooldown) || !Number.isFinite(totalCooldown) || totalCooldown <= 0)
+    return cooldown <= 0 ? 1 : 0;
+  return Math.max(0, Math.min(1, 1 - cooldown / totalCooldown));
+}
+
 export function commanderStatusText(
   commander: CommanderId,
   cooldown: number,
