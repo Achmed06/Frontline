@@ -860,3 +860,46 @@ test("Repulsor target preview predicts the exact clamped landing position", () =
   );
 });
 
+test("Pulse preview marks only targets the cast will actually finish", () => {
+  const match = quietMatch();
+  const lethal = staticUnit(match, "enemy", 200, 280);
+  const shielded = staticUnit(match, "enemy", 225, 280);
+  lethal.hp = 50;
+  shielded.hp = 50;
+  shielded.shield = 40;
+  match.state.energy.player = 10;
+
+  let preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "pulse",
+    210,
+    280,
+  );
+  assert.deepEqual(preview.unitIds, [lethal.id, shielded.id]);
+  assert.deepEqual(preview.lethalUnitIds, [lethal.id]);
+  assert.equal(preview.core, false);
+  assert.equal(preview.coreLethal, false);
+
+  match.state.cores.enemy.hp = 45;
+  preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "pulse",
+    match.state.cores.enemy.x,
+    match.state.cores.enemy.y,
+  );
+  assert.equal(preview.core, true);
+  assert.equal(preview.coreLethal, true);
+
+  match.state.cores.enemy.hp = 46;
+  preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "pulse",
+    match.state.cores.enemy.x,
+    match.state.cores.enemy.y,
+  );
+  assert.equal(preview.coreLethal, false);
+});
+

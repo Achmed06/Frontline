@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.88
+## Current v0.89
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -472,4 +472,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the aiming label distinguishes affected troops from a Pulse Core hit instead of collapsing both into a generic target count
 - a dedicated regression test verifies that Repulsor preview coordinates exactly match the post-cast unit coordinates
 - ability radii, damage, healing, crowd control, push distance, energy costs and all other combat values remain unchanged
+
+## v0.89 changes
+
+- Pulse aiming now marks enemies that the pending 85-damage hit will actually eliminate after current shields are accounted for
+- a lethal Pulse target receives a compact knockout cross while ordinary affected targets keep the normal area-target ring
+- aiming at the enemy Core now surfaces KERNBRUCH when its current health is low enough for the real Pulse Core hit to finish it
+- Pulse Core damage and Core reach now live on the Pulse card definition instead of being duplicated as renderer/simulation magic numbers
+- the aiming label appends K.O. and KERNBRUCH outcome hints without changing whether an otherwise legal cast is allowed
+- dedicated regression coverage distinguishes lethal, shield-surviving and one-hit-Core Pulse previews
+- Pulse damage, Core damage, range, energy cost and all other combat values remain unchanged
 

@@ -1128,10 +1128,22 @@ export class ArenaScene extends Phaser.Scene {
         : affectedUnits
           ? `${affectedUnits} ${affectedUnits === 1 ? "TRUPPE" : "TRUPPEN"}`
           : "0 ZIELE";
+      const lethalUnits = abilityTargets?.lethalUnitIds.length ?? 0;
+      const outcomeSummary =
+        card.id === "pulse"
+          ? [
+              lethalUnits
+                ? `${lethalUnits} K.O.`
+                : "",
+              abilityTargets?.coreLethal ? "KERNBRUCH" : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : "";
       if (this.aim) {
         const actionText =
           card.kind === "ability"
-            ? `LOSLASSEN ZUM WIRKEN · ${targetSummary}`
+            ? `LOSLASSEN ZUM WIRKEN · ${targetSummary}${outcomeSummary ? ` · ${outcomeSummary}` : ""}`
             : "LOSLASSEN ZUM EINSETZEN";
         this.aimLabel
           .setText(valid ? actionText : validation.message)
@@ -1203,6 +1215,22 @@ export class ArenaScene extends Phaser.Scene {
           fx.strokeCircle(target.x, target.y, target.radius + 9);
           fx.lineStyle(1, 0xffffff, pulse * 0.55);
           fx.strokeCircle(target.x, target.y, target.radius + 13);
+          if (abilityTargets?.lethalUnitIds.includes(target.id)) {
+            const mark = target.radius + 16;
+            fx.lineStyle(2, CORAL, 0.9);
+            fx.lineBetween(
+              target.x - mark * 0.45,
+              target.y - mark * 0.45,
+              target.x + mark * 0.45,
+              target.y + mark * 0.45,
+            );
+            fx.lineBetween(
+              target.x + mark * 0.45,
+              target.y - mark * 0.45,
+              target.x - mark * 0.45,
+              target.y + mark * 0.45,
+            );
+          }
         }
         if (abilityTargets?.core) {
           const core = s.cores.enemy;
@@ -1211,6 +1239,20 @@ export class ArenaScene extends Phaser.Scene {
           fx.strokeCircle(core.x, core.y, 31);
           fx.lineStyle(1, 0xffffff, pulse * 0.5);
           fx.strokeCircle(core.x, core.y, 36);
+          if (abilityTargets.coreLethal) {
+            fx.lineStyle(2.2, CORAL, 0.9);
+            for (let i = 0; i < 4; i++) {
+              const angle = Math.PI * 0.25 + i * Math.PI * 0.5;
+              const inner = 39;
+              const outer = 48;
+              fx.lineBetween(
+                core.x + Math.cos(angle) * inner,
+                core.y + Math.sin(angle) * inner,
+                core.x + Math.cos(angle) * outer,
+                core.y + Math.sin(angle) * outer,
+              );
+            }
+          }
         }
         for (const movement of abilityTargets?.movements ?? []) {
           const target = s.units.find((unit) => unit.id === movement.unitId);

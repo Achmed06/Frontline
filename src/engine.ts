@@ -39,6 +39,8 @@ export interface CardDefinition {
   slowDuration?: number;
   slowFactor?: number;
   pushDistance?: number;
+  coreDamage?: number;
+  coreRange?: number;
   shieldBreak?: number;
   captureMultiplier?: number;
 }
@@ -198,6 +200,8 @@ export const CARDS: CardDefinition[] = [
     kind: "ability",
     range: 82,
     damage: 85,
+    coreDamage: 45,
+    coreRange: 100,
   },
   {
     id: "rally",
@@ -431,6 +435,8 @@ export type AbilityTargetMovement = {
 export type AbilityTargetPreview = {
   unitIds: number[];
   core: boolean;
+  lethalUnitIds: number[];
+  coreLethal: boolean;
   movements: AbilityTargetMovement[];
 };
 
@@ -448,7 +454,13 @@ export function abilityTargetPreview(
     !Number.isFinite(x) ||
     !Number.isFinite(y)
   )
-    return { unitIds: [], core: false, movements: [] };
+    return {
+      unitIds: [],
+      core: false,
+      lethalUnitIds: [],
+      coreLethal: false,
+      movements: [],
+    };
 
   const targets =
     card.id === "rally"
@@ -490,11 +502,24 @@ export function abilityTargetPreview(
         })
       : [];
 
+  const core =
+    card.id === "pulse" &&
+    distance(state.cores[other(team)], { x, y }) <= (card.coreRange ?? 0);
+  const lethalUnitIds =
+    card.id === "pulse"
+      ? targets
+          .filter((unit) => unit.hp + unit.shield <= (card.damage ?? 0))
+          .map((unit) => unit.id)
+      : [];
+  const coreLethal =
+    core &&
+    state.cores[other(team)].hp <= (card.coreDamage ?? 0);
+
   return {
     unitIds: targets.map((unit) => unit.id),
-    core:
-      card.id === "pulse" &&
-      distance(state.cores[other(team)], { x, y }) <= 100,
+    core,
+    lethalUnitIds,
+    coreLethal,
     movements,
   };
 }
@@ -771,7 +796,7 @@ export class Match {
       }
       const core = this.state.cores[other(team)];
       if (targetPreview?.core) {
-        core.hp = Math.max(0, core.hp - 45);
+        core.hp = Math.max(0, core.hp - (card.coreDamage ?? 0));
         this.effect("core-hit", core.x, core.y, team, 0.5);
       }
       if (team === "player") this.state.stats.abilities++;
