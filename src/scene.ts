@@ -1129,17 +1129,34 @@ export class ArenaScene extends Phaser.Scene {
           ? `${affectedUnits} ${affectedUnits === 1 ? "TRUPPE" : "TRUPPEN"}`
           : "0 ZIELE";
       const lethalUnits = abilityTargets?.lethalUnitIds.length ?? 0;
+      const totalHealing =
+        abilityTargets?.healing.reduce(
+          (sum, healing) => sum + healing.amount,
+          0,
+        ) ?? 0;
+      const tempoUnits = abilityTargets?.tempoUnitIds.length ?? 0;
+      const rallyWasted =
+        card.id === "rally" &&
+        affectedUnits > 0 &&
+        totalHealing === 0 &&
+        tempoUnits === 0;
       const outcomeSummary =
         card.id === "pulse"
           ? [
-              lethalUnits
-                ? `${lethalUnits} K.O.`
-                : "",
+              lethalUnits ? `${lethalUnits} K.O.` : "",
               abilityTargets?.coreLethal ? "KERNBRUCH" : "",
             ]
               .filter(Boolean)
               .join(" · ")
-          : "";
+          : card.id === "rally"
+            ? [
+                totalHealing ? `+${totalHealing} HP` : "",
+                tempoUnits ? `TEMPO ${tempoUnits}` : "",
+                rallyWasted ? "KEIN BONUS" : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            : "";
       if (this.aim) {
         const actionText =
           card.kind === "ability"
@@ -1149,7 +1166,8 @@ export class ArenaScene extends Phaser.Scene {
           .setText(valid ? actionText : validation.message)
           .setColor(
             valid
-              ? card.kind === "ability" && affectedCount === 0
+              ? card.kind === "ability" &&
+                (affectedCount === 0 || rallyWasted)
                 ? "#ffd37a"
                 : "#83ffcf"
               : "#ff927c",
@@ -1229,6 +1247,31 @@ export class ArenaScene extends Phaser.Scene {
               target.y - mark * 0.45,
               target.x - mark * 0.45,
               target.y + mark * 0.45,
+            );
+          }
+          const healing = abilityTargets?.healing.find(
+            (result) => result.unitId === target.id,
+          );
+          if (healing) {
+            const mark = target.radius + 17;
+            fx.lineStyle(2, 0x73ff9d, 0.9);
+            fx.lineBetween(target.x - 4, target.y - mark, target.x + 4, target.y - mark);
+            fx.lineBetween(target.x, target.y - mark - 4, target.x, target.y - mark + 4);
+          }
+          if (abilityTargets?.tempoUnitIds.includes(target.id)) {
+            const mark = target.radius + 18;
+            fx.lineStyle(1.5, 0xffdf6b, 0.78);
+            fx.lineBetween(
+              target.x - mark * 0.55,
+              target.y + mark * 0.25,
+              target.x,
+              target.y + mark * 0.55,
+            );
+            fx.lineBetween(
+              target.x,
+              target.y + mark * 0.55,
+              target.x + mark * 0.55,
+              target.y + mark * 0.25,
             );
           }
         }

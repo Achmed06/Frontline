@@ -29,6 +29,8 @@ export interface CardDefinition {
   kind: "unit" | "ability";
   hp?: number;
   damage?: number;
+  heal?: number;
+  rallyDuration?: number;
   range?: number;
   speed?: number;
   count?: number;
@@ -211,6 +213,8 @@ export const CARDS: CardDefinition[] = [
     cost: 3,
     kind: "ability",
     range: 96,
+    heal: 65,
+    rallyDuration: 6,
   },
   {
     id: "raider",
@@ -432,11 +436,18 @@ export type AbilityTargetMovement = {
   y: number;
 };
 
+export type AbilityTargetHealing = {
+  unitId: number;
+  amount: number;
+};
+
 export type AbilityTargetPreview = {
   unitIds: number[];
   core: boolean;
   lethalUnitIds: number[];
   coreLethal: boolean;
+  healing: AbilityTargetHealing[];
+  tempoUnitIds: number[];
   movements: AbilityTargetMovement[];
 };
 
@@ -459,6 +470,8 @@ export function abilityTargetPreview(
       core: false,
       lethalUnitIds: [],
       coreLethal: false,
+      healing: [],
+      tempoUnitIds: [],
       movements: [],
     };
 
@@ -514,12 +527,32 @@ export function abilityTargetPreview(
   const coreLethal =
     core &&
     state.cores[other(team)].hp <= (card.coreDamage ?? 0);
+  const healing =
+    card.id === "rally"
+      ? targets
+          .map((unit) => ({
+            unitId: unit.id,
+            amount: Math.max(
+              0,
+              Math.min(unit.maxHp - unit.hp, card.heal ?? 0),
+            ),
+          }))
+          .filter((result) => result.amount > 0)
+      : [];
+  const tempoUnitIds =
+    card.id === "rally"
+      ? targets
+          .filter((unit) => unit.rallyTime < (card.rallyDuration ?? 0))
+          .map((unit) => unit.id)
+      : [];
 
   return {
     unitIds: targets.map((unit) => unit.id),
     core,
     lethalUnitIds,
     coreLethal,
+    healing,
+    tempoUnitIds,
     movements,
   };
 }
@@ -742,6 +775,12 @@ export class Match {
         ? abilityTargetPreview(this.state, team, card.id, x, y)
         : null;
     const targetIds = new Set(targetPreview?.unitIds ?? []);
+    const targetHealing = new Map(
+      (targetPreview?.healing ?? []).map(
+        (healing) => [healing.unitId, healing.amount] as const,
+      ),
+    );
+    const tempoUnitIds = new Set(targetPreview?.tempoUnitIds ?? []);
     const targetMovements = new Map(
       (targetPreview?.movements ?? []).map(
         (movement) => [movement.unitId, movement] as const,
@@ -805,11 +844,17 @@ export class Match {
     } else if (card.id === "rally") {
       this.effect("rally", x, y, team, 0.8);
       for (const unit of this.state.units) {
-        if (targetIds.has(unit.id)) {
-          unit.hp = Math.min(unit.maxHp, unit.hp + 65);
-          unit.rallyTime = Math.max(unit.rallyTime, 6);
+        if (!targetIds.has(unit.id)) continue;
+        const healing = targetHealing.get(unit.id) ?? 0;
+        if (healing > 0) {
+          unit.hp = Math.min(unit.maxHp, unit.hp + healing);
           this.effect("heal", unit.x, unit.y, team, 0.65);
         }
+        if (tempoUnitIds.has(unit.id))
+          unit.rallyTime = Math.max(
+            unit.rallyTime,
+            card.rallyDuration ?? unit.rallyTime,
+          );
       }
       if (team === "player") this.state.stats.abilities++;
     }

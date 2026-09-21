@@ -903,3 +903,37 @@ test("Pulse preview marks only targets the cast will actually finish", () => {
   assert.equal(preview.coreLethal, false);
 });
 
+test("Rally preview reports exact healing and tempo changes", () => {
+  const match = quietMatch();
+  const hurt = staticUnit(match, "player", 195, 390);
+  const full = staticUnit(match, "player", 225, 390);
+  hurt.hp = hurt.maxHp - 40;
+  full.rallyTime = 6;
+  match.state.energy.player = 10;
+
+  let preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "rally",
+    210,
+    390,
+  );
+  assert.deepEqual(preview.unitIds, [hurt.id, full.id]);
+  assert.deepEqual(preview.healing, [{ unitId: hurt.id, amount: 40 }]);
+  assert.deepEqual(preview.tempoUnitIds, [hurt.id]);
+
+  assert.ok(match.play("player", "rally", 210, 390).ok);
+  assert.equal(hurt.hp, hurt.maxHp);
+  assert.equal(hurt.rallyTime, 6);
+  assert.equal(full.hp, full.maxHp);
+  assert.equal(full.rallyTime, 6);
+
+  hurt.hp = hurt.maxHp - 100;
+  hurt.rallyTime = 0;
+  match.state.energy.player = 10;
+  preview = abilityTargetPreview(match.state, "player", "rally", 195, 390);
+  assert.deepEqual(preview.healing, [{ unitId: hurt.id, amount: 65 }]);
+  assert.ok(match.play("player", "rally", 195, 390).ok);
+  assert.equal(hurt.hp, hurt.maxHp - 35);
+});
+

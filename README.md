@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.89
+## Current v0.90
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -482,4 +482,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the aiming label appends K.O. and KERNBRUCH outcome hints without changing whether an otherwise legal cast is allowed
 - dedicated regression coverage distinguishes lethal, shield-surviving and one-hit-Core Pulse previews
 - Pulse damage, Core damage, range, energy cost and all other combat values remain unchanged
+
+## v0.90 changes
+
+- Rally aiming now calculates the exact HP that will actually be restored to every affected allied unit before release
+- the aiming label reports total effective healing and the number of allies whose six-second tempo boost will be added or refreshed
+- a fully redundant Rally cast remains legal but is surfaced in amber as KEIN BONUS instead of looking equally valuable
+- affected allies receive compact heal and tempo markers so full-health or already-boosted targets can be distinguished from units that will materially benefit
+- Rally heal strength and tempo duration now live on the card definition and are reused by both preview and execution
+- Rally execution consumes the shared preview deltas, keeping the displayed healing result and the committed combat result aligned
+- dedicated regression coverage verifies capped healing, full-health targets and already-active tempo states
+- Rally healing, tempo duration, radius, energy cost and all other combat values remain unchanged
 
