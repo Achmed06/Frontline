@@ -609,6 +609,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - every specialist hint is generated from the card definition, so balance changes automatically update the HUD
 - ordinary unit descriptions and all combat values remain unchanged
 
+
+### Versioning
+
+- `package.json` is the release-version source of truth
+- `npm run version:sync` maps package `1.2.0` to Frontline `v1.02`, iOS `1.02` and native build `102`
+- `npm run ios:sync` performs this synchronization before every native build
+- CI verifies that README and the Xcode project cannot silently drift from the package release
+
 ## v1.02 changes
 
 - Breaker now emits its dedicated specialist impact effect only when a hit actually removes enemy shield

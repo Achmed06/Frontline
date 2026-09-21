@@ -9,9 +9,11 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "tsx --test src/*.test.ts",
     "start": "tsx server/start.ts",
-    "ios:sync": "npm run build && cap sync ios",
+    "ios:sync": "npm run version:sync && npm run build && cap sync ios",
     "ios:open": "cap open ios",
-    "ios:ipa": "bash scripts/ios-ipa.sh"
+    "ios:ipa": "bash scripts/ios-ipa.sh",
+    "version:sync": "node scripts/sync-version.mjs",
+    "version:check": "node scripts/sync-version.mjs --check"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",

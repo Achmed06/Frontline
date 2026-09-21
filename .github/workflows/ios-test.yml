@@ -50,6 +50,8 @@ jobs:
       - name: Select Xcode 26.3
         run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
       - run: npm run ios:sync
+      - name: Verify native version matches package release
+        run: npm run version:check
       - name: Compile native iPhone target without signing
         run: >-
           xcodebuild -project ios/App/App.xcodeproj -scheme App
@@ -65,6 +67,11 @@ jobs:
           cd releases/unsigned
           /usr/bin/zip -qry Frontline-unsigned.ipa Payload
           test -s Frontline-unsigned.ipa
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Payload/App.app/Info.plist)
+          BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' Payload/App.app/Info.plist)
+          test "$VERSION" = "1.02"
+          test "$BUILD" = "102"
+          echo "Packaged Frontline $VERSION ($BUILD)"
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
