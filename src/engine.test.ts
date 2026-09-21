@@ -80,7 +80,7 @@ test("swarm members cannot spawn beyond supply when crossing a column boundary",
   assert.equal(match.state.units.length, 3);
   assert.deepEqual(
     match.state.units.map((unit) => ({ x: unit.x, y: unit.y })),
-    preview,
+    preview.map(({ x, y }) => ({ x, y })),
   );
   assert.ok(
     match.state.units.every((unit) =>
@@ -95,15 +95,44 @@ test("deployment preview predicts exact swarm spawn points", () => {
   match.state.points[4].owner = "player";
   const preview = match.deploymentPreview("player", "swarm", 150, 230);
   assert.deepEqual(
-    preview.map((point) => point.x),
-    [133, 150, 167],
+    preview.map(({ x, idealX }) => ({ x, idealX })),
+    [
+      { x: 133, idealX: 133 },
+      { x: 150, idealX: 150 },
+      { x: 167, idealX: 167 },
+    ],
   );
-  assert.ok(preview[0].y > preview[1].y);
+  assert.deepEqual(
+    preview.map((point) => point.adjusted),
+    [true, false, false],
+  );
+  assert.equal(preview[0].idealY, 230);
+  assert.ok(preview[0].y > preview[0].idealY);
   assert.equal(preview[1].y, 230);
   assert.equal(preview[2].y, 230);
 
   const single = match.deploymentPreview("player", "vanguard", 210, 390);
-  assert.deepEqual(single, [{ x: 210, y: 390 }]);
+  assert.deepEqual(
+    single.map(({ x, y, idealX, idealY, adjusted }) => ({
+      x,
+      y,
+      idealX,
+      idealY,
+      adjusted,
+    })),
+    [{ x: 210, y: 390, idealX: 210, idealY: 390, adjusted: false }],
+  );
+});
+
+test("deployment preview reports board-edge formation correction", () => {
+  const match = quietMatch();
+  const preview = match.deploymentPreview("player", "swarm", 25, 490);
+  assert.equal(preview.length, 3);
+  assert.equal(preview[0].idealX, 8);
+  assert.equal(preview[0].x, 18);
+  assert.equal(preview[0].adjusted, true);
+  assert.equal(preview[1].adjusted, false);
+  assert.equal(preview[2].adjusted, false);
 });
 
 test("invalid actions are atomic and energy regenerates equally, independent of territory", () => {

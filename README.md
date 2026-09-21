@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.92
+## Current v0.93
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -515,4 +515,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - committed deployment consumes the exact preview coordinates, including per-member frontline clamping when a Swarm crosses a column boundary
 - dedicated regression coverage verifies that previewed Swarm coordinates exactly match spawned units and still obey connected supply
 - unit counts, spacing, attack ranges, energy costs and all combat values remain unchanged
+
+## v0.93 changes
+
+- deployment preview now keeps both the requested formation point and the legal resolved spawn point for every unit
+- Swarm aiming distinguishes ordinary three-unit spacing from a real automatic correction caused by a battlefield edge or a stricter connected-supply frontline in another column
+- corrected members are marked with an amber origin ring, displacement line and landing arrow instead of drawing misleading lines from the pointer for every normal formation offset
+- the aiming label reports FORMATION ANGEPASST with the exact number of members that will be repositioned before deployment
+- valid but corrected placements use amber feedback so the player can reposition before committing without blocking a legal deployment
+- committed unit deployment still consumes the exact resolved preview coordinates
+- regression coverage verifies both cross-column supply correction and board-edge correction while preserving unadjusted single-unit placements
+- deployment legality, Swarm spacing, unit counts, energy costs and all combat values remain unchanged
 

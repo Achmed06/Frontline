@@ -1123,6 +1123,9 @@ export class ArenaScene extends Phaser.Scene {
         card.kind === "unit"
           ? m.deploymentPreview("player", card.id, x, y)
           : [];
+      const adjustedDeployment = deployment.filter(
+        (point) => point.adjusted,
+      ).length;
       const affectedUnits = abilityTargets?.unitIds.length ?? 0;
       const affectedCount = affectedUnits + (abilityTargets?.core ? 1 : 0);
       const targetSummary = abilityTargets?.core
@@ -1180,15 +1183,24 @@ export class ArenaScene extends Phaser.Scene {
         const actionText =
           card.kind === "ability"
             ? `LOSLASSEN ZUM WIRKEN · ${targetSummary}${outcomeSummary ? ` · ${outcomeSummary}` : ""}`
-            : deployment.length > 1
-              ? `LOSLASSEN ZUM EINSETZEN · ${deployment.length} EINHEITEN`
-              : "LOSLASSEN ZUM EINSETZEN";
+            : [
+                "LOSLASSEN ZUM EINSETZEN",
+                deployment.length > 1
+                  ? `${deployment.length} EINHEITEN`
+                  : "",
+                adjustedDeployment
+                  ? `FORMATION ANGEPASST ${adjustedDeployment}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" · ");
         this.aimLabel
           .setText(valid ? actionText : validation.message)
           .setColor(
             valid
-              ? card.kind === "ability" &&
-                (affectedCount === 0 || rallyWasted || stasisWasted)
+              ? (card.kind === "ability" &&
+                  (affectedCount === 0 || rallyWasted || stasisWasted)) ||
+                (card.kind === "unit" && adjustedDeployment > 0)
                 ? "#ffd37a"
                 : "#83ffcf"
               : "#ff927c",
@@ -1235,12 +1247,38 @@ export class ArenaScene extends Phaser.Scene {
           }
           fx.lineStyle(1.8, previewColor, 0.72);
           fx.strokeCircle(point.x, point.y, 19);
-          if (
-            deployment.length > 1 &&
-            (Math.abs(point.x - x) > 0.5 || Math.abs(point.y - y) > 0.5)
-          ) {
-            fx.lineStyle(1, previewColor, 0.28);
-            fx.lineBetween(x, y, point.x, point.y);
+          if (point.adjusted) {
+            fx.lineStyle(1.5, 0xffd37a, 0.72);
+            fx.strokeCircle(point.idealX, point.idealY, 10);
+            fx.lineBetween(
+              point.idealX,
+              point.idealY,
+              point.x,
+              point.y,
+            );
+            const dx = point.x - point.idealX;
+            const dy = point.y - point.idealY;
+            const travel = Math.hypot(dx, dy);
+            if (travel > 1) {
+              const ux = dx / travel;
+              const uy = dy / travel;
+              const px = -uy;
+              const py = ux;
+              const arrowX = point.x - ux * 11;
+              const arrowY = point.y - uy * 11;
+              fx.lineBetween(
+                point.x,
+                point.y,
+                arrowX + px * 5,
+                arrowY + py * 5,
+              );
+              fx.lineBetween(
+                point.x,
+                point.y,
+                arrowX - px * 5,
+                arrowY - py * 5,
+              );
+            }
           }
         }
       } else {

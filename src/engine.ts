@@ -433,6 +433,9 @@ export interface PlayResult {
 export type DeploymentPoint = {
   x: number;
   y: number;
+  idealX: number;
+  idealY: number;
+  adjusted: boolean;
 };
 
 export type AbilityTargetMovement = {
@@ -768,15 +771,20 @@ export class Match {
       return [];
     const count = card.count ?? 1;
     return Array.from({ length: count }, (_, i) => {
-      const spawnX = clamp(
-        x + (count > 1 ? (i - (count - 1) / 2) * 17 : 0),
-        18,
-        BOARD_WIDTH - 18,
-      );
+      const idealX = x + (count > 1 ? (i - (count - 1) / 2) * 17 : 0);
+      const idealY = y;
+      const spawnX = clamp(idealX, 18, BOARD_WIDTH - 18);
       const front = this.frontline(team, spawnX);
+      const spawnY =
+        team === "player" ? Math.max(idealY, front) : Math.min(idealY, front);
       return {
         x: spawnX,
-        y: team === "player" ? Math.max(y, front) : Math.min(y, front),
+        y: spawnY,
+        idealX,
+        idealY,
+        adjusted:
+          Math.abs(spawnX - idealX) > 1e-8 ||
+          Math.abs(spawnY - idealY) > 1e-8,
       };
     });
   }
