@@ -53,6 +53,7 @@ test("battle coach guides the existing learning path without changing combat", (
   assert.equal(hint?.title, "BODEN EROBERN");
   assert.equal(hint?.focus, "arena");
 
+  match.state.units[0].hp = 0;
   match.state.stats.captured = 1;
   hint = battleCoachHint(progress, match.state, null);
   assert.equal(hint?.title, "TAKTIK EINSETZEN");
