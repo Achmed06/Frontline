@@ -11,9 +11,9 @@ const minor = minorRaw.padStart(2, "0");
 const patch = Number(patchRaw);
 const releaseVersion = `${major}.${minor}${patch ? `.${patch}` : ""}`;
 const releaseLabel = `v${releaseVersion}`;
-const buildNumber = String(
-  Number(major) * 10000 + Number(minorRaw) * 100 + patch,
-);
+const buildNumber = patch
+  ? `${Number(major)}${minor}${String(patch).padStart(2, "0")}`
+  : String(Number(`${major}${minor}`));
 
 const projectPath = "ios/App/App.xcodeproj/project.pbxproj";
 const readmePath = "README.md";
