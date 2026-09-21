@@ -43,6 +43,7 @@ export interface CardDefinition {
   pushDistance?: number;
   coreDamage?: number;
   coreRange?: number;
+  coreDamageMultiplier?: number;
   shieldBreak?: number;
   captureMultiplier?: number;
 }
@@ -177,6 +178,7 @@ export const CARDS: CardDefinition[] = [
     count: 1,
     interval: 2.2,
     radius: 10,
+    coreDamageMultiplier: 1.6,
   },
   {
     id: "medic",
@@ -1273,7 +1275,10 @@ export class Match {
           attacks.push({
             unit,
             target: enemyCore,
-            amount: unit.damage * (unit.cardId === "lancer" ? 1.6 : 1),
+            amount:
+              unit.damage *
+              (CARDS.find((card) => card.id === unit.cardId)
+                ?.coreDamageMultiplier ?? 1),
             core: true,
           });
           unit.attackCooldown = unit.interval;

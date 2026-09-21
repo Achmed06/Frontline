@@ -1063,3 +1063,17 @@ test("Pulse damage preview matches shield and health resolution", () => {
   assert.equal(enemy.hp, 45);
 });
 
+test("Lancer core bonus comes from its card definition", () => {
+  const match = quietMatch();
+  const lancer = staticUnit(match, "player", 210, 145, "lancer");
+  lancer.attackCooldown = 0;
+  const card = CARDS.find((item) => item.id === "lancer")!;
+  const expectedDamage = lancer.damage * (card.coreDamageMultiplier ?? 1);
+  const before = match.state.cores.enemy.hp;
+
+  match.update(1 / 30);
+
+  assert.equal(before - match.state.cores.enemy.hp, expectedDamage);
+  assert.equal(card.coreDamageMultiplier, 1.6);
+});
+

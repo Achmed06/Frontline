@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.95
+## Current v0.96
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -546,4 +546,12 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - committed Pulse unit damage now reads the damage value from the Pulse card definition instead of the remaining hard-coded 85
 - dedicated regression coverage verifies that a 30-shield target absorbs 30 damage, takes 55 HP damage and finishes at the exact previewed health
 - Pulse damage, radius, Core damage, energy cost and all combat balance values remain unchanged
+
+## v0.96 changes
+
+- Lancer's 60% bonus damage against the enemy Core now lives on the Lancer card definition instead of a hard-coded combat branch
+- Core attack resolution reads the optional per-card Core damage multiplier, leaving ordinary units at the default 1.0 multiplier
+- the existing Lancer balance remains exactly 48 base damage multiplied by 1.6 when firing at a Core
+- dedicated regression coverage verifies that the real Core HP loss equals the Lancer card's configured multiplier
+- Lancer health, range, speed, fire interval, energy cost and all other combat values remain unchanged
 
