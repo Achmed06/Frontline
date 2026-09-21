@@ -456,11 +456,20 @@ export type AbilityTargetSlow = {
   changed: boolean;
 };
 
+export type AbilityTargetDamage = {
+  unitId: number;
+  shieldDamage: number;
+  hpDamage: number;
+  remainingShield: number;
+  remainingHp: number;
+};
+
 export type AbilityTargetPreview = {
   unitIds: number[];
   core: boolean;
   lethalUnitIds: number[];
   coreLethal: boolean;
+  damage: AbilityTargetDamage[];
   healing: AbilityTargetHealing[];
   tempoUnitIds: number[];
   slows: AbilityTargetSlow[];
@@ -486,6 +495,7 @@ export function abilityTargetPreview(
       core: false,
       lethalUnitIds: [],
       coreLethal: false,
+      damage: [],
       healing: [],
       tempoUnitIds: [],
       slows: [],
@@ -535,12 +545,27 @@ export function abilityTargetPreview(
   const core =
     card.id === "pulse" &&
     distance(state.cores[other(team)], { x, y }) <= (card.coreRange ?? 0);
-  const lethalUnitIds =
+  const damage =
     card.id === "pulse"
-      ? targets
-          .filter((unit) => unit.hp + unit.shield <= (card.damage ?? 0))
-          .map((unit) => unit.id)
+      ? targets.map((unit) => {
+          const amount = Math.max(0, card.damage ?? 0);
+          const shieldDamage = Math.min(unit.shield, amount);
+          const hpDamage = Math.min(
+            unit.hp,
+            Math.max(0, amount - shieldDamage),
+          );
+          return {
+            unitId: unit.id,
+            shieldDamage,
+            hpDamage,
+            remainingShield: unit.shield - shieldDamage,
+            remainingHp: Math.max(0, unit.hp - hpDamage),
+          };
+        })
       : [];
+  const lethalUnitIds = damage
+    .filter((result) => result.remainingHp <= 0)
+    .map((result) => result.unitId);
   const coreLethal =
     core &&
     state.cores[other(team)].hp <= (card.coreDamage ?? 0);
@@ -589,6 +614,7 @@ export function abilityTargetPreview(
     core,
     lethalUnitIds,
     coreLethal,
+    damage,
     healing,
     tempoUnitIds,
     slows,
@@ -904,7 +930,8 @@ export class Match {
     } else if (card.id === "pulse") {
       this.effect("pulse", x, y, team, 0.75);
       for (const unit of this.state.units) {
-        if (targetIds.has(unit.id)) this.damageUnit(unit, 85, team);
+        if (targetIds.has(unit.id))
+          this.damageUnit(unit, card.damage ?? 0, team);
       }
       const core = this.state.cores[other(team)];
       if (targetPreview?.core) {

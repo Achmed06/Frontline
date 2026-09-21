@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.94
+## Current v0.95
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -536,4 +536,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - invalid deployment keeps the existing coral feedback across every projected member
 - all deployment ghosts are hidden together on aim cancel, selection change and normal redraw cleanup so stale formation silhouettes cannot remain on screen
 - gameplay, deployment coordinates, unit counts, energy costs and all combat values remain unchanged
+
+## v0.95 changes
+
+- Pulse preview now computes the exact shield damage and HP damage that will be applied to every affected enemy
+- the aiming label reports aggregate SCHILD and HP damage before the existing knockout and Core-break indicators
+- shielded Pulse targets receive a compact blue shield-impact arc so absorbed damage is visually distinct from direct health damage
+- lethal detection is now derived from the same projected post-hit HP outcome instead of a separate health-plus-shield comparison
+- committed Pulse unit damage now reads the damage value from the Pulse card definition instead of the remaining hard-coded 85
+- dedicated regression coverage verifies that a 30-shield target absorbs 30 damage, takes 55 HP damage and finishes at the exact previewed health
+- Pulse damage, radius, Core damage, energy cost and all combat balance values remain unchanged
 

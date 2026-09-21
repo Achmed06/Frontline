@@ -1144,6 +1144,16 @@ export class ArenaScene extends Phaser.Scene {
           ? `${affectedUnits} ${affectedUnits === 1 ? "TRUPPE" : "TRUPPEN"}`
           : "0 ZIELE";
       const lethalUnits = abilityTargets?.lethalUnitIds.length ?? 0;
+      const pulseHpDamage =
+        abilityTargets?.damage.reduce(
+          (sum, result) => sum + result.hpDamage,
+          0,
+        ) ?? 0;
+      const pulseShieldDamage =
+        abilityTargets?.damage.reduce(
+          (sum, result) => sum + result.shieldDamage,
+          0,
+        ) ?? 0;
       const totalHealing =
         abilityTargets?.healing.reduce(
           (sum, healing) => sum + healing.amount,
@@ -1162,6 +1172,10 @@ export class ArenaScene extends Phaser.Scene {
       const outcomeSummary =
         card.id === "pulse"
           ? [
+              pulseShieldDamage
+                ? `-${pulseShieldDamage} SCHILD`
+                : "",
+              pulseHpDamage ? `-${pulseHpDamage} HP` : "",
               lethalUnits ? `${lethalUnits} K.O.` : "",
               abilityTargets?.coreLethal ? "KERNBRUCH" : "",
             ]
@@ -1315,6 +1329,22 @@ export class ArenaScene extends Phaser.Scene {
           fx.strokeCircle(target.x, target.y, target.radius + 9);
           fx.lineStyle(1, 0xffffff, pulse * 0.55);
           fx.strokeCircle(target.x, target.y, target.radius + 13);
+          const damage = abilityTargets?.damage.find(
+            (result) => result.unitId === target.id,
+          );
+          if (damage?.shieldDamage) {
+            const mark = target.radius + 16;
+            fx.lineStyle(1.5, 0x88d5ff, 0.82);
+            fx.arc(
+              target.x,
+              target.y,
+              mark,
+              Math.PI * 1.08,
+              Math.PI * 1.92,
+              false,
+            );
+            fx.strokePath();
+          }
           if (abilityTargets?.lethalUnitIds.includes(target.id)) {
             const mark = target.radius + 16;
             fx.lineStyle(2, CORAL, 0.9);

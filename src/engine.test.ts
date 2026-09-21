@@ -1032,3 +1032,34 @@ test("Stasis preview distinguishes effective refreshes from fully applied slow",
   }
 });
 
+test("Pulse damage preview matches shield and health resolution", () => {
+  const match = quietMatch();
+  const enemy = staticUnit(match, "enemy", 210, 280);
+  enemy.hp = 100;
+  enemy.shield = 30;
+  match.state.energy.player = 10;
+
+  const preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "pulse",
+    210,
+    280,
+  );
+  assert.deepEqual(preview.unitIds, [enemy.id]);
+  assert.deepEqual(preview.damage, [
+    {
+      unitId: enemy.id,
+      shieldDamage: 30,
+      hpDamage: 55,
+      remainingShield: 0,
+      remainingHp: 45,
+    },
+  ]);
+  assert.deepEqual(preview.lethalUnitIds, []);
+
+  assert.ok(match.play("player", "pulse", 210, 280).ok);
+  assert.equal(enemy.shield, 0);
+  assert.equal(enemy.hp, 45);
+});
+
