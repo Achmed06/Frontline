@@ -256,11 +256,29 @@ h1 em {
   justify-content: flex-end;
 }
 .enemy-command {
+  position: relative;
   display: inline-flex;
   align-items: baseline;
   justify-content: flex-end;
   gap: 5px;
   min-width: 0;
+  padding-bottom: 3px;
+}
+#enemy-commander-cooldown-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1.5px;
+  transform: scaleX(1);
+  transform-origin: right center;
+  background: #ff9a85;
+  opacity: 0.82;
+  pointer-events: none;
+}
+#enemy-commander-cooldown-progress.cooling {
+  background: #c98578;
+  opacity: 0.62;
 }
 .enemy-command b {
   white-space: nowrap;

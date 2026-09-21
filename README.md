@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.78
+## Current v0.79
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -364,3 +364,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - active-duration, target-aware readiness and contextual availability text remain unchanged
 - cooldown progress is derived from the real Commander cooldown and clamped defensively
 - the progress rail is purely presentational and does not alter Commander timing, effects or combat values
+
+
+## v0.79 changes
+
+- the opposing Commander HUD now mirrors the player's cooldown readability with its own thin progress rail
+- the enemy rail starts empty when the opposing ability fires and fills continuously toward readiness
+- the rail fills from the enemy side of the HUD to preserve the visual left/right team direction
+- enemy active-duration, cooldown text and target-aware availability states remain unchanged
+- progress uses the same real enemy Commander cooldown and shared clamped progress helper as the player rail
+- the enemy cooldown rail is purely presentational and does not alter bot decisions, Commander timing or combat values
