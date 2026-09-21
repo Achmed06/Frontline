@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.01
+## Current v1.02
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -608,4 +608,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Disruptor shows 12 damage, 40% movement slow and 2-second duration
 - every specialist hint is generated from the card definition, so balance changes automatically update the HUD
 - ordinary unit descriptions and all combat values remain unchanged
+
+## v1.02 changes
+
+- Breaker now emits its dedicated specialist impact effect only when a hit actually removes enemy shield
+- the old generic shield pulse on Breaker attacks is replaced by a distinct angular shield-break visual so shield removal cannot be mistaken for shield gain
+- Pioneer now emits its dedicated capture-specialist pulse when its configured capture multiplier contributes to a completed point capture
+- ordinary captures keep the normal capture effect and do not emit Pioneer feedback
+- both specialist effects were already part of the effect model but were previously never produced by the simulation
+- regression coverage verifies Breaker shield removal/effect gating and Pioneer accelerated capture/effect gating
+- Breaker damage, shield break, Pioneer capture speed and all other balance values remain unchanged
 

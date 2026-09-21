@@ -1340,8 +1340,18 @@ export class Match {
       } else {
         const target = attack.target as Unit;
         if (card.shieldBreak && target.hp > 0 && target.shield > 0) {
+          const shieldBefore = target.shield;
           target.shield = Math.max(0, target.shield - card.shieldBreak);
-          this.effect("shield", target.x, target.y, attack.unit.team, 0.3);
+          if (target.shield < shieldBefore)
+            this.effect(
+              "breaker",
+              target.x,
+              target.y,
+              attack.unit.team,
+              0.42,
+              undefined,
+              target.radius + 18,
+            );
         }
         this.damageUnit(target, attack.amount, attack.unit.team);
         if (card.slowDuration && target.hp > 0) {
@@ -1519,6 +1529,16 @@ export class Match {
         point.owner = capturer;
         point.capture = 0;
         point.captureTeam = null;
+        if (captureMultiplier > 1)
+          this.effect(
+            "pioneer",
+            point.x,
+            point.y,
+            capturer,
+            0.75,
+            undefined,
+            CAPTURE_RADIUS,
+          );
         this.effect("capture", point.x, point.y, capturer, 1.1);
         if (capturer === "player") this.state.stats.captured++;
       }

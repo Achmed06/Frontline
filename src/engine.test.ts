@@ -1147,3 +1147,86 @@ test("Rally tempo multipliers are card data used by simulation", () => {
   );
 });
 
+test("Breaker emits its specialist effect only when it actually strips shield", () => {
+  const specialistDeck: CardId[] = [
+    "pioneer",
+    "breaker",
+    "ranger",
+    "medic",
+    "mortar",
+    "disruptor",
+    "pulse",
+    "rally",
+  ];
+  const match = new Match({
+    playerDeck: specialistDeck,
+    botEnabled: false,
+  });
+  const breaker = staticUnit(match, "player", 210, 300, "breaker");
+  const target = staticUnit(match, "enemy", 210, 270);
+  const card = CARDS.find((item) => item.id === "breaker")!;
+  Object.assign(breaker, {
+    damage: card.damage!,
+    range: card.range!,
+    attackCooldown: 0,
+  });
+  target.shield = 70;
+  target.shieldTime = 6;
+
+  match.update(1 / 30);
+
+  assert.equal(target.shield, 7);
+  assert.equal(target.hp, target.maxHp);
+  assert.ok(
+    match.state.effects.some(
+      (effect) =>
+        effect.type === "breaker" &&
+        effect.x === target.x &&
+        effect.y === target.y,
+    ),
+  );
+
+  match.state.effects = [];
+  target.shield = 0;
+  breaker.attackCooldown = 0;
+  match.update(1 / 30);
+  assert.equal(
+    match.state.effects.some((effect) => effect.type === "breaker"),
+    false,
+  );
+});
+
+test("Pioneer accelerated capture emits its specialist completion effect", () => {
+  const specialistDeck: CardId[] = [
+    "pioneer",
+    "breaker",
+    "ranger",
+    "medic",
+    "mortar",
+    "disruptor",
+    "pulse",
+    "rally",
+  ];
+  const pioneerMatch = new Match({
+    playerDeck: specialistDeck,
+    botEnabled: false,
+  });
+  staticUnit(pioneerMatch, "player", 210, 280, "pioneer");
+  pioneerMatch.update(CAPTURE_SECONDS / 1.5 + 0.1);
+  assert.equal(pioneerMatch.state.points[4].owner, "player");
+  assert.ok(
+    pioneerMatch.state.effects.some(
+      (effect) => effect.type === "pioneer" && effect.radius === CAPTURE_RADIUS,
+    ),
+  );
+
+  const ordinaryMatch = quietMatch();
+  staticUnit(ordinaryMatch, "player", 210, 280);
+  ordinaryMatch.update(CAPTURE_SECONDS / 1.5 + 0.1);
+  assert.equal(ordinaryMatch.state.points[4].owner, null);
+  assert.equal(
+    ordinaryMatch.state.effects.some((effect) => effect.type === "pioneer"),
+    false,
+  );
+});
+

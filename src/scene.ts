@@ -902,21 +902,27 @@ export class ArenaScene extends Phaser.Scene {
           e.radius ??
           (e.type === "pulse" || e.type === "rally"
             ? 75
-            : e.type === "capture"
+            : e.type === "capture" || e.type === "pioneer"
               ? 45
-              : e.type === "death"
-                ? 15
-                : 23);
+              : e.type === "breaker"
+                ? 28
+                : e.type === "death"
+                  ? 15
+                  : 23);
         const effectColor =
           e.type === "stasis"
             ? 0x88d5ff
             : e.type === "repulsor"
               ? 0xc29aff
-              : e.type === "heal" || e.type === "rally"
-                ? 0x66ffb0
-                : e.type === "pulse" || e.type === "blast"
-                  ? 0xffc368
-                  : color;
+              : e.type === "breaker"
+                ? 0xffcf67
+                : e.type === "pioneer"
+                  ? 0x75f0ad
+                  : e.type === "heal" || e.type === "rally"
+                    ? 0x66ffb0
+                    : e.type === "pulse" || e.type === "blast"
+                      ? 0xffc368
+                      : color;
         if (e.type === "pulse" || e.type === "blast" || e.type === "capture") {
           fx.fillStyle(effectColor, alpha * 0.22);
           fx.fillCircle(e.x, e.y, 5 + radius * progress);
@@ -1082,6 +1088,54 @@ export class ArenaScene extends Phaser.Scene {
             fx.lineBetween(ex, ey, ex - tx * 6 - px * 3.5, ey - ty * 6 - py * 3.5);
           }
         }
+        if (e.type === "breaker") {
+          const wave = 7 + radius * progress;
+          fx.fillStyle(effectColor, alpha * 0.07);
+          this.polygon(
+            fx,
+            this.hex(e.x, e.y, wave),
+            effectColor,
+            alpha * 0.07,
+            effectColor,
+          );
+          fx.lineStyle(2.4, effectColor, alpha * 0.95);
+          this.polygon(
+            fx,
+            this.hex(e.x, e.y, wave),
+            0x000000,
+            0,
+            effectColor,
+          );
+          fx.lineStyle(1.8, 0xffffff, alpha * 0.72);
+          const slash = wave * 0.72;
+          fx.lineBetween(
+            e.x - slash,
+            e.y - slash * 0.25,
+            e.x + slash,
+            e.y + slash * 0.25,
+          );
+          fx.lineBetween(
+            e.x - slash * 0.25,
+            e.y + slash,
+            e.x + slash * 0.25,
+            e.y - slash,
+          );
+        }
+        if (e.type === "pioneer") {
+          const wave = 10 + radius * progress;
+          fx.fillStyle(effectColor, alpha * 0.045);
+          fx.fillCircle(e.x, e.y, wave);
+          fx.lineStyle(2.1, effectColor, alpha * 0.92);
+          fx.strokeCircle(e.x, e.y, wave);
+          fx.lineStyle(1.5, 0xffffff, alpha * 0.6);
+          for (const offset of [-1, 0, 1]) {
+            const px = e.x + offset * 11;
+            const tipY = e.y - 8 - progress * 15;
+            fx.lineBetween(px, e.y + 9, px, tipY + 6);
+            fx.lineBetween(px, tipY, px - 4, tipY + 6);
+            fx.lineBetween(px, tipY, px + 4, tipY + 6);
+          }
+        }
         if (e.type === "shield") {
           const wave = 9 + radius * progress;
           fx.fillStyle(effectColor, alpha * 0.045);
@@ -1096,6 +1150,8 @@ export class ArenaScene extends Phaser.Scene {
           e.type !== "rally" &&
           e.type !== "stasis" &&
           e.type !== "repulsor" &&
+          e.type !== "breaker" &&
+          e.type !== "pioneer" &&
           e.type !== "shield"
         ) {
           fx.lineStyle(2, effectColor, alpha);
