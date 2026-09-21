@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.97
+## Current v0.98
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -563,4 +563,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the v0.96 Lancer Core regression is hardened to restore the real 48 damage and 135 range after the static test helper neutralizes combat stats
 - the Lancer regression now proves an actual 76.8 Core hit from the configured 1.6 multiplier instead of allowing a zero-damage false positive
 - Medic and Lancer balance values remain unchanged
+
+## v0.98 changes
+
+- Rally and NOVA now share explicit non-stacking tempo constants instead of relying on hidden 1.25 and 1.3 multipliers inside movement and cooldown code
+- the shared tempo status remains +25% movement speed and +30% attack speed
+- Rally exposes both multipliers on its card definition and now states the exact percentages in its player-facing description
+- NOVA exposes the same shared multipliers on its commander definition, matching its existing description and the simulation
+- movement and attack-cooldown resolution consume the shared tempo constants, keeping Rally and NOVA mechanically identical as intended
+- the existing Disruptor + Rally regression now derives expected movement from Rally card data instead of a hard-coded 0.75 result
+- dedicated coverage verifies the Rally attack-speed multiplier against the real cooldown update
+- healing, duration, cooldowns, energy costs and all other balance values remain unchanged
 

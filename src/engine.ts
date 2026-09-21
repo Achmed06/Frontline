@@ -1,4 +1,8 @@
 import { COMMANDERS, isCommanderId, type CommanderId } from "./commanders";
+import {
+  TEMPO_ATTACK_SPEED_MULTIPLIER,
+  TEMPO_MOVE_SPEED_MULTIPLIER,
+} from "./tempo";
 /** Deterministic, renderer-independent simulation for Project Frontline. */
 export type Team = "player" | "enemy";
 export type Difficulty = "rookie" | "standard" | "veteran";
@@ -34,6 +38,8 @@ export interface CardDefinition {
   supportInterval?: number;
   followDistance?: number;
   rallyDuration?: number;
+  moveSpeedMultiplier?: number;
+  attackSpeedMultiplier?: number;
   range?: number;
   speed?: number;
   count?: number;
@@ -218,12 +224,15 @@ export const CARDS: CardDefinition[] = [
     id: "rally",
     name: "Rally",
     role: "Heilung + Tempo",
-    description: "Heilt 65 HP und beschleunigt Verbündete für 6 Sekunden.",
+    description:
+      "Heilt 65 HP. 6 Sekunden lang +25 % Bewegung und +30 % Angriffstempo.",
     cost: 3,
     kind: "ability",
     range: 96,
     heal: 65,
     rallyDuration: 6,
+    moveSpeedMultiplier: TEMPO_MOVE_SPEED_MULTIPLIER,
+    attackSpeedMultiplier: TEMPO_ATTACK_SPEED_MULTIPLIER,
   },
   {
     id: "raider",
@@ -1233,7 +1242,8 @@ export class Match {
       if (unit.hp <= 0) continue;
       unit.attackCooldown = Math.max(
         0,
-        unit.attackCooldown - STEP * (unit.rallyTime > 0 ? 1.3 : 1),
+        unit.attackCooldown -
+          STEP * (unit.rallyTime > 0 ? TEMPO_ATTACK_SPEED_MULTIPLIER : 1),
       );
       unit.slowTime = Math.max(0, unit.slowTime - STEP);
       if (unit.slowTime === 0) unit.slowFactor = 1;
@@ -1422,7 +1432,10 @@ export class Match {
     if (d <= stopDistance || d < 0.01) return;
     const travel = Math.min(
       d - stopDistance,
-      unit.speed * STEP * (unit.rallyTime > 0 ? 1.25 : 1) * unit.slowFactor,
+      unit.speed *
+        STEP *
+        (unit.rallyTime > 0 ? TEMPO_MOVE_SPEED_MULTIPLIER : 1) *
+        unit.slowFactor,
     );
     unit.x = clamp(
       unit.x + ((target.x - unit.x) / d) * travel,

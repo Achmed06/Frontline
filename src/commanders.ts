@@ -1,3 +1,8 @@
+import {
+  TEMPO_ATTACK_SPEED_MULTIPLIER,
+  TEMPO_MOVE_SPEED_MULTIPLIER,
+} from "./tempo";
+
 /** New commander choices. Combat and bot use the same values. */
 export const COMMANDERS = {
   nova: {
@@ -9,6 +14,8 @@ export const COMMANDERS = {
       "Alle aktuell lebenden eigenen Truppen greifen 6 Sekunden lang 30 % schneller an und bewegen sich 25 % schneller. Keine Heilung; stapelt sich nicht mit Rally.",
     role: "TEMPO & ANGRIFF",
     duration: 6,
+    moveSpeedMultiplier: TEMPO_MOVE_SPEED_MULTIPLIER,
+    attackSpeedMultiplier: TEMPO_ATTACK_SPEED_MULTIPLIER,
   },
   atlas: {
     name: "ATLAS",

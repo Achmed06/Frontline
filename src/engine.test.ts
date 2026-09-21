@@ -684,8 +684,11 @@ test("Disruptor refreshes a non-stacking slow that expires and combines with Ral
   m.state.units = [target];
   Object.assign(target, { x: 85, y: 220, speed: 30, rallyTime: 6 });
   const y = target.y;
+  const rally = CARDS.find((card) => card.id === "rally")!;
   m.update(1 / 30);
-  assert.ok(Math.abs(target.y - y - 0.75) < 1e-8);
+  const expectedTravel =
+    30 * (1 / 30) * rally.moveSpeedMultiplier! * target.slowFactor;
+  assert.ok(Math.abs(target.y - y - expectedTravel) < 1e-8);
   target.speed = 0;
   m.update(2.1);
   assert.equal(target.slowTime, 0);
@@ -1100,5 +1103,28 @@ test("Medic support timing and healing come from card data", () => {
   assert.equal(card.followDistance, 65);
   assert.equal(patient.hp, 50 + card.heal!);
   assert.equal(medic.healCooldown, card.supportInterval);
+});
+
+test("Rally tempo multipliers are card data used by simulation", () => {
+  const match = quietMatch();
+  const unit = staticUnit(match, "player", 85, 220);
+  const rally = CARDS.find((card) => card.id === "rally")!;
+  Object.assign(unit, {
+    attackCooldown: 1,
+    rallyTime: rally.rallyDuration!,
+    speed: 0,
+  });
+  match.state.units = [unit];
+
+  match.update(1 / 30);
+
+  assert.equal(rally.moveSpeedMultiplier, 1.25);
+  assert.equal(rally.attackSpeedMultiplier, 1.3);
+  assert.ok(
+    Math.abs(
+      unit.attackCooldown -
+        (1 - (1 / 30) * rally.attackSpeedMultiplier!),
+    ) < 1e-8,
+  );
 });
 
