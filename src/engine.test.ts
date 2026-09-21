@@ -4,6 +4,7 @@ import {
   abilityTargetPreview,
   BOARD_HEIGHT,
   BOARD_WIDTH,
+  CAPTURE_RADIUS,
   CAPTURE_SECONDS,
   CARDS,
   DEFAULT_DECK,
@@ -1163,7 +1164,7 @@ test("Breaker emits its specialist effect only when it actually strips shield", 
     botEnabled: false,
   });
   const breaker = staticUnit(match, "player", 210, 300, "breaker");
-  const target = staticUnit(match, "enemy", 210, 270);
+  const target = staticUnit(match, "enemy", 210, 270, "ranger");
   const card = CARDS.find((item) => item.id === "breaker")!;
   Object.assign(breaker, {
     damage: card.damage!,
