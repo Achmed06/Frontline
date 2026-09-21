@@ -430,6 +430,11 @@ export interface PlayResult {
   message: string;
 }
 
+export type DeploymentPoint = {
+  x: number;
+  y: number;
+};
+
 export type AbilityTargetMovement = {
   unitId: number;
   x: number;
@@ -746,6 +751,36 @@ export class Match {
       : y <= this.frontline(team, x);
   }
 
+  /** Exact unit insertion points shared by renderer guidance and committed deployment. */
+  deploymentPreview(
+    team: Team,
+    cardId: CardId,
+    x: number,
+    y: number,
+  ): DeploymentPoint[] {
+    const card = CARDS.find((item) => item.id === cardId);
+    if (
+      !card ||
+      card.kind !== "unit" ||
+      !Number.isFinite(x) ||
+      !Number.isFinite(y)
+    )
+      return [];
+    const count = card.count ?? 1;
+    return Array.from({ length: count }, (_, i) => {
+      const spawnX = clamp(
+        x + (count > 1 ? (i - (count - 1) / 2) * 17 : 0),
+        18,
+        BOARD_WIDTH - 18,
+      );
+      const front = this.frontline(team, spawnX);
+      return {
+        x: spawnX,
+        y: team === "player" ? Math.max(y, front) : Math.min(y, front),
+      };
+    });
+  }
+
   /** Read-only check shared by aiming feedback and the committed action. */
   validatePlay(team: Team, cardId: string, x: number, y: number): PlayResult {
     if (this.state.phase === "ended")
@@ -805,6 +840,10 @@ export class Match {
       card.kind === "ability"
         ? abilityTargetPreview(this.state, team, card.id, x, y)
         : null;
+    const deployment =
+      card.kind === "unit"
+        ? this.deploymentPreview(team, card.id, x, y)
+        : [];
     const targetIds = new Set(targetPreview?.unitIds ?? []);
     const targetHealing = new Map(
       (targetPreview?.healing ?? []).map(
@@ -824,23 +863,13 @@ export class Match {
     );
     this.state.energy[team] = Math.max(0, this.state.energy[team] - card.cost);
     if (card.kind === "unit") {
-      const count = card.count ?? 1;
-      for (let i = 0; i < count; i++) {
-        const spawnX = clamp(
-          x + (count > 1 ? (i - 1) * 17 : 0),
-          18,
-          BOARD_WIDTH - 18,
-        );
-        // Every member is constrained independently when a swarm spans a supply boundary.
-        const front = this.frontline(team, spawnX);
-        const spawnY =
-          team === "player" ? Math.max(y, front) : Math.min(y, front);
+      for (const point of deployment) {
         const unit: Unit = {
           id: this.nextId++,
           cardId: card.id,
           team,
-          x: spawnX,
-          y: spawnY,
+          x: point.x,
+          y: point.y,
           hp: card.hp!,
           maxHp: card.hp!,
           damage: card.damage!,
@@ -860,7 +889,7 @@ export class Match {
         this.effect("spawn", unit.x, unit.y, team, 0.65);
       }
       if (team === "player") {
-        this.state.stats.deployed += count;
+        this.state.stats.deployed += deployment.length;
         this.state.stats.unitPlays[card.id] =
           (this.state.stats.unitPlays[card.id] ?? 0) + 1;
       }

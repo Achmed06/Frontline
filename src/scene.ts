@@ -1119,6 +1119,10 @@ export class ArenaScene extends Phaser.Scene {
         card.kind === "ability"
           ? abilityTargetPreview(m.state, "player", card.id, x, y)
           : null;
+      const deployment =
+        card.kind === "unit"
+          ? m.deploymentPreview("player", card.id, x, y)
+          : [];
       const affectedUnits = abilityTargets?.unitIds.length ?? 0;
       const affectedCount = affectedUnits + (abilityTargets?.core ? 1 : 0);
       const targetSummary = abilityTargets?.core
@@ -1176,7 +1180,9 @@ export class ArenaScene extends Phaser.Scene {
         const actionText =
           card.kind === "ability"
             ? `LOSLASSEN ZUM WIRKEN · ${targetSummary}${outcomeSummary ? ` · ${outcomeSummary}` : ""}`
-            : "LOSLASSEN ZUM EINSETZEN";
+            : deployment.length > 1
+              ? `LOSLASSEN ZUM EINSETZEN · ${deployment.length} EINHEITEN`
+              : "LOSLASSEN ZUM EINSETZEN";
         this.aimLabel
           .setText(valid ? actionText : validation.message)
           .setColor(
@@ -1192,10 +1198,11 @@ export class ArenaScene extends Phaser.Scene {
             y < 115 ? y + 70 : y - 65,
           )
           .setVisible(true);
-        if (card.kind === "unit")
+        if (card.kind === "unit" && deployment.length === 1) {
+          const [point] = deployment;
           this.ghost
             .setTexture(`${card.id}-player`)
-            .setPosition(x, y - 3)
+            .setPosition(point.x, point.y - 3)
             .setDisplaySize(
               card.id === "bulwark" ? 45 : 36,
               card.id === "bulwark" ? 45 : 36,
@@ -1203,29 +1210,39 @@ export class ArenaScene extends Phaser.Scene {
             .setAlpha(0.55)
             .setTint(valid ? MINT : CORAL)
             .setVisible(true);
+        }
       }
       const previewColor = valid ? MINT : CORAL;
       if (card.kind === "unit") {
         const attackRange = Math.max(18, card.range ?? 18);
-        fx.fillStyle(previewColor, valid ? 0.025 : 0.018);
-        fx.fillCircle(x, y, attackRange);
-        fx.lineStyle(1, previewColor, valid ? 0.22 : 0.16);
-        fx.strokeCircle(x, y, attackRange);
-        if (attackRange >= 55) {
-          for (let i = 0; i < 8; i++) {
-            const angle = i * Math.PI * 0.25 + this.clock * 0.18;
-            const inner = attackRange - 3;
-            const outer = attackRange + 3;
-            fx.lineBetween(
-              x + Math.cos(angle) * inner,
-              y + Math.sin(angle) * inner,
-              x + Math.cos(angle) * outer,
-              y + Math.sin(angle) * outer,
-            );
+        for (const point of deployment) {
+          fx.fillStyle(previewColor, valid ? 0.025 : 0.018);
+          fx.fillCircle(point.x, point.y, attackRange);
+          fx.lineStyle(1, previewColor, valid ? 0.22 : 0.16);
+          fx.strokeCircle(point.x, point.y, attackRange);
+          if (attackRange >= 55) {
+            for (let i = 0; i < 8; i++) {
+              const angle = i * Math.PI * 0.25 + this.clock * 0.18;
+              const inner = attackRange - 3;
+              const outer = attackRange + 3;
+              fx.lineBetween(
+                point.x + Math.cos(angle) * inner,
+                point.y + Math.sin(angle) * inner,
+                point.x + Math.cos(angle) * outer,
+                point.y + Math.sin(angle) * outer,
+              );
+            }
+          }
+          fx.lineStyle(1.8, previewColor, 0.72);
+          fx.strokeCircle(point.x, point.y, 19);
+          if (
+            deployment.length > 1 &&
+            (Math.abs(point.x - x) > 0.5 || Math.abs(point.y - y) > 0.5)
+          ) {
+            fx.lineStyle(1, previewColor, 0.28);
+            fx.lineBetween(x, y, point.x, point.y);
           }
         }
-        fx.lineStyle(1.8, previewColor, 0.72);
-        fx.strokeCircle(x, y, 19);
       } else {
         fx.fillStyle(previewColor, valid ? 0.045 : 0.025);
         fx.fillCircle(x, y, card.range ?? 65);

@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.91
+## Current v0.92
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -504,4 +504,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Stasis execution now consumes those shared preview outcomes, preventing preview and committed crowd-control state from drifting apart
 - dedicated regression coverage includes a fresh target, a partially expired slow and an already fully applied Stasis target
 - Stasis duration, slow factor, radius, energy cost and all other combat values remain unchanged
+
+## v0.92 changes
+
+- unit aiming now uses an engine-owned deployment preview instead of assuming every card inserts exactly at the pointer
+- Swarm displays all three real insertion points before release rather than representing the card as one generic unit ghost
+- each projected Swarm member shows its own attack footprint and any supply-boundary correction applied to its actual spawn position
+- the aiming label reports the real multi-unit count for cards that deploy more than one unit
+- single-unit cards continue to use the existing unit ghost, now positioned from the same shared deployment preview used by simulation
+- committed deployment consumes the exact preview coordinates, including per-member frontline clamping when a Swarm crosses a column boundary
+- dedicated regression coverage verifies that previewed Swarm coordinates exactly match spawned units and still obey connected supply
+- unit counts, spacing, attack ranges, energy costs and all combat values remain unchanged
 

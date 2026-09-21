@@ -74,13 +74,36 @@ test("swarm members cannot spawn beyond supply when crossing a column boundary",
   const match = quietMatch();
   match.state.points[6].owner = null;
   match.state.points[4].owner = "player";
+  const preview = match.deploymentPreview("player", "swarm", 150, 230);
+  assert.equal(preview.length, 3);
   assert.equal(match.play("player", "swarm", 150, 230).ok, true);
   assert.equal(match.state.units.length, 3);
+  assert.deepEqual(
+    match.state.units.map((unit) => ({ x: unit.x, y: unit.y })),
+    preview,
+  );
   assert.ok(
     match.state.units.every((unit) =>
       match.canDeploy("player", unit.x, unit.y),
     ),
   );
+});
+
+test("deployment preview predicts exact swarm spawn points", () => {
+  const match = quietMatch();
+  match.state.points[6].owner = null;
+  match.state.points[4].owner = "player";
+  const preview = match.deploymentPreview("player", "swarm", 150, 230);
+  assert.deepEqual(
+    preview.map((point) => point.x),
+    [133, 150, 167],
+  );
+  assert.ok(preview[0].y > preview[1].y);
+  assert.equal(preview[1].y, 230);
+  assert.equal(preview[2].y, 230);
+
+  const single = match.deploymentPreview("player", "vanguard", 210, 390);
+  assert.deepEqual(single, [{ x: 210, y: 390 }]);
 });
 
 test("invalid actions are atomic and energy regenerates equally, independent of territory", () => {
