@@ -2,7 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeLearning, advanceLearning } from './headquarters';
 import { resolvedBaseLayout } from './base-layout';
-import { constructOnPlot, moveBaseBuilding, visibleProject } from './base-construction';
+import {
+  canConstructOnPlot,
+  canMoveBaseBuilding,
+  constructOnPlot,
+  moveBaseBuilding,
+  visibleProject,
+} from './base-construction';
 import { Match } from './engine';
 const metrics = { wins: 24, stars: 72, mastery: 20, lessons: 4 };
 
@@ -51,3 +57,23 @@ test('legacy bases keep their buildings and resolve missing or invalid locations
   assert.equal(Object.values(resolved).includes(12), false);
   assert.equal(normalizeLearning({ layout: { depot: 4 } }).layout, undefined);
 });
+
+test('placement helpers expose the exact rules used by the mobile builder', () => {
+  const empty = normalizeLearning(null);
+  assert.equal(canConstructOnPlot(empty, 'depot', 6, metrics), true);
+  assert.equal(canConstructOnPlot(empty, 'depot', 12, metrics), false);
+  assert.equal(
+    canConstructOnPlot(empty, 'depot', 6, { ...metrics, wins: 0 }),
+    false,
+  );
+
+  const depot = constructOnPlot(empty, 'depot', 6, metrics);
+  assert.equal(canConstructOnPlot(depot, 'training', 6, metrics), false);
+  assert.equal(canConstructOnPlot(depot, 'supplyhub', 6, metrics), true);
+  assert.equal(canConstructOnPlot(depot, 'supplyhub', 7, metrics), false);
+
+  assert.equal(canMoveBaseBuilding(depot, 'depot', 6), false);
+  assert.equal(canMoveBaseBuilding(depot, 'depot', 12), false);
+  assert.equal(canMoveBaseBuilding(depot, 'depot', 7), true);
+});
+

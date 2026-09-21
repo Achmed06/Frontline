@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.05
+## Current v1.06
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -660,3 +660,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - If saving fails, construction is not committed in memory and the existing base is preserved
 - The lobby miniature now shows the actual saved arrangement
 - Release: package 1.5.0 / v1.05 / iOS 1.05 (105)
+
+## v1.06 changes
+
+- the mobile headquarters builder now supports plot-first construction: tap a free plot, choose any eligible unbuilt tier-one building, then confirm it directly on that remembered plot
+- a remembered free plot stays visibly selected while browsing locked tier-one buildings, so players can compare requirements without losing their intended location
+- selecting an existing building or the fixed command plot clears the remembered free-plot intent to avoid accidental construction
+- zoomed base-map scroll position survives builder redraws, so selecting plots or catalog entries no longer jumps the enlarged map back to its origin
+- construction and relocation availability are now shared pure helpers used by both the UI and the mutation functions, preventing preview/commit rule drift
+- regression coverage checks command-plot rejection, occupied plots, progression requirements, upgrade location rules and move availability through the same helpers
+- release: package 1.6.0 / v1.06 / iOS 1.06 (106)
+

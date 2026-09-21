@@ -1,6 +1,13 @@
 import { BASE_PROJECTS, BASE_STAGES, baseStage, baseProjectProgress, type BaseProjectId, type BaseProjectMetrics, type LearningProgress } from "./headquarters";
 import { BASE_ROOTS, COMMAND_PLOT, resolvedBaseLayout, type BaseRoot } from "./base-layout";
-import { constructOnPlot, moveBaseBuilding, projectRoot, visibleProject } from "./base-construction";
+import {
+  canConstructOnPlot,
+  canMoveBaseBuilding,
+  constructOnPlot,
+  moveBaseBuilding,
+  projectRoot,
+  visibleProject,
+} from "./base-construction";
 import { baseMapSvg, buildingArt } from "./base-map";
 import "./base-builder.css";
 
@@ -22,6 +29,10 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
   let message = "";
   let justBuilt = false;
   function draw(focus?: string) {
+    const previousMapScroll =
+      container.querySelector<HTMLElement>(".builder-map-scroll");
+    const previousScrollLeft = previousMapScroll?.scrollLeft ?? 0;
+    const previousScrollTop = previousMapScroll?.scrollTop ?? 0;
     const progress = options.progress();
     const layout = resolvedBaseLayout(progress.projects ?? [], progress.layout);
     const project = BASE_PROJECTS.find(p => p.id === selected)!;
@@ -32,13 +43,16 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
     const prerequisite = !project.requires || !!progress.projects?.includes(project.requires);
     const ready = status.ready && prerequisite;
     const isExpansion = project.requires !== null;
-    const canPlace = chosen !== undefined && chosen !== COMMAND_PLOT &&
-      !Object.entries(layout).some(([key, plot]) => plot === chosen && (key !== root || !built && !isExpansion));
+    const canPlace =
+      chosen !== undefined &&
+      (mode === "move"
+        ? canMoveBaseBuilding(progress, root, chosen)
+        : canConstructOnPlot(progress, selected, chosen, options.metrics));
     const tier = built ? (isExpansion ? 2 : 1) : 0;
     container.innerHTML = `<section class="base-builder" style="--base-accent:${options.accent}">
       <header class="builder-header"><div><span class="builder-eyebrow">FRONTLINE / HAUPTQUARTIER</span><h2>${BASE_STAGES[baseStage(options.metrics.wins)].name}</h2></div><button class="builder-close" data-action="close" aria-label="Zurück zur Lobby">×</button></header>
       <div class="builder-resources"><span><b>${Object.keys(layout).length}<small>/5</small></b>GEBÄUDE</span><span><b>${options.metrics.wins}</b>FELDZUGSIEGE</span><span><b>${options.metrics.stars} ★</b>STERNE</span><button data-action="details">GESTALTUNG<br>& ERFOLGE ↗</button></div>
-      <div class="builder-map-shell ${mode !== 'inspect' ? 'editing' : ''} ${justBuilt ? 'construction-complete' : ''}"><div class="builder-map-hint">${mode === 'move' ? 'NEUEN BAUPLATZ ANTIPPEN' : mode === 'place' ? isExpansion ? 'AUSBAU AM BESTEHENDEN GEBÄUDE' : 'FREIEN BAUPLATZ ANTIPPEN' : 'DEINE BASIS · GEBÄUDE ANTIPPEN'}</div><div class="builder-map-scroll"><div class="builder-map-scale ${zoom ? 'zoomed' : ''}">${baseMapSvg(progress, options.accent, { selected: built ? root : undefined, placing: mode !== 'inspect', chosen, ghost: mode === 'place' ? selected : undefined, stage: baseStage(options.metrics.wins) })}</div></div><button class="builder-zoom" data-action="zoom" aria-label="${zoom ? 'Karte verkleinern' : 'Karte vergrößern'}">${zoom ? '−' : '+'}</button><span class="builder-map-caption">${zoom ? 'ZUM VERSCHIEBEN WISCHEN' : 'SEKTOR 01 / HEIMATFRONT'}</span></div>
+      <div class="builder-map-shell ${mode !== 'inspect' ? 'editing' : ''} ${justBuilt ? 'construction-complete' : ''}"><div class="builder-map-hint">${mode === 'move' ? 'NEUEN BAUPLATZ ANTIPPEN' : mode === 'place' ? isExpansion ? 'AUSBAU AM BESTEHENDEN GEBÄUDE' : 'FREIEN BAUPLATZ ANTIPPEN' : chosen !== undefined ? `BAUPLATZ ${chosen + 1} VORGEMERKT · GEBÄUDE WÄHLEN` : 'DEINE BASIS · GEBÄUDE ANTIPPEN'}</div><div class="builder-map-scroll"><div class="builder-map-scale ${zoom ? 'zoomed' : ''}">${baseMapSvg(progress, options.accent, { selected: built ? root : undefined, placing: mode !== 'inspect', chosen, ghost: mode === 'place' ? selected : undefined, stage: baseStage(options.metrics.wins) })}</div></div><button class="builder-zoom" data-action="zoom" aria-label="${zoom ? 'Karte verkleinern' : 'Karte vergrößern'}">${zoom ? '−' : '+'}</button><span class="builder-map-caption">${mode === 'inspect' && chosen !== undefined ? `BAUPLATZ ${chosen + 1} VORGEMERKT` : zoom ? 'ZUM VERSCHIEBEN WISCHEN' : 'SEKTOR 01 / HEIMATFRONT'}</span></div>
       <div class="builder-catalog" aria-label="Gebäude auswählen">${BASE_ROOTS.map(id => {
         const shown = visibleProject(progress, id);
         const owned = progress.projects?.includes(id);
@@ -51,21 +65,53 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
       <p class="builder-feedback" role="status" aria-live="polite">${message || (mode !== 'inspect' ? 'Erst mit Bestätigung wird deine Basis geändert.' : 'Bauen und Versetzen sind kostenlos. Freischaltungen verdienst du im Spiel.')}</p></article>
       <p class="builder-fairplay">Deine Basis, dein Aufbau. Gleiche Kampfwerte für alle.</p></section>`;
     container.querySelectorAll<HTMLElement>('[data-building]').forEach(button => button.onclick = () => {
-      selected = button.dataset.building as BaseProjectId; mode = 'inspect'; chosen = undefined; message = ''; justBuilt = false; draw(`[data-building="${selected}"]`);
+      const rememberedPlot = chosen;
+      selected = button.dataset.building as BaseProjectId;
+      const nextProgress = options.progress();
+      const selectedRoot = projectRoot(selected);
+      const rootBuilt = nextProgress.projects?.includes(selectedRoot) ?? false;
+      justBuilt = false;
+      if (
+        rememberedPlot !== undefined &&
+        canConstructOnPlot(
+          nextProgress,
+          selected,
+          rememberedPlot,
+          options.metrics,
+        )
+      ) {
+        mode = "place";
+        chosen = rememberedPlot;
+        message = `Bauplatz ${rememberedPlot + 1} ist vorgemerkt. Mit Bestätigung wird das Gebäude dort gebaut.`;
+      } else {
+        mode = "inspect";
+        chosen = rememberedPlot !== undefined && !rootBuilt
+          ? rememberedPlot
+          : undefined;
+        message = chosen !== undefined
+          ? `Bauplatz ${chosen + 1} bleibt vorgemerkt. Wähle ein baubereites Gebäude.`
+          : "";
+      }
+      draw(`[data-building="${selected}"]`);
     });
     container.querySelectorAll<SVGElement>('[data-plot]').forEach(plot => {
       const activate = () => {
         const value = Number(plot.dataset.plot);
-        if (value === COMMAND_PLOT) { message = 'Deine Kommandozentrale wächst mit deinen Feldzugsiegen und bleibt in der Mitte.'; draw('[data-plot="12"]'); return; }
+        if (value === COMMAND_PLOT) { chosen = undefined; message = 'Deine Kommandozentrale wächst mit deinen Feldzugsiegen und bleibt in der Mitte.'; draw('[data-plot="12"]'); return; }
         const occupant = BASE_ROOTS.find(id => layout[id] === value);
         if (mode !== 'inspect') {
           if (occupant && !(occupant === root && isExpansion && mode === 'place')) { message = 'Dieser Bauplatz ist bereits belegt. Wähle ein freies Feld.'; draw(`[data-plot="${value}"]`); return; }
           if (mode === 'place' && isExpansion && value !== layout[root]) { message = 'Der Ausbau bleibt am bisherigen Standort. Versetzen ist nach dem Ausbau möglich.'; draw(`[data-plot="${value}"]`); return; }
           chosen = value; message = ''; draw('[data-action="confirm"]');
         } else if (occupant) {
-          selected = visibleProject(progress, occupant); message = ''; draw(`[data-building="${selected}"]`);
+          chosen = undefined;
+          selected = visibleProject(progress, occupant);
+          message = "";
+          draw(`[data-building="${selected}"]`);
         } else {
-          message = `Bauplatz ${value + 1} ist frei. Wähle unten ein baubereites Gebäude.`; draw(`[data-plot="${value}"]`);
+          chosen = value;
+          message = `Bauplatz ${value + 1} ist vorgemerkt. Wähle unten ein baubereites Gebäude.`;
+          draw(`[data-plot="${value}"]`);
         }
       };
       plot.onclick = activate;
@@ -78,7 +124,7 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
       if (action === 'zoom') { zoom = !zoom; draw('[data-action="zoom"]'); return; }
       if (action === 'cancel') { mode = 'inspect'; chosen = undefined; message = ''; }
       if (action === 'upgrade' && upgrade) { selected = upgrade.id; message = ''; }
-      if (action === 'place') { mode = 'place'; chosen = isExpansion ? layout[root] : undefined; message = ''; }
+      if (action === 'place') { mode = 'place'; chosen = isExpansion ? layout[root] : chosen; message = ''; }
       if (action === 'move') { mode = 'move'; chosen = undefined; message = ''; }
       if (action === 'confirm' && chosen !== undefined) {
         const current = options.progress();
@@ -90,6 +136,18 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
       }
       draw(mode === 'inspect' ? `[data-building="${selected}"]` : '[data-action="cancel"]');
     });
+    const mapScroll =
+      container.querySelector<HTMLElement>(".builder-map-scroll");
+    if (mapScroll) {
+      mapScroll.scrollLeft = Math.min(
+        previousScrollLeft,
+        Math.max(0, mapScroll.scrollWidth - mapScroll.clientWidth),
+      );
+      mapScroll.scrollTop = Math.min(
+        previousScrollTop,
+        Math.max(0, mapScroll.scrollHeight - mapScroll.clientHeight),
+      );
+    }
     if (focus) container.querySelector<HTMLElement>(focus)?.focus({ preventScroll: true });
   }
   draw();
