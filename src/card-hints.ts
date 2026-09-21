@@ -10,7 +10,28 @@ export function selectedCardHint(
   card: CardDefinition | undefined,
 ): string {
   if (!card) return "Karte wählen → halten, zielen, loslassen";
-  if (card.kind !== "ability") return card.description;
+
+  if (card.kind === "unit") {
+    if (card.id === "pioneer")
+      return `+${percentBonus(card.captureMultiplier)}% EROBERUNG · ${card.hp ?? 0} HP · ${card.damage ?? 0} SCHADEN`;
+
+    if (card.id === "breaker")
+      return `${card.shieldBreak ?? 0} SCHILDBRUCH · ${card.damage ?? 0} SCHADEN · ${card.hp ?? 0} HP`;
+
+    if (card.id === "lancer")
+      return `${card.damage ?? 0} SCHADEN · +${percentBonus(card.coreDamageMultiplier)}% CORE · ${card.range ?? 0} REICHWEITE`;
+
+    if (card.id === "medic")
+      return `+${card.heal ?? 0} HP · ${card.supportRange ?? 0} HEILREICHWEITE · ${String(card.supportInterval ?? 0).replace(".", ",")}s TAKT`;
+
+    if (card.id === "mortar")
+      return `${card.damage ?? 0} DIREKT · ${card.splashDamage ?? 0} SPLASH · ${card.splashRadius ?? 0} RADIUS`;
+
+    if (card.id === "disruptor")
+      return `${card.damage ?? 0} SCHADEN · -${percentReduction(card.slowFactor)}% BEWEGUNG · ${card.slowDuration ?? 0}s`;
+
+    return card.description;
+  }
 
   if (card.id === "pulse")
     return `${card.damage ?? 0} SCHADEN · ${card.coreDamage ?? 0} CORE · ZIELEN & LOSLASSEN`;

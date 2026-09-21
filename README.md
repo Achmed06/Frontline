@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.00
+## Current v1.01
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -596,4 +596,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Repulsor execution still consumes the exact preview coordinates, preserving preview/execution parity
 - regression coverage verifies a full 55-unit push, a partially clamped push and a zero-distance boundary block
 - no Repulsor balance values or energy costs changed
+
+## v1.01 changes
+
+- specialist unit selection now exposes the exact configured values directly in the mobile match HUD
+- Pioneer shows its +50% capture bonus plus HP and damage
+- Breaker shows 45 shield break, 18 damage and 160 HP
+- Lancer shows 48 damage, +60% Core damage and 135 range
+- Medic shows +19 HP, 100 heal range and its 1.1-second heal interval
+- Mortar shows 40 direct damage, 28 splash damage and 42 splash radius
+- Disruptor shows 12 damage, 40% movement slow and 2-second duration
+- every specialist hint is generated from the card definition, so balance changes automatically update the HUD
+- ordinary unit descriptions and all combat values remain unchanged
 
