@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  abilityTargetPreview,
   BOARD_HEIGHT,
   BOARD_WIDTH,
   CAPTURE_SECONDS,
@@ -755,4 +756,62 @@ test("bot commander activation exposes the real enemy cooldown state", () => {
       .filter((unit) => unit.team === "enemy" && unit.hp > 0)
       .some((unit) => unit.shield > 0),
   );
+});
+
+
+test("ability target preview matches tactical validation targets and Pulse Core reach", () => {
+  const match = quietMatch();
+  const ally = staticUnit(match, "player", 210, 390);
+  const enemy = staticUnit(match, "enemy", 230, 390);
+  const distantEnemy = staticUnit(match, "enemy", 40, 110);
+
+  let preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "rally",
+    210,
+    390,
+  );
+  assert.deepEqual(preview.unitIds, [ally.id]);
+  assert.equal(preview.core, false);
+  assert.equal(match.validatePlay("player", "rally", 210, 390).ok, true);
+
+  preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "stasis",
+    210,
+    390,
+  );
+  assert.deepEqual(preview.unitIds, [enemy.id]);
+  assert.equal(match.validatePlay("player", "stasis", 210, 390).ok, false);
+  match.state.energy.player = 10;
+  assert.equal(match.validatePlay("player", "stasis", 210, 390).ok, true);
+
+  preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "repulsor",
+    40,
+    110,
+  );
+  assert.deepEqual(preview.unitIds, [distantEnemy.id]);
+
+  preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "pulse",
+    match.state.cores.enemy.x,
+    match.state.cores.enemy.y,
+  );
+  assert.equal(preview.core, true);
+
+  preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "pulse",
+    210,
+    150,
+  );
+  assert.equal(preview.core, false);
 });

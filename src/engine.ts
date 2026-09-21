@@ -422,6 +422,59 @@ export interface PlayResult {
   message: string;
 }
 
+export type AbilityTargetPreview = {
+  unitIds: number[];
+  core: boolean;
+};
+
+export function abilityTargetPreview(
+  state: MatchState,
+  team: Team,
+  cardId: CardId,
+  x: number,
+  y: number,
+): AbilityTargetPreview {
+  const card = CARDS.find((item) => item.id === cardId);
+  if (
+    !card ||
+    card.kind !== "ability" ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y)
+  )
+    return { unitIds: [], core: false };
+
+  const unitIds =
+    card.id === "rally"
+      ? state.units
+          .filter(
+            (unit) =>
+              unit.team === team &&
+              unit.hp > 0 &&
+              distance(unit, { x, y }) <= (card.range ?? 96),
+          )
+          .map((unit) => unit.id)
+      : card.id === "pulse" ||
+          card.id === "stasis" ||
+          card.id === "repulsor"
+        ? state.units
+            .filter(
+              (unit) =>
+                unit.team !== team &&
+                unit.hp > 0 &&
+                distance(unit, { x, y }) <=
+                  (card.range ?? 0) + unit.radius,
+            )
+            .map((unit) => unit.id)
+        : [];
+
+  return {
+    unitIds,
+    core:
+      card.id === "pulse" &&
+      distance(state.cores[other(team)], { x, y }) <= 100,
+  };
+}
+
 export class Match {
   readonly state: MatchState;
   readonly difficulty: Difficulty;
@@ -609,13 +662,11 @@ export class Match {
         message: "Setze Einheiten in deinem versorgten Gebiet ein.",
       };
     }
-    if (
-      card.id === "rally" &&
-      !this.state.units.some(
-        (unit) =>
-          unit.team === team && unit.hp > 0 && distance(unit, { x, y }) <= 96,
-      )
-    ) {
+    const targetPreview =
+      card.kind === "ability"
+        ? abilityTargetPreview(this.state, team, card.id, x, y)
+        : null;
+    if (card.id === "rally" && !targetPreview?.unitIds.length) {
       return {
         ok: false,
         message: "Rally braucht eigene Einheiten im Zielgebiet.",
@@ -623,12 +674,7 @@ export class Match {
     }
     if (
       (card.id === "stasis" || card.id === "repulsor") &&
-      !this.state.units.some(
-        (unit) =>
-          unit.team !== team &&
-          unit.hp > 0 &&
-          distance(unit, { x, y }) <= card.range! + unit.radius,
-      )
+      !targetPreview?.unitIds.length
     ) {
       return {
         ok: false,

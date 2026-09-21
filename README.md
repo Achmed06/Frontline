@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.86
+## Current v0.87
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -450,3 +450,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - losing the rebuilt army again immediately returns the lesson to reinforcement recovery
 - dedicated tests cover wrong-card, low-energy, affordable deployment, front push, Core push and repeated wipeout states
 - win conditions, unit stats, territory ownership, energy regeneration and all combat values remain unchanged
+
+
+## v0.87 changes
+
+- tactical aiming now highlights the exact units that will be affected before the player releases the cast
+- Rally marks living allied targets, while Pulse, Stasis and Repulsor mark living enemy targets inside their real effect geometry
+- Pulse also highlights the enemy Core whenever the cast point is inside its special 100-point Core damage reach
+- the hold-to-aim label now distinguishes ability casting from unit deployment and reports the live number of affected targets
+- a valid Pulse aimed at empty space remains legally castable but is shown in amber with 0 ZIELE so an accidental wasted cast is easier to avoid
+- target preview calculation is now shared with tactical validation, preventing renderer guidance from drifting away from combat rules
+- dedicated engine tests cover Rally, Stasis, Repulsor and Pulse/Core target previews
+- ability damage, healing, crowd control, radii, energy costs and all combat values remain unchanged

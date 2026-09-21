@@ -1,6 +1,6 @@
 import { ARENA_THEMES, type ArenaThemeId } from "./arena-themes";
 import Phaser from "phaser";
-import { Match, CARDS } from "./engine";
+import { abilityTargetPreview, Match, CARDS } from "./engine";
 import { unitSvg } from "./art";
 
 const MINT = 0x41ffc1,
@@ -1115,10 +1115,28 @@ export class ArenaScene extends Phaser.Scene {
       const { x, y } = this.pointer;
       const validation = m.validatePlay("player", selected, x, y);
       const valid = validation.ok;
+      const abilityTargets =
+        card.kind === "ability"
+          ? abilityTargetPreview(m.state, "player", card.id, x, y)
+          : null;
+      const affectedCount =
+        (abilityTargets?.unitIds.length ?? 0) + (abilityTargets?.core ? 1 : 0);
       if (this.aim) {
+        const actionText =
+          card.kind === "ability"
+            ? affectedCount
+              ? `LOSLASSEN ZUM WIRKEN · ${affectedCount} ${affectedCount === 1 ? "ZIEL" : "ZIELE"}`
+              : "LOSLASSEN ZUM WIRKEN · 0 ZIELE"
+            : "LOSLASSEN ZUM EINSETZEN";
         this.aimLabel
-          .setText(valid ? "LOSLASSEN ZUM EINSETZEN" : validation.message)
-          .setColor(valid ? "#83ffcf" : "#ff927c")
+          .setText(valid ? actionText : validation.message)
+          .setColor(
+            valid
+              ? card.kind === "ability" && affectedCount === 0
+                ? "#ffd37a"
+                : "#83ffcf"
+              : "#ff927c",
+          )
           .setPosition(
             Math.max(145, Math.min(275, x)),
             y < 115 ? y + 70 : y - 65,
@@ -1163,6 +1181,32 @@ export class ArenaScene extends Phaser.Scene {
         fx.fillCircle(x, y, card.range ?? 65);
         fx.lineStyle(1.5, previewColor, 0.68);
         fx.strokeCircle(x, y, card.range ?? 65);
+
+        const targetColor =
+          card.id === "rally"
+            ? 0xffdf6b
+            : card.id === "stasis"
+              ? 0x88d5ff
+              : card.id === "repulsor"
+                ? 0xc29aff
+                : 0xffc368;
+        for (const id of abilityTargets?.unitIds ?? []) {
+          const target = s.units.find((unit) => unit.id === id);
+          if (!target) continue;
+          const pulse = 0.75 + 0.2 * Math.sin(this.clock * 6 + target.id);
+          fx.lineStyle(2.2, targetColor, pulse);
+          fx.strokeCircle(target.x, target.y, target.radius + 9);
+          fx.lineStyle(1, 0xffffff, pulse * 0.55);
+          fx.strokeCircle(target.x, target.y, target.radius + 13);
+        }
+        if (abilityTargets?.core) {
+          const core = s.cores.enemy;
+          const pulse = 0.72 + 0.22 * Math.sin(this.clock * 6);
+          fx.lineStyle(2.4, targetColor, pulse);
+          fx.strokeCircle(core.x, core.y, 31);
+          fx.lineStyle(1, 0xffffff, pulse * 0.5);
+          fx.strokeCircle(core.x, core.y, 36);
+        }
       }
       fx.lineStyle(1.5, previewColor, 0.8);
       fx.lineBetween(x - 7, y, x + 7, y);
