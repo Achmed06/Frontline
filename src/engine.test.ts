@@ -1077,8 +1077,10 @@ test("Lancer core bonus comes from its card definition", () => {
 
   match.update(1 / 30);
 
-  assert.equal(expectedDamage, 76.80000000000001);
-  assert.equal(before - match.state.cores.enemy.hp, expectedDamage);
+  assert.ok(Math.abs(expectedDamage - 76.8) < 1e-8);
+  assert.ok(
+    Math.abs(before - match.state.cores.enemy.hp - expectedDamage) < 1e-8,
+  );
   assert.equal(card.coreDamageMultiplier, 1.6);
 });
 
