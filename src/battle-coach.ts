@@ -1,5 +1,9 @@
 import { CARDS, type MatchState } from "./engine";
 import {
+  commanderHasValidTarget,
+  type CommanderId,
+} from "./commanders";
+import {
   matchLearning,
   type LearningProgress,
   type LessonId,
@@ -41,6 +45,7 @@ export function battleCoachHint(
   progress: LearningProgress,
   state: MatchState,
   selectedCardId: string | null,
+  commander: CommanderId = "atlas",
 ): BattleCoachHint | null {
   const deployed = total(progress, state, "deploy");
   if (deployed < GOALS.deploy) {
@@ -86,13 +91,16 @@ export function battleCoachHint(
 
   const ability = total(progress, state, "ability");
   if (ability < GOALS.ability) {
-    if (state.commanderCooldown <= 0) {
+    const commanderReady =
+      state.commanderCooldown <= 0 &&
+      commanderHasValidTarget(commander, state.units, "player");
+    if (commanderReady) {
       return {
         lesson: "ability",
         kicker: "FELDAUSBILDUNG · SCHRITT 3",
         title: "KOMMANDANTENFÄHIGKEIT NUTZEN",
         detail:
-          "Tippe auf deinen Kommandanten, wenn mehrere eigene Truppen vom Effekt profitieren.",
+          "Tippe auf deinen Kommandanten, sobald der gezeigte Effekt deinen aktuellen Truppen wirklich hilft.",
         focus: "commander",
         current: ability,
         goal: GOALS.ability,
@@ -103,7 +111,9 @@ export function battleCoachHint(
       kicker: "FELDAUSBILDUNG · SCHRITT 3",
       title: "TAKTIK EINSETZEN",
       detail:
-        "Dein Kommandant lädt noch. Du kannst stattdessen eine Taktikkarte aus deinem Deck nutzen.",
+        state.commanderCooldown > 0
+          ? "Dein Kommandant lädt noch. Du kannst stattdessen eine Taktikkarte aus deinem Deck nutzen."
+          : "Dein Kommandant hat gerade kein gültiges Ziel. Nutze bis dahin eine Taktikkarte oder bringe passende Truppen in Stellung.",
       focus: "cards",
       current: ability,
       goal: GOALS.ability,

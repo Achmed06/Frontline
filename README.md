@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.81
+## Current v0.82
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -394,3 +394,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the initial insufficient-energy toast now also reports the estimated ready time instead of only the rounded missing-energy amount
 - the waiting state receives a restrained amber emphasis so it reads as resource timing rather than an error
 - energy generation, card costs, deployment validation and all combat rules remain unchanged
+
+
+## v0.82 changes
+
+- first-session battle coaching now uses the same target-aware Commander readiness rules as the live Commander button
+- the coach no longer highlights a disabled Commander simply because its cooldown reached zero
+- ATLAS requires a living allied unit before the Commander lesson points at the button
+- LYRA waits for a wounded or slowed ally and NOVA waits for a unit that can actually receive the rally effect
+- when the Commander has no valid target, the lesson keeps focus on tactical cards and explains why
+- dedicated tests cover no-target, LYRA and NOVA coaching states
+- learning progress, Commander effects, cooldowns and combat rules remain unchanged

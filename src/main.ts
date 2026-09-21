@@ -649,7 +649,12 @@ function updateHud(force = false) {
   if (!force && now - lastHud < 100) return;
   lastHud = now;
   const s = match.state;
-  const coach = battleCoachHint(learningProgress, s, selected);
+  const coach = battleCoachHint(
+    learningProgress,
+    s,
+    selected,
+    match.commanders.player,
+  );
   el("learning-hud").hidden = !live || !coach;
   if (coach) {
     el("learning-hud").innerHTML =

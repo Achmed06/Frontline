@@ -23,6 +23,31 @@ test("battle coach guides the existing learning path without changing combat", (
 
   match.state.stats.captured = 1;
   hint = battleCoachHint(progress, match.state, null);
+  assert.equal(hint?.title, "TAKTIK EINSETZEN");
+  assert.equal(hint?.focus, "cards");
+
+  match.state.units.push({
+    id: 999,
+    cardId: "vanguard",
+    team: "player",
+    x: 210,
+    y: 450,
+    hp: 120,
+    maxHp: 120,
+    radius: 10,
+    shield: 0,
+    damage: 18,
+    range: 20,
+    speed: 38,
+    interval: 0.9,
+    attackCooldown: 0,
+    healCooldown: 0,
+    shieldTime: 0,
+    rallyTime: 0,
+    slowTime: 0,
+    slowFactor: 1,
+  });
+  hint = battleCoachHint(progress, match.state, null, "atlas");
   assert.equal(hint?.title, "KOMMANDANTENFÄHIGKEIT NUTZEN");
   assert.equal(hint?.focus, "commander");
 
@@ -48,4 +73,52 @@ test("battle coach disappears once the permanent learning path is complete", () 
   });
   const match = new Match({ botEnabled: false });
   assert.equal(battleCoachHint(progress, match.state, null), null);
+});
+
+test("battle coach never highlights an unusable commander", () => {
+  const progress = normalizeLearning(null);
+  const match = new Match({ botEnabled: false });
+  match.state.stats.deployed = 3;
+  match.state.stats.captured = 1;
+
+  const unit = {
+    id: 1001,
+    cardId: "vanguard",
+    team: "player" as const,
+    x: 210,
+    y: 450,
+    hp: 120,
+    maxHp: 120,
+    radius: 10,
+    shield: 0,
+    damage: 18,
+    range: 20,
+    speed: 38,
+    interval: 0.9,
+    attackCooldown: 0,
+    healCooldown: 0,
+    shieldTime: 0,
+    rallyTime: 0,
+    slowTime: 0,
+    slowFactor: 1,
+  };
+  match.state.units.push(unit);
+
+  let hint = battleCoachHint(progress, match.state, null, "lyra");
+  assert.equal(hint?.title, "TAKTIK EINSETZEN");
+  assert.equal(hint?.focus, "cards");
+
+  unit.hp = 60;
+  hint = battleCoachHint(progress, match.state, null, "lyra");
+  assert.equal(hint?.title, "KOMMANDANTENFÄHIGKEIT NUTZEN");
+  assert.equal(hint?.focus, "commander");
+
+  unit.hp = unit.maxHp;
+  unit.rallyTime = 6;
+  hint = battleCoachHint(progress, match.state, null, "nova");
+  assert.equal(hint?.title, "TAKTIK EINSETZEN");
+
+  unit.rallyTime = 2;
+  hint = battleCoachHint(progress, match.state, null, "nova");
+  assert.equal(hint?.title, "KOMMANDANTENFÄHIGKEIT NUTZEN");
 });
