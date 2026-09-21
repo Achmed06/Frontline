@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.76
+## Current v0.77
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -341,4 +341,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - zero cooldown without a usable target is shown as KEIN ZIEL instead of a false ready state
 - the player Commander button is disabled and visually muted while no valid target exists
 - the opposing Commander HUD uses the same target-aware readiness rules
+- Commander effects, cooldowns, AI behavior and combat values are unchanged
+
+
+## v0.77 changes
+
+- unavailable Commander states now explain the actual reason instead of using only the generic KEIN ZIEL label
+- ATLAS and NOVA show TRUPP FEHLT when no living allied unit exists
+- LYRA shows TRUPP FEHLT with no living allies and ALLE INTAKT while every living ally is healthy and unslowed
+- the ready flash now follows real usability transitions, not only the cooldown reaching zero
+- LYRA therefore surfaces the moment a wounded or slowed ally becomes a valid repair target
+- ATLAS and NOVA can surface readiness when the first usable allied unit enters the field
+- initial match setup remains quiet because readiness flashing starts only after combat time has advanced
 - Commander effects, cooldowns, AI behavior and combat values are unchanged

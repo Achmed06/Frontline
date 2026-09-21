@@ -6,6 +6,7 @@ import {
   commanderActiveSeconds,
   commanderHasValidTarget,
   commanderStatusText,
+  commanderUnavailableText,
 } from "./commanders";
 import { newSeries, normalizeSeries, chooseSeriesRoute } from "./series";
 
@@ -77,7 +78,8 @@ test("commander readiness requires a real target instead of only zero cooldown",
   assert.equal(commanderHasValidTarget("atlas", healthy), true);
   assert.equal(commanderHasValidTarget("nova", healthy), true);
   assert.equal(commanderHasValidTarget("lyra", healthy), false);
-  assert.equal(commanderStatusText("lyra", 0, healthy), "KEIN ZIEL");
+  assert.equal(commanderStatusText("lyra", 0, healthy), "ALLE INTAKT");
+  assert.equal(commanderUnavailableText("lyra", healthy), "ALLE INTAKT");
 
   const wounded = [{ ...healthy[0], hp: 70 }];
   assert.equal(commanderHasValidTarget("lyra", wounded), true);
@@ -92,4 +94,6 @@ test("commander readiness requires a real target instead of only zero cooldown",
 
   const dead = [{ ...healthy[0], hp: 0 }];
   assert.equal(commanderHasValidTarget("atlas", dead), false);
+  assert.equal(commanderStatusText("atlas", 0, dead), "TRUPP FEHLT");
+  assert.equal(commanderUnavailableText("nova", dead), "TRUPP FEHLT");
 });

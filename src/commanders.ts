@@ -75,6 +75,17 @@ export function commanderHasValidTarget(
   });
 }
 
+export function commanderUnavailableText(
+  commander: CommanderId,
+  units: readonly CommanderUnitState[],
+  team: "player" | "enemy" = "player",
+): string {
+  const living = units.filter((unit) => unit.team === team && unit.hp > 0);
+  if (living.length === 0) return "TRUPP FEHLT";
+  if (commander === "lyra") return "ALLE INTAKT";
+  return "KEIN ZIEL";
+}
+
 export function commanderStatusText(
   commander: CommanderId,
   cooldown: number,
@@ -86,5 +97,5 @@ export function commanderStatusText(
   if (cooldown > 0) return `${Math.ceil(cooldown)}s`;
   return commanderHasValidTarget(commander, units, team)
     ? "BEREIT"
-    : "KEIN ZIEL";
+    : commanderUnavailableText(commander, units, team);
 }

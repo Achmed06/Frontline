@@ -160,7 +160,7 @@ let active = false,
   pauseBeganAt = 0,
   startBannerShown = false,
   finishReadyAt = 0,
-  lastCommanderCooldown = 0,
+  lastCommanderReady = false,
   lastEnemyCommanderCooldown = 0,
   commanderReadyFlashUntil = 0,
   lastPointOwners: Array<"player" | "enemy" | null> = match.state.points.map(
@@ -359,7 +359,7 @@ function start(
   startBannerShown = false;
   ended = false;
   finishReadyAt = 0;
-  lastCommanderCooldown = 0;
+  lastCommanderReady = false;
   lastEnemyCommanderCooldown = 0;
   commanderReadyFlashUntil = 0;
   lastCaptured = 0;
@@ -760,11 +760,12 @@ function updateHud(force = false) {
     active &&
     !ended &&
     live &&
-    lastCommanderCooldown > 0 &&
-    s.commanderCooldown <= 0
+    commanderReady &&
+    !lastCommanderReady &&
+    s.time > 0.25
   )
     commanderReadyFlashUntil = performance.now() + 1250;
-  lastCommanderCooldown = s.commanderCooldown;
+  lastCommanderReady = commanderReady;
   const enemyCommanderTriggered =
     active &&
     !ended &&
