@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.87
+## Current v0.88
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -462,3 +462,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - target preview calculation is now shared with tactical validation, preventing renderer guidance from drifting away from combat rules
 - dedicated engine tests cover Rally, Stasis, Repulsor and Pulse/Core target previews
 - ability damage, healing, crowd control, radii, energy costs and all combat values remain unchanged
+
+## v0.88 changes
+
+- Repulsor aiming now previews the exact push direction and landing position for every affected enemy before release
+- projected landing markers respect the same battlefield clamps as the real displacement, including edge and corner cases
+- tactical execution now consumes the same shared target preview used by validation and renderer guidance instead of calculating affected units a second time
+- Pulse Core hits, Rally targets, Stasis targets and Repulsor targets therefore resolve from the same target set the player was shown
+- the aiming label distinguishes affected troops from a Pulse Core hit instead of collapsing both into a generic target count
+- a dedicated regression test verifies that Repulsor preview coordinates exactly match the post-cast unit coordinates
+- ability radii, damage, healing, crowd control, push distance, energy costs and all other combat values remain unchanged
+

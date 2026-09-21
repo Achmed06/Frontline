@@ -1119,14 +1119,19 @@ export class ArenaScene extends Phaser.Scene {
         card.kind === "ability"
           ? abilityTargetPreview(m.state, "player", card.id, x, y)
           : null;
-      const affectedCount =
-        (abilityTargets?.unitIds.length ?? 0) + (abilityTargets?.core ? 1 : 0);
+      const affectedUnits = abilityTargets?.unitIds.length ?? 0;
+      const affectedCount = affectedUnits + (abilityTargets?.core ? 1 : 0);
+      const targetSummary = abilityTargets?.core
+        ? affectedUnits
+          ? `${affectedUnits} ${affectedUnits === 1 ? "TRUPPE" : "TRUPPEN"} + KERN`
+          : "KERN"
+        : affectedUnits
+          ? `${affectedUnits} ${affectedUnits === 1 ? "TRUPPE" : "TRUPPEN"}`
+          : "0 ZIELE";
       if (this.aim) {
         const actionText =
           card.kind === "ability"
-            ? affectedCount
-              ? `LOSLASSEN ZUM WIRKEN · ${affectedCount} ${affectedCount === 1 ? "ZIEL" : "ZIELE"}`
-              : "LOSLASSEN ZUM WIRKEN · 0 ZIELE"
+            ? `LOSLASSEN ZUM WIRKEN · ${targetSummary}`
             : "LOSLASSEN ZUM EINSETZEN";
         this.aimLabel
           .setText(valid ? actionText : validation.message)
@@ -1206,6 +1211,40 @@ export class ArenaScene extends Phaser.Scene {
           fx.strokeCircle(core.x, core.y, 31);
           fx.lineStyle(1, 0xffffff, pulse * 0.5);
           fx.strokeCircle(core.x, core.y, 36);
+        }
+        for (const movement of abilityTargets?.movements ?? []) {
+          const target = s.units.find((unit) => unit.id === movement.unitId);
+          if (!target) continue;
+          const dx = movement.x - target.x;
+          const dy = movement.y - target.y;
+          const travel = Math.hypot(dx, dy);
+          if (travel < 1) continue;
+          const ux = dx / travel;
+          const uy = dy / travel;
+          const px = -uy;
+          const py = ux;
+          const startX = target.x + ux * (target.radius + 10);
+          const startY = target.y + uy * (target.radius + 10);
+          const endX = movement.x - ux * 8;
+          const endY = movement.y - uy * 8;
+          fx.lineStyle(2, targetColor, 0.72);
+          fx.lineBetween(startX, startY, endX, endY);
+          fx.lineBetween(
+            endX,
+            endY,
+            endX - ux * 8 + px * 4,
+            endY - uy * 8 + py * 4,
+          );
+          fx.lineBetween(
+            endX,
+            endY,
+            endX - ux * 8 - px * 4,
+            endY - uy * 8 - py * 4,
+          );
+          fx.fillStyle(targetColor, 0.06);
+          fx.fillCircle(movement.x, movement.y, target.radius + 7);
+          fx.lineStyle(1.4, targetColor, 0.62);
+          fx.strokeCircle(movement.x, movement.y, target.radius + 7);
         }
       }
       fx.lineStyle(1.5, previewColor, 0.8);

@@ -422,9 +422,16 @@ export interface PlayResult {
   message: string;
 }
 
+export type AbilityTargetMovement = {
+  unitId: number;
+  x: number;
+  y: number;
+};
+
 export type AbilityTargetPreview = {
   unitIds: number[];
   core: boolean;
+  movements: AbilityTargetMovement[];
 };
 
 export function abilityTargetPreview(
@@ -441,37 +448,54 @@ export function abilityTargetPreview(
     !Number.isFinite(x) ||
     !Number.isFinite(y)
   )
-    return { unitIds: [], core: false };
+    return { unitIds: [], core: false, movements: [] };
 
-  const unitIds =
+  const targets =
     card.id === "rally"
-      ? state.units
-          .filter(
-            (unit) =>
-              unit.team === team &&
-              unit.hp > 0 &&
-              distance(unit, { x, y }) <= (card.range ?? 96),
-          )
-          .map((unit) => unit.id)
+      ? state.units.filter(
+          (unit) =>
+            unit.team === team &&
+            unit.hp > 0 &&
+            distance(unit, { x, y }) <= (card.range ?? 96),
+        )
       : card.id === "pulse" ||
           card.id === "stasis" ||
           card.id === "repulsor"
-        ? state.units
-            .filter(
-              (unit) =>
-                unit.team !== team &&
-                unit.hp > 0 &&
-                distance(unit, { x, y }) <=
-                  (card.range ?? 0) + unit.radius,
-            )
-            .map((unit) => unit.id)
+        ? state.units.filter(
+            (unit) =>
+              unit.team !== team &&
+              unit.hp > 0 &&
+              distance(unit, { x, y }) <= (card.range ?? 0) + unit.radius,
+          )
         : [];
+  const movements =
+    card.id === "repulsor"
+      ? targets.map((unit) => {
+          const d = distance(unit, { x, y });
+          const dx = d > 0.001 ? (unit.x - x) / d : 0;
+          const dy = d > 0.001 ? (unit.y - y) / d : team === "player" ? -1 : 1;
+          return {
+            unitId: unit.id,
+            x: clamp(
+              unit.x + dx * (card.pushDistance ?? 0),
+              15,
+              BOARD_WIDTH - 15,
+            ),
+            y: clamp(
+              unit.y + dy * (card.pushDistance ?? 0),
+              62,
+              BOARD_HEIGHT - 62,
+            ),
+          };
+        })
+      : [];
 
   return {
-    unitIds,
+    unitIds: targets.map((unit) => unit.id),
     core:
       card.id === "pulse" &&
       distance(state.cores[other(team)], { x, y }) <= 100,
+    movements,
   };
 }
 
@@ -688,6 +712,16 @@ export class Match {
     const validation = this.validatePlay(team, cardId, x, y);
     if (!validation.ok) return validation;
     const card = CARDS.find((item) => item.id === cardId)!;
+    const targetPreview =
+      card.kind === "ability"
+        ? abilityTargetPreview(this.state, team, card.id, x, y)
+        : null;
+    const targetIds = new Set(targetPreview?.unitIds ?? []);
+    const targetMovements = new Map(
+      (targetPreview?.movements ?? []).map(
+        (movement) => [movement.unitId, movement] as const,
+      ),
+    );
     this.state.energy[team] = Math.max(0, this.state.energy[team] - card.cost);
     if (card.kind === "unit") {
       const count = card.count ?? 1;
@@ -733,15 +767,10 @@ export class Match {
     } else if (card.id === "pulse") {
       this.effect("pulse", x, y, team, 0.75);
       for (const unit of this.state.units) {
-        if (
-          unit.team !== team &&
-          unit.hp > 0 &&
-          distance(unit, { x, y }) <= 82 + unit.radius
-        )
-          this.damageUnit(unit, 85, team);
+        if (targetIds.has(unit.id)) this.damageUnit(unit, 85, team);
       }
       const core = this.state.cores[other(team)];
-      if (distance(core, { x, y }) <= 100) {
+      if (targetPreview?.core) {
         core.hp = Math.max(0, core.hp - 45);
         this.effect("core-hit", core.x, core.y, team, 0.5);
       }
@@ -751,11 +780,7 @@ export class Match {
     } else if (card.id === "rally") {
       this.effect("rally", x, y, team, 0.8);
       for (const unit of this.state.units) {
-        if (
-          unit.team === team &&
-          unit.hp > 0 &&
-          distance(unit, { x, y }) <= 96
-        ) {
+        if (targetIds.has(unit.id)) {
           unit.hp = Math.min(unit.maxHp, unit.hp + 65);
           unit.rallyTime = Math.max(unit.rallyTime, 6);
           this.effect("heal", unit.x, unit.y, team, 0.65);
@@ -766,29 +791,15 @@ export class Match {
     if (card.id === "stasis" || card.id === "repulsor") {
       this.effect(card.id, x, y, team, 0.7, undefined, card.range);
       for (const unit of this.state.units) {
-        if (
-          unit.team === team ||
-          unit.hp <= 0 ||
-          distance(unit, { x, y }) > card.range! + unit.radius
-        )
-          continue;
+        if (!targetIds.has(unit.id)) continue;
         if (card.id === "stasis") {
           unit.slowTime = Math.max(unit.slowTime, card.slowDuration!);
           unit.slowFactor = Math.min(unit.slowFactor, card.slowFactor!);
         } else {
-          const d = distance(unit, { x, y });
-          const dx = d > 0.001 ? (unit.x - x) / d : 0;
-          const dy = d > 0.001 ? (unit.y - y) / d : team === "player" ? -1 : 1;
-          unit.x = clamp(
-            unit.x + dx * card.pushDistance!,
-            15,
-            BOARD_WIDTH - 15,
-          );
-          unit.y = clamp(
-            unit.y + dy * card.pushDistance!,
-            62,
-            BOARD_HEIGHT - 62,
-          );
+          const movement = targetMovements.get(unit.id);
+          if (!movement) continue;
+          unit.x = movement.x;
+          unit.y = movement.y;
         }
       }
       if (team === "player") this.state.stats.abilities++;

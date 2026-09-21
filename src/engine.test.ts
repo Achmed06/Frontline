@@ -820,3 +820,43 @@ test("ability target preview matches tactical validation targets and Pulse Core 
   );
   assert.equal(preview.core, false);
 });
+
+test("Repulsor target preview predicts the exact clamped landing position", () => {
+  const match = new Match({
+    playerDeck: tacticalDeck,
+    botEnabled: false,
+  });
+  const enemy = staticUnit(match, "enemy", 210, 280);
+  match.state.energy.player = 10;
+
+  let preview = abilityTargetPreview(
+    match.state,
+    "player",
+    "repulsor",
+    210,
+    280,
+  );
+  assert.deepEqual(preview.unitIds, [enemy.id]);
+  assert.equal(preview.movements.length, 1);
+  const firstLanding = preview.movements[0];
+  assert.ok(match.play("player", "repulsor", 210, 280).ok);
+  assert.deepEqual(
+    { x: enemy.x, y: enemy.y },
+    { x: firstLanding.x, y: firstLanding.y },
+  );
+
+  Object.assign(enemy, { x: 18, y: 70 });
+  match.state.energy.player = 10;
+  preview = abilityTargetPreview(match.state, "player", "repulsor", 40, 90);
+  assert.deepEqual(preview.unitIds, [enemy.id]);
+  assert.equal(preview.movements.length, 1);
+  const clampedLanding = preview.movements[0];
+  assert.ok(clampedLanding.x >= 15);
+  assert.ok(clampedLanding.y >= 62);
+  assert.ok(match.play("player", "repulsor", 40, 90).ok);
+  assert.deepEqual(
+    { x: enemy.x, y: enemy.y },
+    { x: clampedLanding.x, y: clampedLanding.y },
+  );
+});
+
