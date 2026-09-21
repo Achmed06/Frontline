@@ -460,6 +460,9 @@ export type AbilityTargetMovement = {
   unitId: number;
   x: number;
   y: number;
+  distance: number;
+  clamped: boolean;
+  changed: boolean;
 };
 
 export type AbilityTargetHealing = {
@@ -544,18 +547,20 @@ export function abilityTargetPreview(
           const d = distance(unit, { x, y });
           const dx = d > 0.001 ? (unit.x - x) / d : 0;
           const dy = d > 0.001 ? (unit.y - y) / d : team === "player" ? -1 : 1;
+          const requestedX = unit.x + dx * (card.pushDistance ?? 0);
+          const requestedY = unit.y + dy * (card.pushDistance ?? 0);
+          const landingX = clamp(requestedX, 15, BOARD_WIDTH - 15);
+          const landingY = clamp(requestedY, 62, BOARD_HEIGHT - 62);
+          const moved = Math.hypot(landingX - unit.x, landingY - unit.y);
           return {
             unitId: unit.id,
-            x: clamp(
-              unit.x + dx * (card.pushDistance ?? 0),
-              15,
-              BOARD_WIDTH - 15,
-            ),
-            y: clamp(
-              unit.y + dy * (card.pushDistance ?? 0),
-              62,
-              BOARD_HEIGHT - 62,
-            ),
+            x: landingX,
+            y: landingY,
+            distance: moved,
+            clamped:
+              Math.abs(landingX - requestedX) > 1e-8 ||
+              Math.abs(landingY - requestedY) > 1e-8,
+            changed: moved > 1e-8,
           };
         })
       : [];

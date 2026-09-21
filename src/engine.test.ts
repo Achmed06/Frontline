@@ -876,7 +876,7 @@ test("ability target preview matches tactical validation targets and Pulse Core 
   assert.equal(preview.core, false);
 });
 
-test("Repulsor target preview predicts the exact clamped landing position", () => {
+test("Repulsor target preview reports exact effective displacement and clamping", () => {
   const match = new Match({
     playerDeck: tacticalDeck,
     botEnabled: false,
@@ -894,6 +894,9 @@ test("Repulsor target preview predicts the exact clamped landing position", () =
   assert.deepEqual(preview.unitIds, [enemy.id]);
   assert.equal(preview.movements.length, 1);
   const firstLanding = preview.movements[0];
+  assert.equal(firstLanding.distance, 55);
+  assert.equal(firstLanding.clamped, false);
+  assert.equal(firstLanding.changed, true);
   assert.ok(match.play("player", "repulsor", 210, 280).ok);
   assert.deepEqual(
     { x: enemy.x, y: enemy.y },
@@ -906,6 +909,10 @@ test("Repulsor target preview predicts the exact clamped landing position", () =
   assert.deepEqual(preview.unitIds, [enemy.id]);
   assert.equal(preview.movements.length, 1);
   const clampedLanding = preview.movements[0];
+  assert.equal(clampedLanding.clamped, true);
+  assert.equal(clampedLanding.changed, true);
+  assert.ok(clampedLanding.distance > 0);
+  assert.ok(clampedLanding.distance < 55);
   assert.ok(clampedLanding.x >= 15);
   assert.ok(clampedLanding.y >= 62);
   assert.ok(match.play("player", "repulsor", 40, 90).ok);
@@ -913,6 +920,18 @@ test("Repulsor target preview predicts the exact clamped landing position", () =
     { x: enemy.x, y: enemy.y },
     { x: clampedLanding.x, y: clampedLanding.y },
   );
+
+  Object.assign(enemy, { x: 15, y: 100 });
+  match.state.energy.player = 10;
+  preview = abilityTargetPreview(match.state, "player", "repulsor", 40, 100);
+  const blocked = preview.movements[0];
+  assert.equal(blocked.x, 15);
+  assert.equal(blocked.y, 100);
+  assert.equal(blocked.distance, 0);
+  assert.equal(blocked.clamped, true);
+  assert.equal(blocked.changed, false);
+  assert.ok(match.play("player", "repulsor", 40, 100).ok);
+  assert.deepEqual({ x: enemy.x, y: enemy.y }, { x: 15, y: 100 });
 });
 
 test("Pulse preview marks only targets the cast will actually finish", () => {

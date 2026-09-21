@@ -1169,6 +1169,20 @@ export class ArenaScene extends Phaser.Scene {
         card.id === "stasis" &&
         affectedUnits > 0 &&
         (abilityTargets?.slows.every((slow) => !slow.changed) ?? false);
+      const movedUnits =
+        abilityTargets?.movements.filter((movement) => movement.changed)
+          .length ?? 0;
+      const clampedMoves =
+        abilityTargets?.movements.filter(
+          (movement) => movement.changed && movement.clamped,
+        ).length ?? 0;
+      const blockedMoves =
+        abilityTargets?.movements.filter((movement) => !movement.changed)
+          .length ?? 0;
+      const repulsorWasted =
+        card.id === "repulsor" &&
+        affectedUnits > 0 &&
+        movedUnits === 0;
       const outcomeSummary =
         card.id === "pulse"
           ? [
@@ -1200,7 +1214,15 @@ export class ArenaScene extends Phaser.Scene {
                 ]
                   .filter(Boolean)
                   .join(" · ")
-              : "";
+              : card.id === "repulsor"
+                ? [
+                    movedUnits ? `VERSCHOBEN ${movedUnits}` : "",
+                    clampedMoves ? `GEKÜRZT ${clampedMoves}` : "",
+                    blockedMoves ? `BLOCKIERT ${blockedMoves}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : "";
       if (this.aim) {
         const actionText =
           card.kind === "ability"
@@ -1221,7 +1243,10 @@ export class ArenaScene extends Phaser.Scene {
           .setColor(
             valid
               ? (card.kind === "ability" &&
-                  (affectedCount === 0 || rallyWasted || stasisWasted)) ||
+                  (affectedCount === 0 ||
+                    rallyWasted ||
+                    stasisWasted ||
+                    repulsorWasted)) ||
                 (card.kind === "unit" && adjustedDeployment > 0)
                 ? "#ffd37a"
                 : "#83ffcf"
@@ -1399,6 +1424,25 @@ export class ArenaScene extends Phaser.Scene {
               target.y,
             );
           }
+          const movement = abilityTargets?.movements.find(
+            (result) => result.unitId === target.id,
+          );
+          if (movement && !movement.changed) {
+            const mark = target.radius + 17;
+            fx.lineStyle(2, NEUTRAL, 0.9);
+            fx.lineBetween(
+              target.x - mark * 0.5,
+              target.y - mark * 0.5,
+              target.x + mark * 0.5,
+              target.y + mark * 0.5,
+            );
+            fx.lineBetween(
+              target.x + mark * 0.5,
+              target.y - mark * 0.5,
+              target.x - mark * 0.5,
+              target.y + mark * 0.5,
+            );
+          }
         }
         if (abilityTargets?.core) {
           const core = s.cores.enemy;
@@ -1424,10 +1468,10 @@ export class ArenaScene extends Phaser.Scene {
         }
         for (const movement of abilityTargets?.movements ?? []) {
           const target = s.units.find((unit) => unit.id === movement.unitId);
-          if (!target) continue;
+          if (!target || !movement.changed) continue;
           const dx = movement.x - target.x;
           const dy = movement.y - target.y;
-          const travel = Math.hypot(dx, dy);
+          const travel = movement.distance;
           if (travel < 1) continue;
           const ux = dx / travel;
           const uy = dy / travel;

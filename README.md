@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.99
+## Current v1.00
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -585,4 +585,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the hint formatter reads directly from card data, so future balance changes automatically update the player-facing values
 - dedicated tests cover all four tactical cards plus unit and empty-selection fallback behavior
 - aiming controls, combat values, energy costs and deployment rules remain unchanged
+
+## v1.00 changes
+
+- Repulsor preview now reports the effective displacement distance for every affected unit instead of only its final coordinates
+- preview results distinguish full movement, boundary-clamped movement and completely blocked movement
+- the aim label now reports moved, shortened and blocked targets with `VERSCHOBEN N`, `GEKÜRZT N` and `BLOCKIERT N`
+- a legal Repulsor cast that cannot move any affected target is highlighted as wasteful instead of looking fully effective
+- fully blocked targets receive a neutral blocked marker while useful push arrows continue to show the exact landing position
+- Repulsor execution still consumes the exact preview coordinates, preserving preview/execution parity
+- regression coverage verifies a full 55-unit push, a partially clamped push and a zero-distance boundary block
+- no Repulsor balance values or energy costs changed
 
