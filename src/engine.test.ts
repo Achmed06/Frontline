@@ -760,7 +760,11 @@ test("bot commander activation exposes the real enemy cooldown state", () => {
 
 
 test("ability target preview matches tactical validation targets and Pulse Core reach", () => {
-  const match = quietMatch();
+  const match = new Match({
+    seed: 42,
+    botEnabled: false,
+    playerDeck: [...DEFAULT_DECK.slice(0, 6), "rally", "stasis"],
+  });
   const ally = staticUnit(match, "player", 210, 390);
   const enemy = staticUnit(match, "enemy", 230, 390);
   const distantEnemy = staticUnit(match, "enemy", 40, 110);
