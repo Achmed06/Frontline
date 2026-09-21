@@ -151,3 +151,84 @@ test("battle coach uses the live card cost and energy rate before directing depl
   assert.equal(hint?.title, "TRUPPE WÄHLEN");
   assert.equal(hint?.focus, "cards");
 });
+
+
+test("battle coach follows a selected tactic into the arena only when it can be used", () => {
+  const progress = normalizeLearning(null);
+  const match = new Match({ botEnabled: false });
+  match.state.stats.deployed = 3;
+  match.state.stats.captured = 1;
+  match.state.commanderCooldown = 10;
+
+  match.state.energy.player = 3;
+  let hint = battleCoachHint(progress, match.state, "pulse");
+  assert.equal(hint?.title, "ENERGIE SAMMELN");
+  assert.equal(hint?.focus, "cards");
+  assert.match(hint?.detail ?? "", /1,4s/);
+
+  match.state.energy.player = 4;
+  hint = battleCoachHint(progress, match.state, "pulse");
+  assert.equal(hint?.title, "TAKTIK ZIELEN");
+  assert.equal(hint?.focus, "arena");
+
+  hint = battleCoachHint(progress, match.state, "rally");
+  assert.equal(hint?.title, "ANDERE TAKTIK WÄHLEN");
+  assert.equal(hint?.focus, "cards");
+
+  match.state.units.push({
+    id: 2001,
+    cardId: "vanguard",
+    team: "player",
+    x: 210,
+    y: 450,
+    hp: 125,
+    maxHp: 125,
+    radius: 10,
+    shield: 0,
+    damage: 16,
+    range: 20,
+    speed: 35,
+    interval: 1,
+    attackCooldown: 0,
+    healCooldown: 0,
+    shieldTime: 0,
+    rallyTime: 0,
+    slowTime: 0,
+    slowFactor: 1,
+  });
+  hint = battleCoachHint(progress, match.state, "rally");
+  assert.equal(hint?.title, "TAKTIK ZIELEN");
+  assert.equal(hint?.focus, "arena");
+});
+
+test("a deliberately selected usable tactic takes priority over commander coaching", () => {
+  const progress = normalizeLearning(null);
+  const match = new Match({ botEnabled: false });
+  match.state.stats.deployed = 3;
+  match.state.stats.captured = 1;
+  match.state.units.push({
+    id: 2002,
+    cardId: "vanguard",
+    team: "player",
+    x: 210,
+    y: 450,
+    hp: 125,
+    maxHp: 125,
+    radius: 10,
+    shield: 0,
+    damage: 16,
+    range: 20,
+    speed: 35,
+    interval: 1,
+    attackCooldown: 0,
+    healCooldown: 0,
+    shieldTime: 0,
+    rallyTime: 0,
+    slowTime: 0,
+    slowFactor: 1,
+  });
+
+  const hint = battleCoachHint(progress, match.state, "pulse", "atlas");
+  assert.equal(hint?.title, "TAKTIK ZIELEN");
+  assert.equal(hint?.focus, "arena");
+});

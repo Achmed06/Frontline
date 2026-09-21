@@ -28,6 +28,23 @@ const GOALS: Record<LessonId, number> = {
   win: 1,
 };
 
+function abilityHasPotentialTarget(
+  cardId: string,
+  state: MatchState,
+): boolean {
+  if (cardId === "pulse") return true;
+  if (cardId === "rally")
+    return state.units.some((unit) => unit.team === "player" && unit.hp > 0);
+  if (cardId === "stasis" || cardId === "repulsor")
+    return state.units.some((unit) => unit.team === "enemy" && unit.hp > 0);
+  return false;
+}
+
+function energyWaitSeconds(cost: number, energy: number): string {
+  const wait = Math.ceil(((cost - energy) / ENERGY_RATE) * 10) / 10;
+  return Math.max(0.1, wait).toFixed(1).replace(".", ",");
+}
+
 function total(
   progress: LearningProgress,
   state: MatchState,
@@ -63,13 +80,10 @@ export function battleCoachHint(
       };
     }
     if (state.energy.player + 1e-8 < selected.cost) {
-      const wait =
-        Math.ceil(
-          ((selected.cost - state.energy.player) / ENERGY_RATE) * 10,
-        ) / 10;
-      const waitLabel = Math.max(0.1, wait)
-        .toFixed(1)
-        .replace(".", ",");
+      const waitLabel = energyWaitSeconds(
+        selected.cost,
+        state.energy.player,
+      );
       return {
         lesson: "deploy",
         kicker: "FELDAUSBILDUNG · SCHRITT 1",
@@ -108,6 +122,52 @@ export function battleCoachHint(
 
   const ability = total(progress, state, "ability");
   if (ability < GOALS.ability) {
+    const selected = CARDS.find((card) => card.id === selectedCardId);
+    if (selected?.kind === "ability") {
+      if (state.energy.player + 1e-8 < selected.cost) {
+        const waitLabel = energyWaitSeconds(
+          selected.cost,
+          state.energy.player,
+        );
+        return {
+          lesson: "ability",
+          kicker: "FELDAUSBILDUNG · SCHRITT 3",
+          title: "ENERGIE SAMMELN",
+          detail: `${selected.name} kostet ${selected.cost} Energie. Bereit in ${waitLabel}s. Danach kannst du die Taktik in der Arena zielen.`,
+          focus: "cards",
+          current: ability,
+          goal: GOALS.ability,
+        };
+      }
+      if (abilityHasPotentialTarget(selected.id, state)) {
+        return {
+          lesson: "ability",
+          kicker: "FELDAUSBILDUNG · SCHRITT 3",
+          title: "TAKTIK ZIELEN",
+          detail:
+            selected.id === "pulse"
+              ? "Halte in der Arena auf das gewünschte Zielgebiet und lass los, um Pulse auszulösen."
+              : selected.id === "rally"
+                ? "Ziele Rally auf eigene lebende Truppen und lass los, sobald der Wirkbereich passt."
+                : "Ziele die Taktik auf lebende Gegner und lass los, sobald der Wirkbereich passt.",
+          focus: "arena",
+          current: ability,
+          goal: GOALS.ability,
+        };
+      }
+      return {
+        lesson: "ability",
+        kicker: "FELDAUSBILDUNG · SCHRITT 3",
+        title: "ANDERE TAKTIK WÄHLEN",
+        detail:
+          selected.id === "rally"
+            ? "Rally braucht eigene lebende Truppen. Wähle bis dahin eine andere Taktik oder bringe zuerst eine Truppe ins Feld."
+            : "Diese Taktik braucht lebende Gegner im Zielgebiet. Wähle bis dahin eine andere Taktik.",
+        focus: "cards",
+        current: ability,
+        goal: GOALS.ability,
+      };
+    }
     const commanderReady =
       state.commanderCooldown <= 0 &&
       commanderHasValidTarget(commander, state.units, "player");

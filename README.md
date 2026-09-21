@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.83
+## Current v0.84
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -416,3 +416,14 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - tactic cards still correctly route the player back to choosing a troop for the deployment lesson
 - dedicated tests cover low-energy, exact-cost and tactic-card states
 - card costs, energy regeneration, deployment validation and all combat rules remain unchanged
+
+
+## v0.84 changes
+
+- field-training step 3 now follows a deliberately selected tactic into the arena instead of leaving the coaching focus on the card row
+- an affordable usable tactic shows TAKTIK ZIELEN and highlights the battlefield as the next action
+- an unaffordable tactic stays on the card row with the real energy-ready countdown
+- Rally waits for a living allied unit before arena guidance; Stasis and Repulsor wait for a living enemy; Pulse remains freely targetable
+- a selected usable tactic takes coaching priority over a simultaneously ready Commander so the tutorial respects the player's current intent
+- dedicated tests cover tactic energy, target availability and selected-tactic priority
+- tactic effects, targeting radii, energy costs, Commander rules and all combat values remain unchanged
