@@ -68,7 +68,7 @@ test("commander status text prioritizes active effect, then cooldown, then ready
   assert.equal(commanderStatusText("atlas", 28.4, units), "AKTIV 5s");
   assert.equal(commanderStatusText("lyra", 12.2, units), "13s");
   assert.equal(commanderStatusText("nova", 0, units, "enemy"), "AKTIV 6s");
-  assert.equal(commanderStatusText("atlas", 0, [], "enemy"), "KEIN ZIEL");
+  assert.equal(commanderStatusText("atlas", 0, [], "enemy"), "TRUPP FEHLT");
 });
 
 test("commander readiness requires a real target instead of only zero cooldown", () => {
