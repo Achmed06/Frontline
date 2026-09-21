@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v0.98
+## Current v0.99
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -574,4 +574,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the existing Disruptor + Rally regression now derives expected movement from Rally card data instead of a hard-coded 0.75 result
 - dedicated coverage verifies the Rally attack-speed multiplier against the real cooldown update
 - healing, duration, cooldowns, energy costs and all other balance values remain unchanged
+
+## v0.99 changes
+
+- selected tactical cards now show their actual configured effect values in the mobile match HUD instead of the generic “hold to aim” hint
+- Pulse shows 85 damage and 45 Core damage
+- Rally shows +65 HP, +25% movement, +30% attack speed and the 6-second duration
+- Stasis shows the 40% movement reduction, 4-second duration and zero-damage nature
+- Repulsor shows the 55-unit push distance and zero-damage nature
+- the hint formatter reads directly from card data, so future balance changes automatically update the player-facing values
+- dedicated tests cover all four tactical cards plus unit and empty-selection fallback behavior
+- aiming controls, combat values, energy costs and deployment rules remain unchanged
 

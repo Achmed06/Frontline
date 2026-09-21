@@ -1,4 +1,5 @@
 import { renderBackupMenu } from "./save-backup-menu";
+import { selectedCardHint } from "./card-hints";
 import { initializeStore, renderStore, supporterOwned } from "./store";
 import { watchAppState } from "./mobile";
 import { ARENA_THEMES, isArenaTheme, type ArenaThemeId } from "./arena-themes";
@@ -243,12 +244,6 @@ function selectCard(id: string) {
       `Noch ${Math.ceil(missing)} Energie · bereit in ${energyWaitLabel(wait)}s.`,
     );
   }
-}
-function selectedCardHint(card: (typeof CARDS)[number] | undefined): string {
-  if (!card) return "Karte wählen → halten, zielen, loslassen";
-  return card.kind === "ability"
-    ? "Halten zum Zielen · loslassen zum Wirken"
-    : card.description;
 }
 function energyWaitLabel(seconds: number): string {
   const rounded = Math.max(0.1, Math.ceil(seconds * 10) / 10);
