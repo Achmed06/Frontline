@@ -2592,26 +2592,59 @@ export class ArenaScene extends Phaser.Scene {
           );
           fx.lineStyle(2.4, deathAccent, fade * 0.9);
           if (direction.active) {
-            const angle = Math.atan2(direction.ny, direction.nx);
-            fx.strokeEllipse(
-              centerX,
-              centerY,
-              (10 + burst * 2) * direction.stretch,
-              10 + burst * 1.28,
-              angle,
-            );
+            const major = (5 + burst) * direction.stretch;
+            const minor = 5 + burst * 0.64;
+            fx.beginPath();
+            for (let k = 0; k <= 18; k++) {
+              const t = (k / 18) * Math.PI * 2;
+              const px =
+                centerX +
+                direction.nx * Math.cos(t) * major +
+                tangentX * Math.sin(t) * minor;
+              const py =
+                centerY +
+                direction.ny * Math.cos(t) * major +
+                tangentY * Math.sin(t) * minor;
+              if (k === 0) fx.moveTo(px, py);
+              else fx.lineTo(px, py);
+            }
+            fx.closePath();
+            fx.strokePath();
           } else {
             fx.strokeCircle(centerX, centerY, 5 + burst);
           }
 
           fx.lineStyle(1.2, 0xffe5ba, fade * 0.58);
-          fx.strokeEllipse(
-            centerX,
-            centerY + 7,
-            (14 + burst * 1.55) * (direction.active ? direction.stretch : 1),
-            5 + burst * 0.5,
-            direction.active ? Math.atan2(direction.ny, direction.nx) : 0,
-          );
+          if (direction.active) {
+            const groundMajor =
+              (7 + burst * 0.775) * direction.stretch;
+            const groundMinor = 2.5 + burst * 0.25;
+            const groundX = centerX;
+            const groundY = centerY + 7;
+            fx.beginPath();
+            for (let k = 0; k <= 18; k++) {
+              const t = (k / 18) * Math.PI * 2;
+              const px =
+                groundX +
+                direction.nx * Math.cos(t) * groundMajor +
+                tangentX * Math.sin(t) * groundMinor;
+              const py =
+                groundY +
+                direction.ny * Math.cos(t) * groundMajor +
+                tangentY * Math.sin(t) * groundMinor;
+              if (k === 0) fx.moveTo(px, py);
+              else fx.lineTo(px, py);
+            }
+            fx.closePath();
+            fx.strokePath();
+          } else {
+            fx.strokeEllipse(
+              centerX,
+              centerY + 7,
+              14 + burst * 1.55,
+              5 + burst * 0.5,
+            );
+          }
 
           for (let i = 0; i < profile.shards; i++) {
             const a =
@@ -2683,15 +2716,25 @@ export class ArenaScene extends Phaser.Scene {
               fade * 0.5,
             );
             if (direction.active) {
-              fx.strokeEllipse(
-                centerX,
-                centerY,
-                (burst + 8 + profile.scale * 4) *
-                  2 *
-                  direction.stretch,
-                (burst + 8 + profile.scale * 4) * 1.5,
-                Math.atan2(direction.ny, direction.nx),
-              );
+              const shockRadius = burst + 8 + profile.scale * 4;
+              const major = shockRadius * direction.stretch;
+              const minor = shockRadius * 0.75;
+              fx.beginPath();
+              for (let k = 0; k <= 20; k++) {
+                const t = (k / 20) * Math.PI * 2;
+                const px =
+                  centerX +
+                  direction.nx * Math.cos(t) * major +
+                  tangentX * Math.sin(t) * minor;
+                const py =
+                  centerY +
+                  direction.ny * Math.cos(t) * major +
+                  tangentY * Math.sin(t) * minor;
+                if (k === 0) fx.moveTo(px, py);
+                else fx.lineTo(px, py);
+              }
+              fx.closePath();
+              fx.strokePath();
             } else {
               fx.strokeCircle(
                 centerX,
