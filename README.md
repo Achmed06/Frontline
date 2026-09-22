@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.42
+## Current v1.43
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1154,3 +1154,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure deploymentArrivalVisual helper centralizes arrival kind, progress, beam geometry, ring/shock size, sprite scale and vertical offset
 - regression coverage verifies heavy/siege/swarm/support differentiation, real spawn metadata propagation, standard fallback and malformed timing handling
 - release: package 1.42.0 / v1.42 / iOS 1.42 (142)
+
+
+## v1.43 changes
+
+- ordinary unit impact effects now use the real incoming attack vector instead of presenting almost every hit as a symmetric radial burst
+- the bright contact point appears on the source-facing edge while spark rays and impact wake bias away from the attacker, matching the existing directional unit reaction and K.O. language
+- Ranger precision impacts align their strike axis and cross-mark to the actual shot path
+- Lancer rail impacts use properly oriented custom ellipses along the real projectile direction instead of fixed horizontal ellipses
+- Mortar debris now carries directional momentum away from the blast source while keeping enough radial spread to preserve explosion readability
+- Disruptor electrical arcs inherit a lighter directional bias from the incoming discharge
+- Sentinel/heavy impacts add a perpendicular compression bar, Core-turret beam impacts keep a short axis trace and Breaker/melee slashes align to the attacker/target relationship
+- when source coordinates are missing or coincide with the target, the previous radial/fixed fallback remains available
+- no unit is physically moved by these visuals; damage, hit radius, splash, targeting, cooldowns and all balance values are unchanged
+- a pure impactDirectionVisual helper centralizes source vector, perpendicular vector, lifetime intensity, directional bias, contact offset and wake length
+- regression coverage verifies real source direction, lifetime decay, radial fallback and malformed-value handling
+- release: package 1.43.0 / v1.43 / iOS 1.43 (143)

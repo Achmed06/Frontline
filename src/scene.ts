@@ -17,6 +17,7 @@ import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
+import { impactDirectionVisual } from "./impact-direction-visual";
 import { shieldImpactVisual } from "./shield-impact-visual";
 import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
@@ -2322,6 +2323,7 @@ export class ArenaScene extends Phaser.Scene {
 
         if (e.type === "impact") {
           const profile = impactProfile(e.sourceCardId);
+          const direction = impactDirectionVisual(e);
           const heavy = (e.radius ?? 0) >= 12;
           const impactRadius =
             (3 + (e.radius ?? 9) * progress) * profile.scale;
@@ -2335,14 +2337,24 @@ export class ArenaScene extends Phaser.Scene {
                   : profile.kind === "pulse"
                     ? 0xffe29b
                     : effectColor;
+          const contactX =
+            e.x -
+            (direction.active
+              ? direction.nx * direction.contactOffset
+              : 0);
+          const contactY =
+            e.y -
+            (direction.active
+              ? direction.ny * direction.contactOffset
+              : 0);
 
           fx.fillStyle(
             0xffffff,
             alpha * (heavy ? 0.42 : 0.27) * Math.min(1.2, profile.scale),
           );
           fx.fillCircle(
-            e.x,
-            e.y,
+            contactX,
+            contactY,
             (2.7 + (heavy ? 1.7 : 0.7)) * Math.min(1.18, profile.scale),
           );
           fx.lineStyle(
@@ -2355,41 +2367,115 @@ export class ArenaScene extends Phaser.Scene {
           for (let i = 0; i < profile.rays; i++) {
             const angle =
               (i * Math.PI * 2) / profile.rays + e.id * 0.37;
+            const radialX = Math.cos(angle);
+            const radialY = Math.sin(angle);
+            const biasedX =
+              radialX * (1 - direction.bias) +
+              direction.nx * direction.bias;
+            const biasedY =
+              radialY * (1 - direction.bias) +
+              direction.ny * direction.bias;
+            const length = Math.max(
+              0.001,
+              Math.hypot(biasedX, biasedY),
+            );
+            const nx = biasedX / length;
+            const ny = biasedY / length;
             const inner = 4 + impactRadius * 0.42;
             const outer =
               inner +
               (heavy ? 8 : 5) *
                 profile.scale *
-                (1 - progress * 0.35);
+                (1 - progress * 0.35) *
+                (direction.active ? 1 + direction.bias * 0.2 : 1);
             fx.lineBetween(
-              e.x + Math.cos(angle) * inner,
-              e.y + Math.sin(angle) * inner,
-              e.x + Math.cos(angle) * outer,
-              e.y + Math.sin(angle) * outer,
+              e.x + nx * inner,
+              e.y + ny * inner,
+              e.x + nx * outer,
+              e.y + ny * outer,
+            );
+          }
+
+          if (direction.active) {
+            fx.lineStyle(
+              heavy ? 2 : 1.25,
+              0xffffff,
+              alpha * 0.54 * direction.intensity,
+            );
+            fx.lineBetween(
+              contactX,
+              contactY,
+              e.x + direction.nx * direction.wakeLength,
+              e.y + direction.ny * direction.wakeLength,
             );
           }
 
           if (profile.kind === "precision") {
             fx.lineStyle(1.2, 0xffffff, alpha * 0.58);
-            fx.lineBetween(e.x - impactRadius - 3, e.y, e.x - 3, e.y);
-            fx.lineBetween(e.x + 3, e.y, e.x + impactRadius + 3, e.y);
-            fx.lineBetween(e.x, e.y - impactRadius - 3, e.x, e.y - 3);
-            fx.lineBetween(e.x, e.y + 3, e.x, e.y + impactRadius + 3);
+            if (direction.active) {
+              const reach = impactRadius + 4;
+              fx.lineBetween(
+                e.x - direction.nx * reach,
+                e.y - direction.ny * reach,
+                e.x + direction.nx * reach,
+                e.y + direction.ny * reach,
+              );
+              fx.lineBetween(
+                e.x - direction.px * 5,
+                e.y - direction.py * 5,
+                e.x + direction.px * 5,
+                e.y + direction.py * 5,
+              );
+            } else {
+              fx.lineBetween(e.x - impactRadius - 3, e.y, e.x - 3, e.y);
+              fx.lineBetween(e.x + 3, e.y, e.x + impactRadius + 3, e.y);
+              fx.lineBetween(e.x, e.y - impactRadius - 3, e.x, e.y - 3);
+              fx.lineBetween(e.x, e.y + 3, e.x, e.y + impactRadius + 3);
+            }
           } else if (profile.kind === "rail") {
-            fx.lineStyle(1.7, 0xffffff, alpha * 0.65);
-            fx.strokeEllipse(
-              e.x,
-              e.y,
-              impactRadius * 2.15,
-              impactRadius * 0.82,
-            );
-            fx.lineStyle(1.1, profileColor, alpha * 0.48);
-            fx.strokeEllipse(
-              e.x,
-              e.y,
-              impactRadius * 2.8,
-              impactRadius * 1.1,
-            );
+            if (direction.active) {
+              for (const ring of [
+                { major: impactRadius * 1.4, minor: impactRadius * 0.41, width: 1.7, opacity: 0.65 },
+                { major: impactRadius * 1.82, minor: impactRadius * 0.55, width: 1.1, opacity: 0.48 },
+              ]) {
+                fx.lineStyle(
+                  ring.width,
+                  ring === undefined ? 0xffffff : profileColor,
+                  alpha * ring.opacity,
+                );
+                fx.beginPath();
+                for (let k = 0; k <= 18; k++) {
+                  const t = (k / 18) * Math.PI * 2;
+                  const px =
+                    e.x +
+                    direction.nx * Math.cos(t) * ring.major +
+                    direction.px * Math.sin(t) * ring.minor;
+                  const py =
+                    e.y +
+                    direction.ny * Math.cos(t) * ring.major +
+                    direction.py * Math.sin(t) * ring.minor;
+                  if (k === 0) fx.moveTo(px, py);
+                  else fx.lineTo(px, py);
+                }
+                fx.closePath();
+                fx.strokePath();
+              }
+            } else {
+              fx.lineStyle(1.7, 0xffffff, alpha * 0.65);
+              fx.strokeEllipse(
+                e.x,
+                e.y,
+                impactRadius * 2.15,
+                impactRadius * 0.82,
+              );
+              fx.lineStyle(1.1, profileColor, alpha * 0.48);
+              fx.strokeEllipse(
+                e.x,
+                e.y,
+                impactRadius * 2.8,
+                impactRadius * 1.1,
+              );
+            }
           } else if (profile.kind === "explosive") {
             fx.fillStyle(profileColor, alpha * 0.16);
             fx.fillCircle(e.x, e.y, impactRadius * 0.78);
@@ -2397,23 +2483,54 @@ export class ArenaScene extends Phaser.Scene {
             fx.strokeCircle(e.x, e.y, impactRadius + 5);
             for (let i = 0; i < 6; i++) {
               const angle = i * Math.PI / 3 + e.id * 0.19;
+              const radialX = Math.cos(angle);
+              const radialY = Math.sin(angle);
+              const debrisX =
+                radialX * (1 - direction.bias * 0.75) +
+                direction.nx * direction.bias * 0.75;
+              const debrisY =
+                radialY * (1 - direction.bias * 0.75) +
+                direction.ny * direction.bias * 0.75;
+              const length = Math.max(0.001, Math.hypot(debrisX, debrisY));
               const distance = impactRadius * (0.55 + progress * 0.55);
               fx.fillStyle(i % 2 ? 0xffc368 : 0xd3d7c9, alpha * 0.74);
               fx.fillRect(
-                e.x + Math.cos(angle) * distance - 1.5,
-                e.y + Math.sin(angle) * distance - 1.5,
+                e.x + (debrisX / length) * distance - 1.5,
+                e.y + (debrisY / length) * distance - 1.5,
                 3,
                 3,
               );
             }
           } else if (profile.kind === "electric") {
-            let lastX = e.x + impactRadius;
-            let lastY = e.y;
+            let lastX =
+              direction.active
+                ? contactX
+                : e.x + impactRadius;
+            let lastY =
+              direction.active
+                ? contactY
+                : e.y;
             for (let i = 1; i <= 8; i++) {
               const angle = (i * Math.PI * 2) / 8;
+              const radialX = Math.cos(angle);
+              const radialY = Math.sin(angle);
+              const electricX =
+                radialX * (1 - direction.bias * 0.5) +
+                direction.nx * direction.bias * 0.5;
+              const electricY =
+                radialY * (1 - direction.bias * 0.5) +
+                direction.ny * direction.bias * 0.5;
+              const length = Math.max(
+                0.001,
+                Math.hypot(electricX, electricY),
+              );
               const jitter = i % 2 ? 3 : -2;
-              const x = e.x + Math.cos(angle) * (impactRadius + jitter);
-              const y = e.y + Math.sin(angle) * (impactRadius + jitter);
+              const x =
+                e.x +
+                (electricX / length) * (impactRadius + jitter);
+              const y =
+                e.y +
+                (electricY / length) * (impactRadius + jitter);
               fx.lineStyle(1.4, 0xbcecff, alpha * 0.78);
               fx.lineBetween(lastX, lastY, x, y);
               lastX = x;
@@ -2424,33 +2541,78 @@ export class ArenaScene extends Phaser.Scene {
             fx.strokeCircle(e.x, e.y, impactRadius + 5);
             fx.lineStyle(1, 0xffffff, alpha * 0.36);
             fx.strokeCircle(e.x, e.y, impactRadius + 9);
+            if (direction.active) {
+              const bar = impactRadius * 0.85;
+              fx.lineStyle(2.2, 0xffffff, alpha * 0.46);
+              fx.lineBetween(
+                e.x - direction.px * bar,
+                e.y - direction.py * bar,
+                e.x + direction.px * bar,
+                e.y + direction.py * bar,
+              );
+            }
           } else if (profile.kind === "beam") {
             fx.lineStyle(2.2, 0xffffff, alpha * 0.7);
             fx.strokeCircle(e.x, e.y, impactRadius * 0.58);
             fx.fillStyle(profileColor, alpha * 0.2);
             fx.fillCircle(e.x, e.y, impactRadius * 0.45);
+            if (direction.active) {
+              fx.lineStyle(1.5, profileColor, alpha * 0.62);
+              fx.lineBetween(
+                e.x - direction.nx * impactRadius,
+                e.y - direction.ny * impactRadius,
+                e.x + direction.nx * impactRadius * 0.7,
+                e.y + direction.ny * impactRadius * 0.7,
+              );
+            }
           } else if (profile.kind === "breach") {
             fx.lineStyle(2.2, 0xffcf67, alpha * 0.8);
-            fx.lineBetween(
-              e.x - impactRadius * 0.75,
-              e.y - impactRadius * 0.75,
-              e.x + impactRadius * 0.75,
-              e.y + impactRadius * 0.75,
-            );
-            fx.lineBetween(
-              e.x + impactRadius * 0.75,
-              e.y - impactRadius * 0.75,
-              e.x - impactRadius * 0.75,
-              e.y + impactRadius * 0.75,
-            );
+            if (direction.active) {
+              const slash = impactRadius * 0.88;
+              fx.lineBetween(
+                e.x - direction.px * slash - direction.nx * 3,
+                e.y - direction.py * slash - direction.ny * 3,
+                e.x + direction.px * slash + direction.nx * 4,
+                e.y + direction.py * slash + direction.ny * 4,
+              );
+              fx.lineBetween(
+                e.x - direction.nx * slash * 0.65,
+                e.y - direction.ny * slash * 0.65,
+                e.x + direction.nx * slash,
+                e.y + direction.ny * slash,
+              );
+            } else {
+              fx.lineBetween(
+                e.x - impactRadius * 0.75,
+                e.y - impactRadius * 0.75,
+                e.x + impactRadius * 0.75,
+                e.y + impactRadius * 0.75,
+              );
+              fx.lineBetween(
+                e.x + impactRadius * 0.75,
+                e.y - impactRadius * 0.75,
+                e.x - impactRadius * 0.75,
+                e.y + impactRadius * 0.75,
+              );
+            }
           } else if (profile.kind === "melee") {
             fx.lineStyle(1.8, profileColor, alpha * 0.62);
-            fx.lineBetween(
-              e.x - impactRadius * 0.85,
-              e.y + impactRadius * 0.3,
-              e.x + impactRadius * 0.5,
-              e.y - impactRadius * 0.7,
-            );
+            if (direction.active) {
+              const slash = impactRadius * 0.9;
+              fx.lineBetween(
+                e.x - direction.px * slash - direction.nx * 2,
+                e.y - direction.py * slash - direction.ny * 2,
+                e.x + direction.px * slash + direction.nx * 4,
+                e.y + direction.py * slash + direction.ny * 4,
+              );
+            } else {
+              fx.lineBetween(
+                e.x - impactRadius * 0.85,
+                e.y + impactRadius * 0.3,
+                e.x + impactRadius * 0.5,
+                e.y - impactRadius * 0.7,
+              );
+            }
           } else if (profile.kind === "pulse") {
             fx.lineStyle(1.5, 0xfff2bf, alpha * 0.6);
             fx.strokeCircle(e.x, e.y, impactRadius + 6 * progress);
