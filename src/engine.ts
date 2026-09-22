@@ -1165,6 +1165,7 @@ export class Match {
           clamp(10 + applied * 0.22, 12, 32),
           applied,
           card.id,
+          { x, y },
         );
       }
       if (team === "player") this.state.stats.abilities++;
@@ -1631,6 +1632,7 @@ export class Match {
           clamp(10 + applied * 0.22, 12, 32),
           applied,
           attack.unit.cardId,
+          attack.unit,
         );
       } else {
         const target = attack.target as Unit;

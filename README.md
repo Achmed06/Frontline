@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.34
+## Current v1.35
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1034,3 +1034,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure battlefieldScarVisual helper centralizes lifetime, fade, radius and weapon-profile styling
 - regression coverage verifies settle/hold/fade behavior, source weapon styling and malformed-value clamping
 - release: package 1.34.0 / v1.34 / iOS 1.34 (134)
+
+
+## v1.35 changes
+
+- Core damage now carries the real attack origin into the existing core-hit presentation event
+- direct unit attacks use the firing unit position; Pulse uses its actual cast center
+- Core impact feedback is no longer purely centered: the struck side of the Core now flashes, arcs and throws directional sparks toward the incoming attack side
+- short armor-fracture lines propagate inward from the real impact edge, making flanking and close Core pressure easier to read at a glance
+- the original centered weight-based Core flash remains as fallback when a directional source is unavailable or coincides with the Core center
+- effect strength still derives from the existing core-hit lifetime and radius; Core HP, damage, range, targeting and end conditions are unchanged
+- the new source coordinates are presentation-only and reuse the same optional Effect fields already introduced for unit hit reactions
+- a pure coreHitReaction helper centralizes source direction, weight scaling, rim placement and malformed-value handling
+- regression coverage verifies vertical and horizontal source direction, neutral fallback and real Pulse source propagation into a core-hit event
+- release: package 1.35.0 / v1.35 / iOS 1.35 (135)

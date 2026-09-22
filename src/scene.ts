@@ -20,6 +20,10 @@ import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
 import { coreTurretVisual } from "./core-turret-visual";
+import {
+  coreHitReaction,
+  type CoreHitReaction,
+} from "./core-hit-reaction";
 import { healLinkVisual } from "./heal-link-visual";
 import {
   battlefieldScarVisual,
@@ -1195,6 +1199,7 @@ export class ArenaScene extends Phaser.Scene {
       enemyCoreTarget,
       enemyCoreHit?.radius ?? 0,
       m.coreTurretCooldownSeconds("enemy"),
+      coreHitReaction(enemyCoreHit),
     );
     this.drawCore(
       210,
@@ -1205,6 +1210,7 @@ export class ArenaScene extends Phaser.Scene {
       playerCoreTarget,
       playerCoreHit?.radius ?? 0,
       m.coreTurretCooldownSeconds("player"),
+      coreHitReaction(playerCoreHit),
     );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
@@ -3126,6 +3132,7 @@ export class ArenaScene extends Phaser.Scene {
     turretTarget?: Unit,
     hitWeight = 0,
     turretCooldown = 0,
+    hitReaction: CoreHitReaction = coreHitReaction(undefined),
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
@@ -3292,6 +3299,85 @@ export class ArenaScene extends Phaser.Scene {
           y - 2,
           shell + 5 + (1 - hitAlpha) * weight * 0.45,
         );
+      }
+
+      if (hitReaction.active) {
+        const impactX = x + hitReaction.nx * hitReaction.rimRadius;
+        const impactY = y - 2 + hitReaction.ny * hitReaction.rimRadius;
+        const tangentX = -hitReaction.ny;
+        const tangentY = hitReaction.nx;
+        const reactionAlpha = flash * hitReaction.intensity;
+        const angle = Math.atan2(hitReaction.ny, hitReaction.nx);
+
+        g.fillStyle(0xffffff, reactionAlpha * 0.82);
+        g.fillCircle(
+          impactX,
+          impactY,
+          2.4 + hitReaction.intensity * 2.2,
+        );
+        g.fillStyle(color, reactionAlpha * 0.3);
+        g.fillCircle(
+          impactX,
+          impactY,
+          5 + hitReaction.intensity * 4,
+        );
+
+        g.lineStyle(
+          2.4,
+          0xffffff,
+          reactionAlpha * 0.92,
+        );
+        g.beginPath();
+        g.arc(
+          x,
+          y - 2,
+          hitReaction.rimRadius,
+          angle - hitReaction.arcWidth,
+          angle + hitReaction.arcWidth,
+          false,
+        );
+        g.strokePath();
+
+        g.lineStyle(1.4, color, reactionAlpha * 0.75);
+        for (const spread of [-1, -0.35, 0.35, 1]) {
+          const lateral = spread * (3.5 + weight * 0.06);
+          const sx = impactX + tangentX * lateral;
+          const sy = impactY + tangentY * lateral;
+          const length =
+            hitReaction.sparkLength *
+            (1 - Math.abs(spread) * 0.16);
+          g.lineBetween(
+            sx,
+            sy,
+            sx + hitReaction.nx * length + tangentX * spread * 2,
+            sy + hitReaction.ny * length + tangentY * spread * 2,
+          );
+        }
+
+        g.lineStyle(1.2, 0xffd6a0, reactionAlpha * 0.68);
+        for (const spread of [-1, 1]) {
+          const startX = impactX - hitReaction.nx * 2;
+          const startY = impactY - hitReaction.ny * 2;
+          const midX =
+            startX -
+            hitReaction.nx * (6 + weight * 0.06) +
+            tangentX * spread * 3;
+          const midY =
+            startY -
+            hitReaction.ny * (6 + weight * 0.06) +
+            tangentY * spread * 3;
+          g.lineBetween(startX, startY, midX, midY);
+          g.lineBetween(
+            midX,
+            midY,
+            midX -
+              hitReaction.nx * (4 + weight * 0.03) +
+              tangentX * spread * 2,
+            midY -
+              hitReaction.ny * (4 + weight * 0.03) +
+              tangentY * spread * 2,
+          );
+        }
       }
     }
     if (destroyed) {
