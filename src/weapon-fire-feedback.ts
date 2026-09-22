@@ -124,12 +124,12 @@ export function weaponFireFeedback(
   return {
     kind: profile.kind,
     strength,
-    displacement: displacement * strength,
+    displacement: strength === 0 ? 0 : displacement * strength,
     scale: 1 + (scale - 1) * strength,
     widthScale: 1 + (widthScale - 1) * strength,
     heightScale: 1 + (heightScale - 1) * strength,
-    muzzleLength: muzzleLength * strength,
-    muzzleRadius: muzzleRadius * strength,
+    muzzleLength: strength === 0 ? 0 : muzzleLength * strength,
+    muzzleRadius: strength === 0 ? 0 : muzzleRadius * strength,
     muzzleRays,
   };
 }
