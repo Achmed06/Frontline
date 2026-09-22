@@ -572,6 +572,7 @@ export interface Effect {
   maxLife: number;
   radius?: number;
   value?: number;
+  sourceCardId?: string;
   targetX?: number;
   targetY?: number;
 }
@@ -1405,6 +1406,7 @@ export class Match {
     target?: { x: number; y: number },
     radius?: number,
     value?: number,
+    sourceCardId?: string,
   ): void {
     this.state.effects.push({
       id: this.nextId++,
@@ -1416,6 +1418,7 @@ export class Match {
       maxLife: duration,
       radius,
       value,
+      sourceCardId,
       ...(target ? { targetX: target.x, targetY: target.y } : {}),
     });
   }
@@ -1556,8 +1559,11 @@ export class Match {
         attack.unit.x,
         attack.unit.y,
         attack.unit.team,
-        0.22,
+        0.26,
         attack.target,
+        undefined,
+        undefined,
+        attack.unit.cardId,
       );
       if (attack.core) {
         const before = attack.target.hp;
@@ -1708,7 +1714,17 @@ export class Match {
       const target = coreTurretTarget(this.state, team);
       if (target) {
         this.damageUnit(target, CORE_TURRET_DAMAGE, team);
-        this.effect("shot", core.x, core.y, team, 0.25, target);
+        this.effect(
+          "shot",
+          core.x,
+          core.y,
+          team,
+          0.25,
+          target,
+          undefined,
+          undefined,
+          "core-turret",
+        );
         this.coreCooldown[team] = CORE_TURRET_INTERVAL;
       }
     }

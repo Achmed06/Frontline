@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.16
+## Current v1.17
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -789,4 +789,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - enemy deployment geometry is covered by the same symmetric helper even though only the local player's placement overlay is shown interactively
 - regression coverage verifies initial column geometry, asymmetric 2/3 and 3/3 advances, exact legal front edges and outer board rejection
 - release: package 1.16.0 / v1.16 / iOS 1.16 (116)
+
+## v1.17 changes
+
+- attack effects now carry the actual attacking card identity into the renderer instead of presenting every attack as the same generic tracer
+- close-range Vanguard, Bulwark, Swarm, Breaker, Raider and Pioneer attacks render as compact directional slashes rather than fake projectiles
+- Ranger uses a fast precision tracer with a restrained target lock; Lancer uses a brighter long rail-like streak and larger lock
+- Mortar shells follow a visible parabolic arc with smoke puffs and a heavier terminal ring while damage timing remains unchanged
+- Disruptor shots use a short electrical zig-zag trail; Sentinel rounds use a slower heavy pulse; Core turrets have their own concentrated beam treatment
+- muzzle flashes, unit recoil and impact feedback remain compatible with the existing v1.10-v1.13 hit-response system
+- all projectile travel remains presentation-only: attack interval, damage application, targeting and balance are unchanged
+- regression coverage verifies that ranged, melee and Core-turret shot events preserve their exact source identity and target coordinates
+- release: package 1.17.0 / v1.17 / iOS 1.17 (117)
 

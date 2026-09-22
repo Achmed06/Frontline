@@ -1126,51 +1126,212 @@ export class ArenaScene extends Phaser.Scene {
           fx.fillStyle(0xd8ffe8, alpha * pulse);
           fx.fillCircle(e.targetX, e.targetY, 3.2);
         } else {
-          const travel = Math.min(1, progress * 2.35);
-          const tail = Math.max(0, travel - 0.2);
-          const x = e.x + (e.targetX - e.x) * travel;
-          const y = e.y + (e.targetY - e.y) * travel;
-          const tailX = e.x + (e.targetX - e.x) * tail;
-          const tailY = e.y + (e.targetY - e.y) * tail;
-          fx.lineStyle(2.2, color, alpha * 0.85);
-          fx.lineBetween(tailX, tailY, x, y);
-          fx.fillStyle(0xffffff, alpha);
-          fx.fillCircle(x, y, 2.6);
-          fx.fillStyle(color, alpha * 0.55);
-          fx.fillCircle(x, y, 4.5);
-          if (travel < 0.42) {
-            const muzzle = 1 - travel / 0.42;
-            fx.fillStyle(0xffffff, alpha * muzzle * 0.72);
-            fx.fillCircle(e.x, e.y, 2.5 + muzzle * 2.2);
-            fx.lineStyle(1.4, color, alpha * muzzle * 0.8);
-            for (let i = 0; i < 4; i++) {
-              const angle = i * Math.PI * 0.5 + e.id * 0.31;
+          const source = e.sourceCardId ?? "generic";
+          const dx = e.targetX - e.x;
+          const dy = e.targetY - e.y;
+          const distance = Math.max(0.01, Math.hypot(dx, dy));
+          const nx = dx / distance;
+          const ny = dy / distance;
+          const px = -ny;
+          const py = nx;
+          const melee =
+            source === "vanguard" ||
+            source === "bulwark" ||
+            source === "swarm" ||
+            source === "breaker" ||
+            source === "raider" ||
+            source === "pioneer";
+
+          if (melee) {
+            const slash = Math.min(1, progress * 3.8);
+            const centerX = e.targetX - nx * (8 - slash * 3);
+            const centerY = e.targetY - ny * (8 - slash * 3);
+            const reach = 6 + slash * 6;
+            fx.lineStyle(source === "breaker" ? 3.4 : 2.6, color, alpha * 0.9);
+            fx.lineBetween(
+              centerX - px * reach - nx * 5,
+              centerY - py * reach - ny * 5,
+              centerX + px * reach + nx * 4,
+              centerY + py * reach + ny * 4,
+            );
+            fx.lineStyle(1.2, 0xffffff, alpha * 0.58);
+            fx.lineBetween(
+              centerX - px * reach * 0.72,
+              centerY - py * reach * 0.72,
+              centerX + px * reach * 0.72,
+              centerY + py * reach * 0.72,
+            );
+            if (source === "breaker") {
+              fx.lineStyle(1.8, 0xffcf67, alpha * 0.74);
               fx.lineBetween(
-                e.x + Math.cos(angle) * 3,
-                e.y + Math.sin(angle) * 3,
-                e.x + Math.cos(angle) * (6 + muzzle * 4),
-                e.y + Math.sin(angle) * (6 + muzzle * 4),
+                centerX - nx * 7 - px * 5,
+                centerY - ny * 7 - py * 5,
+                centerX + nx * 7 + px * 5,
+                centerY + ny * 7 + py * 5,
               );
             }
-          }
-          if (e.type === "shot") {
-            const lockAlpha = alpha * (0.2 + (1 - travel) * 0.45);
-            const r = 8 + travel * 2;
-            const arm = 4;
-            fx.lineStyle(1.2, color, lockAlpha);
-            fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r + arm, e.targetY - r);
-            fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r, e.targetY - r + arm);
-            fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r - arm, e.targetY - r);
-            fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r, e.targetY - r + arm);
-            fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r + arm, e.targetY + r);
-            fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r, e.targetY + r - arm);
-            fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r - arm, e.targetY + r);
-            fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r, e.targetY + r - arm);
-          }
-          if (travel > 0.86) {
-            const impact = (travel - 0.86) / 0.14;
-            fx.lineStyle(1.4, color, alpha * (1 - impact));
-            fx.strokeCircle(e.targetX, e.targetY, 3 + impact * 9);
+          } else {
+            const speed =
+              source === "lancer"
+                ? 3.25
+                : source === "core-turret"
+                  ? 3.05
+                  : source === "ranger"
+                    ? 2.8
+                    : source === "sentinel"
+                      ? 2.3
+                      : source === "mortar"
+                        ? 1.85
+                        : 2.35;
+            const travel = Math.min(1, progress * speed);
+            const tailTravel = Math.max(
+              0,
+              travel -
+                (source === "lancer"
+                  ? 0.34
+                  : source === "sentinel"
+                    ? 0.14
+                    : 0.2),
+            );
+            const arc =
+              source === "mortar"
+                ? Math.sin(Math.PI * travel) * Math.min(38, 18 + distance * 0.12)
+                : 0;
+            const tailArc =
+              source === "mortar"
+                ? Math.sin(Math.PI * tailTravel) *
+                  Math.min(38, 18 + distance * 0.12)
+                : 0;
+            const x = e.x + dx * travel;
+            const y = e.y + dy * travel - arc;
+            const tailX = e.x + dx * tailTravel;
+            const tailY = e.y + dy * tailTravel - tailArc;
+
+            if (source === "lancer") {
+              fx.lineStyle(4.4, color, alpha * 0.23);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.lineStyle(1.8, 0xffffff, alpha * 0.96);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.fillStyle(0xffffff, alpha);
+              fx.fillCircle(x, y, 2.2);
+              fx.fillStyle(color, alpha * 0.7);
+              fx.fillCircle(x, y, 5.4);
+            } else if (source === "mortar") {
+              fx.lineStyle(1.6, 0xbfd3c9, alpha * 0.32);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.fillStyle(0x182d31, alpha);
+              fx.fillCircle(x, y, 4.8);
+              fx.lineStyle(1.6, 0xffc368, alpha * 0.86);
+              fx.strokeCircle(x, y, 5.4);
+              for (let i = 1; i <= 3; i++) {
+                const smokeTravel = Math.max(0, travel - i * 0.045);
+                const smokeArc =
+                  Math.sin(Math.PI * smokeTravel) *
+                  Math.min(38, 18 + distance * 0.12);
+                fx.fillStyle(0xd6ddd5, alpha * (0.18 / i));
+                fx.fillCircle(
+                  e.x + dx * smokeTravel,
+                  e.y + dy * smokeTravel - smokeArc,
+                  2 + i,
+                );
+              }
+            } else if (source === "disruptor") {
+              const segments = 5;
+              let lastX = tailX;
+              let lastY = tailY;
+              for (let i = 1; i <= segments; i++) {
+                const t = tailTravel + (travel - tailTravel) * (i / segments);
+                const jitter = (i % 2 ? 1 : -1) * 3.2 * alpha;
+                const sx = e.x + dx * t + px * jitter;
+                const sy = e.y + dy * t + py * jitter;
+                fx.lineStyle(1.5, 0x88d5ff, alpha * 0.82);
+                fx.lineBetween(lastX, lastY, sx, sy);
+                lastX = sx;
+                lastY = sy;
+              }
+              fx.fillStyle(0xbcecff, alpha);
+              fx.fillCircle(x, y, 3.6);
+              fx.lineStyle(1.4, color, alpha * 0.72);
+              fx.strokeCircle(x, y, 6.4);
+            } else if (source === "sentinel") {
+              fx.lineStyle(5.2, color, alpha * 0.16);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.lineStyle(2.6, color, alpha * 0.8);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.fillStyle(0xffffff, alpha * 0.9);
+              fx.fillCircle(x, y, 3.3);
+              fx.lineStyle(1.4, 0xffffff, alpha * 0.5);
+              fx.strokeCircle(x, y, 6.5);
+            } else if (source === "core-turret") {
+              fx.lineStyle(6.5, color, alpha * 0.13);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.lineStyle(2.2, 0xffffff, alpha * 0.88);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.fillStyle(color, alpha * 0.82);
+              fx.fillCircle(x, y, 5.5);
+            } else {
+              fx.lineStyle(source === "ranger" ? 1.7 : 2.2, color, alpha * 0.85);
+              fx.lineBetween(tailX, tailY, x, y);
+              fx.fillStyle(0xffffff, alpha);
+              fx.fillCircle(x, y, source === "ranger" ? 2 : 2.6);
+              fx.fillStyle(color, alpha * 0.55);
+              fx.fillCircle(x, y, source === "ranger" ? 3.8 : 4.5);
+            }
+
+            if (travel < 0.42 && source !== "mortar") {
+              const muzzle = 1 - travel / 0.42;
+              fx.fillStyle(0xffffff, alpha * muzzle * 0.72);
+              fx.fillCircle(
+                e.x,
+                e.y,
+                2.5 + muzzle * (source === "lancer" ? 3.8 : 2.2),
+              );
+              fx.lineStyle(1.4, color, alpha * muzzle * 0.8);
+              for (let i = 0; i < 4; i++) {
+                const angle = i * Math.PI * 0.5 + e.id * 0.31;
+                fx.lineBetween(
+                  e.x + Math.cos(angle) * 3,
+                  e.y + Math.sin(angle) * 3,
+                  e.x + Math.cos(angle) * (6 + muzzle * 4),
+                  e.y + Math.sin(angle) * (6 + muzzle * 4),
+                );
+              }
+            }
+
+            if (source === "ranger" || source === "lancer" || source === "core-turret") {
+              const lockAlpha = alpha * (0.2 + (1 - travel) * 0.45);
+              const r = source === "lancer" ? 11 + travel * 3 : 8 + travel * 2;
+              const arm = source === "lancer" ? 5 : 4;
+              fx.lineStyle(1.2, color, lockAlpha);
+              fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r + arm, e.targetY - r);
+              fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r, e.targetY - r + arm);
+              fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r - arm, e.targetY - r);
+              fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r, e.targetY - r + arm);
+              fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r + arm, e.targetY + r);
+              fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r, e.targetY + r - arm);
+              fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r - arm, e.targetY + r);
+              fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r, e.targetY + r - arm);
+            }
+
+            if (travel > 0.86) {
+              const impact = (travel - 0.86) / 0.14;
+              const impactColor =
+                source === "disruptor"
+                  ? 0x88d5ff
+                  : source === "mortar"
+                    ? 0xffc368
+                    : color;
+              fx.lineStyle(
+                source === "mortar" ? 2.4 : 1.4,
+                impactColor,
+                alpha * (1 - impact),
+              );
+              fx.strokeCircle(
+                e.targetX,
+                e.targetY,
+                3 + impact * (source === "mortar" ? 13 : 9),
+              );
+            }
           }
         }
       } else {

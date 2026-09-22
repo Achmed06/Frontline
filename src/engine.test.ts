@@ -1620,3 +1620,58 @@ test("enemy deployment columns mirror the same three-column geometry", () => {
   }
 });
 
+test("shot effects preserve weapon identity for renderer-specific combat feedback", () => {
+  const ranged = quietMatch();
+  const ranger = staticUnit(ranged, "player", 210, 350);
+  ranger.cardId = "ranger";
+  Object.assign(ranger, {
+    damage: 26,
+    range: 110,
+    radius: 9,
+    attackCooldown: 0,
+  });
+  const rangedTarget = staticUnit(ranged, "enemy", 210, 270);
+  Object.assign(rangedTarget, { hp: 200, maxHp: 200, radius: 10 });
+  ranged.update(1 / 30);
+  const rangerShot = ranged.state.effects.find(
+    (effect) => effect.type === "shot" && effect.team === "player",
+  );
+  assert.ok(rangerShot);
+  assert.equal(rangerShot.sourceCardId, "ranger");
+  assert.equal(rangerShot.maxLife, 0.26);
+  assert.equal(rangerShot.targetX, rangedTarget.x);
+  assert.equal(rangerShot.targetY, rangedTarget.y);
+
+  const melee = quietMatch();
+  const vanguard = staticUnit(melee, "player", 210, 310);
+  Object.assign(vanguard, {
+    damage: 16,
+    range: 20,
+    radius: 10,
+    attackCooldown: 0,
+  });
+  const meleeTarget = staticUnit(melee, "enemy", 210, 275);
+  Object.assign(meleeTarget, { hp: 200, maxHp: 200, radius: 10 });
+  melee.update(1 / 30);
+  const meleeShot = melee.state.effects.find(
+    (effect) => effect.type === "shot" && effect.team === "player",
+  );
+  assert.ok(meleeShot);
+  assert.equal(meleeShot.sourceCardId, "vanguard");
+
+  const turret = quietMatch();
+  const intruder = staticUnit(turret, "enemy", 210, 470);
+  Object.assign(intruder, { hp: 200, maxHp: 200 });
+  turret.update(1 / 30);
+  const turretShot = turret.state.effects.find(
+    (effect) =>
+      effect.type === "shot" &&
+      effect.team === "player" &&
+      effect.sourceCardId === "core-turret",
+  );
+  assert.ok(turretShot);
+  assert.equal(turretShot.maxLife, 0.25);
+  assert.equal(turretShot.targetX, intruder.x);
+  assert.equal(turretShot.targetY, intruder.y);
+});
+
