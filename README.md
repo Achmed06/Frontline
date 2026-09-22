@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.27
+## Current v1.28
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -933,3 +933,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - match simulation, winner selection, tiebreak ordering, Core HP, control time and territory ownership are unchanged
 - regression coverage now verifies Core endings, relay victory/defeat/draw, control-time, Core-HP, territory, full ties and the shared finish duration
 - release: package 1.27.0 / v1.27 / iOS 1.27 (127)
+
+## v1.28 changes
+
+- every card now exposes a live readiness strip derived from current energy versus its exact cost instead of switching only between dimmed and affordable
+- unaffordable cards show proportional progress toward their own cost, so a 4-energy card at 2 energy visibly reads as halfway ready while cheaper cards can already be available
+- cards flash once when regenerated energy crosses their actual affordability threshold; initial match setup does not trigger a false ready cascade
+- selecting an unaffordable card keeps the existing wait message but now includes exact readiness percentage from the same shared calculation
+- successful plays show the real post-engine energy spend beside the resource counter and briefly emphasize the segmented energy track
+- failed plays never emit spend feedback, and the spend display uses before/after engine energy rather than trusting card metadata
+- accessibility labels now state whether a card is ready or include exact missing energy and estimated wait time
+- a pure energyReadiness/energySpent helper centralizes clamping, progress, missing energy and wait-time math with malformed-value regression coverage
+- reduced-motion keeps static readiness information and spend value while suppressing ready/spend animations
+- energy cap, regeneration rate, card costs and all gameplay balance remain unchanged
+- release: package 1.28.0 / v1.28 / iOS 1.28 (128)
+

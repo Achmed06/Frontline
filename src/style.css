@@ -519,6 +519,25 @@ h1 em {
   font-size: 10px;
   color: #8d9f91;
 }
+.energy-spend {
+  position: relative;
+  top: -1px;
+  min-width: 0;
+  color: #ffd879;
+  font: 800 10px/1 monospace;
+  opacity: 0;
+  transform: translateY(2px) scale(.9);
+  pointer-events: none;
+}
+.energy-spend.visible {
+  animation: energy-spend-pop .72s ease-out both;
+}
+@keyframes energy-spend-pop {
+  0% { opacity: 0; transform: translateY(5px) scale(.78); }
+  18% { opacity: 1; transform: translateY(-2px) scale(1.08); }
+  72% { opacity: 1; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-9px) scale(.96); }
+}
 .energy-track {
   height: 7px;
   flex: 1;
@@ -543,6 +562,14 @@ h1 em {
     #698961 10%
   );
   transition: width 0.1s;
+}
+.energy-track.spent {
+  animation: energy-track-spend .48s ease-out;
+}
+@keyframes energy-track-spend {
+  0% { box-shadow: 0 0 0 #ffd36b00; }
+  28% { box-shadow: 0 0 12px #ffd36b88, inset 0 0 5px #fff3b866; }
+  100% { box-shadow: 0 0 0 #ffd36b00; }
 }
 .territory-count {
   font-size: 8px;
@@ -597,6 +624,49 @@ h1 em {
     border-color 0.12s,
     opacity 0.12s;
   overflow: visible;
+}
+.card::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 3px;
+  background: #d9f7b4;
+  box-shadow: 0 0 6px #a8e87855;
+  transform: scaleX(var(--energy-readiness, 1));
+  transform-origin: left center;
+  opacity: .46;
+  pointer-events: none;
+  transition: transform .1s linear, opacity .12s;
+}
+.card.unaffordable::after {
+  background: #ffd36b;
+  box-shadow: 0 0 5px #f3b95644;
+  opacity: .92;
+}
+.card.affordable::after {
+  transform: scaleX(1);
+  opacity: .34;
+}
+.card.ready-flash {
+  animation: card-energy-ready .72s ease-out;
+}
+@keyframes card-energy-ready {
+  0% {
+    box-shadow: 0 0 0 #fff2a100;
+    filter: brightness(1);
+  }
+  24% {
+    box-shadow: 0 0 18px #fff2a1cc, inset 0 0 0 1px #fff7c9;
+    filter: brightness(1.22);
+  }
+  100% {
+    box-shadow: 0 0 0 #fff2a100;
+    filter: brightness(1);
+  }
 }
 .card.ability {
   background: linear-gradient(155deg, #494634, #2e352e);
@@ -1554,6 +1624,18 @@ h1 em {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+  }
+  .card.ready-flash,
+  .energy-track.spent,
+  .energy-spend.visible {
+    animation: none !important;
+  }
+  .card.ready-flash {
+    box-shadow: inset 0 0 0 1px #fff2a1;
+  }
+  .energy-spend.visible {
+    opacity: 1;
+    transform: none;
   }
 }
 @media (max-width: 380px) {

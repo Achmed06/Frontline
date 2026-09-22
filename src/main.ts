@@ -2,6 +2,7 @@ import { renderBaseBuilder } from "./base-builder";
 import { baseMapSvg } from "./base-map";
 import { renderBackupMenu } from "./save-backup-menu";
 import { selectedCardHint } from "./card-hints";
+import { energyReadiness, energySpent } from "./energy-feedback";
 import { corePressure, corePressureLabel } from "./core-pressure";
 import { initializeStore, renderStore, supporterOwned } from "./store";
 import { watchAppState } from "./mobile";
@@ -107,7 +108,7 @@ app.innerHTML = `
     <header class="game-top"><div class="mini-brand">F<span>∕</span></div><div><b>FRONTLINE</b><small id="mode-label">EINSATZBASIS</small></div><div class="top-actions"><button id="sound" class="icon-btn" aria-label="Ton einschalten" title="Ton umschalten">♪</button><button id="help" class="icon-btn" aria-label="Spielanleitung">?</button><button id="pause" class="icon-btn" aria-label="Spiel pausieren" disabled>Ⅱ</button></div></header>
     <section class="match-hud" aria-label="Matchstatus"><div id="player-core-info" class="core-info" data-core-state="stable" data-core-status=""><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span></div><div id="enemy-core-info" class="core-info enemy" data-core-state="stable" data-core-status=""><span><span class="enemy-command"><b id="enemy-commander-label">BOT</b><small id="enemy-commander-status">BEREIT</small><i id="enemy-commander-cooldown-progress" aria-hidden="true"></i></span><i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
     <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div>
-    <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
+    <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
       <div class="base-status"><span><i></i> DEINE EINSATZBASIS</span><b id="base-stars">0 ★</b></div>
       <section class="operation-hero">
@@ -187,8 +188,11 @@ if (
   difficulty = savedDifficulty;
 el<HTMLSelectElement>("difficulty").value = difficulty;
 const cardButtons = new Map<string, HTMLButtonElement>();
+const cardAffordable = new Map<string, boolean>();
+let energySpendTimer = 0;
 function renderCards(override?: readonly CardId[]) {
   cardButtons.clear();
+  cardAffordable.clear();
   el("cards").replaceChildren();
   deckCards = (
     override ?? (activeSeries && seriesRun ? seriesRun.deck : deck)
@@ -229,6 +233,22 @@ function showToast(message: string, error = false) {
     2200,
   );
 }
+function showEnergySpend(spent: number) {
+  if (spent <= 0) return;
+  const spend = el("energy-spend");
+  const track = el("energy-fill").parentElement;
+  spend.textContent = `−${Math.round(spent * 10) / 10}`;
+  spend.classList.remove("visible");
+  track?.classList.remove("spent");
+  void spend.offsetWidth;
+  spend.classList.add("visible");
+  track?.classList.add("spent");
+  window.clearTimeout(energySpendTimer);
+  energySpendTimer = window.setTimeout(() => {
+    spend.classList.remove("visible");
+    track?.classList.remove("spent");
+  }, 720);
+}
 function sceneRunning(): boolean {
   return active && !paused && !ended && performance.now() >= matchReadyAt;
 }
@@ -242,12 +262,15 @@ function selectCard(id: string) {
   selected = selected === id ? null : id;
   updateSelection();
   sound.play("select");
-  if (selected && match.state.energy.player < card.cost) {
-    const missing = card.cost - match.state.energy.player;
-    const wait = missing / ENERGY_RATE;
-    showToast(
-      `Noch ${Math.ceil(missing)} Energie · bereit in ${energyWaitLabel(wait)}s.`,
+  if (selected) {
+    const readiness = energyReadiness(
+      match.state.energy.player,
+      card.cost,
     );
+    if (!readiness.affordable)
+      showToast(
+        `Noch ${Math.ceil(readiness.missing)} Energie · bereit in ${energyWaitLabel(readiness.waitSeconds)}s.`,
+      );
   }
 }
 function energyWaitLabel(seconds: number): string {
@@ -279,17 +302,16 @@ function deploy(x: number, y: number) {
     showToast("Wähle zuerst unten eine Karte.");
     return;
   }
+  const playedCard = CARDS.find((card) => card.id === selected);
+  const beforeEnergy = match.state.energy.player;
   const result = match.play("player", selected, x, y);
   if (!result.ok) {
     showToast(result.message, true);
     sound.play("error");
     return;
   }
-  sound.play(
-    CARDS.find((c) => c.id === selected)?.kind === "ability"
-      ? "ability"
-      : "deploy",
-  );
+  showEnergySpend(energySpent(beforeEnergy, match.state.energy.player));
+  sound.play(playedCard?.kind === "ability" ? "ability" : "deploy");
   selected = null;
   updateSelection();
   updateHud(true);
@@ -814,9 +836,12 @@ function updateHud(force = false) {
   el("energy-fill").style.width = `${(s.energy.player / ENERGY_CAP) * 100}%`;
   const selectedCard = CARDS.find((card) => card.id === selected);
   const selectedHint = el("selected-hint");
-  if (live && selectedCard && s.energy.player < selectedCard.cost) {
-    const wait = (selectedCard.cost - s.energy.player) / ENERGY_RATE;
-    selectedHint.textContent = `ENERGIE IN ${energyWaitLabel(wait)}s`;
+  const selectedReadiness = selectedCard
+    ? energyReadiness(s.energy.player, selectedCard.cost)
+    : null;
+  if (live && selectedReadiness && !selectedReadiness.affordable) {
+    selectedHint.textContent =
+      `ENERGIE IN ${energyWaitLabel(selectedReadiness.waitSeconds)}s · ${Math.round(selectedReadiness.progress * 100)}%`;
     selectedHint.classList.add("waiting-energy");
   } else {
     selectedHint.textContent = selectedCardHint(selectedCard);
@@ -841,7 +866,32 @@ function updateHud(force = false) {
   }
   for (const card of deckCards) {
     const b = cardButtons.get(card.id)!;
-    b.classList.toggle("unaffordable", s.energy.player < card.cost);
+    const readiness = energyReadiness(s.energy.player, card.cost);
+    const previous = cardAffordable.get(card.id);
+    b.style.setProperty(
+      "--energy-readiness",
+      readiness.progress.toFixed(4),
+    );
+    b.classList.toggle("unaffordable", !readiness.affordable);
+    b.classList.toggle("affordable", readiness.affordable);
+    b.dataset.energyReady = String(readiness.affordable);
+    b.setAttribute(
+      "aria-label",
+      readiness.affordable
+        ? `${card.name}, ${card.cost} Energie, bereit. ${card.description}`
+        : `${card.name}, ${card.cost} Energie. Noch ${readiness.missing.toFixed(1).replace(".", ",")} Energie, bereit in ${energyWaitLabel(readiness.waitSeconds)} Sekunden. ${card.description}`,
+    );
+    if (
+      live &&
+      previous === false &&
+      readiness.affordable
+    ) {
+      b.classList.remove("ready-flash");
+      void b.offsetWidth;
+      b.classList.add("ready-flash");
+      window.setTimeout(() => b.classList.remove("ready-flash"), 720);
+    }
+    cardAffordable.set(card.id, readiness.affordable);
     b.disabled = !live;
   }
   const commanderButton = el<HTMLButtonElement>("commander");
