@@ -12,7 +12,7 @@ import {
   type Unit,
 } from "./engine";
 import { unitSvg } from "./art";
-import { matchEndVisual } from "./match-end-visual";
+import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
@@ -2521,7 +2521,7 @@ export class ArenaScene extends Phaser.Scene {
       fx.lineBetween(x, y - 7, x, y + 7);
     }
     this.drawOvertimeOverlay(s);
-    this.drawMatchEndOverlay(s);
+    this.drawMatchEndOverlay(m);
   }
 
   private drawOvertimeOverlay(state: Match["state"]): void {
@@ -2587,9 +2587,10 @@ export class ArenaScene extends Phaser.Scene {
       .setVisible(true);
   }
 
-  private drawMatchEndOverlay(state: Match["state"]): void {
+  private drawMatchEndOverlay(match: Match): void {
+    const state = match.state;
     const visual = matchEndVisual(state);
-    if (!visual?.coreBreak) {
+    if (!visual) {
       this.endSequenceStartedAt = null;
       this.endTitle.setVisible(false);
       this.endSubtitle.setVisible(false);
@@ -2601,7 +2602,11 @@ export class ArenaScene extends Phaser.Scene {
 
     const rawProgress = Math.max(
       0,
-      Math.min(1, (this.clock - this.endSequenceStartedAt) / 0.85),
+      Math.min(
+        1,
+        (this.clock - this.endSequenceStartedAt) /
+          (MATCH_END_SEQUENCE_MS / 1000),
+      ),
     );
     const progress = this.reducedMotion ? 1 : rawProgress;
     const eased = 1 - Math.pow(1 - progress, 3);
@@ -2632,13 +2637,7 @@ export class ArenaScene extends Phaser.Scene {
       fx.fillRect(0, 0, 420, 560);
     }
 
-    if (visual.focus === "center") {
-      const ring = 34 + eased * 82;
-      fx.lineStyle(3, accent, 0.54 * (1 - rawProgress * 0.45));
-      fx.strokeCircle(210, 280, ring);
-      fx.lineStyle(1.2, 0xffffff, 0.34 * (1 - rawProgress * 0.35));
-      fx.strokeCircle(210, 280, ring + 13);
-    } else {
+    if (visual.coreBreak && visual.focus !== "center") {
       const focus =
         visual.focus === "enemy" ? state.cores.enemy : state.cores.player;
       const direction = focus.y < 280 ? 1 : -1;
@@ -2665,6 +2664,87 @@ export class ArenaScene extends Phaser.Scene {
       fx.strokeCircle(focus.x, focus.y, ring);
       fx.lineStyle(1.2, 0xffffff, 0.45 * (1 - rawProgress * 0.3));
       fx.strokeCircle(focus.x, focus.y, ring + 10);
+    } else if (visual.metric === "relay" || visual.metric === "control-time") {
+      const objectivePoints = (match.controlObjective?.pointIds ?? [])
+        .map((id) => state.points[id])
+        .filter(Boolean);
+      if (objectivePoints.length) {
+        const minX = Math.min(...objectivePoints.map((point) => point.x));
+        const maxX = Math.max(...objectivePoints.map((point) => point.x));
+        const centerY =
+          objectivePoints.reduce((sum, point) => sum + point.y, 0) /
+          objectivePoints.length;
+        fx.lineStyle(2.4, accent, 0.38 + eased * 0.32);
+        fx.lineBetween(minX, centerY, maxX, centerY);
+        for (const point of objectivePoints) {
+          const ring = 31 + eased * 15;
+          fx.fillStyle(accent, 0.025 + eased * 0.035);
+          fx.fillCircle(point.x, point.y, ring - 5);
+          fx.lineStyle(2.8, accent, 0.72 - rawProgress * 0.14);
+          fx.strokeCircle(point.x, point.y, ring);
+          fx.lineStyle(1.2, 0xffffff, 0.32);
+          fx.strokeCircle(point.x, point.y, ring + 7);
+        }
+      } else {
+        const ring = 34 + eased * 82;
+        fx.lineStyle(3, accent, 0.54 * (1 - rawProgress * 0.45));
+        fx.strokeCircle(210, 280, ring);
+      }
+    } else if (visual.metric === "core-health") {
+      for (const team of ["enemy", "player"] as const) {
+        const core = state.cores[team];
+        const hp = Math.max(0, Math.min(1, core.hp / core.maxHp));
+        const teamColor = team === "player" ? MINT : CORAL;
+        const ring = 35 + eased * 15;
+        fx.lineStyle(2.4, teamColor, 0.38 + hp * 0.42);
+        fx.strokeCircle(core.x, core.y, ring);
+        fx.lineStyle(4, teamColor, 0.25 + hp * 0.55);
+        fx.beginPath();
+        fx.arc(
+          core.x,
+          core.y,
+          ring + 7,
+          -Math.PI / 2,
+          -Math.PI / 2 + Math.PI * 2 * hp,
+          false,
+        );
+        fx.strokePath();
+      }
+      fx.lineStyle(1.8, accent, 0.34 + eased * 0.24);
+      fx.lineBetween(210, 90, 210, 470);
+    } else if (visual.metric === "territory") {
+      for (const point of state.points) {
+        const pointColor =
+          point.owner === "player"
+            ? MINT
+            : point.owner === "enemy"
+              ? CORAL
+              : NEUTRAL;
+        const winnerOwned =
+          (state.winner === "player" || state.winner === "enemy") &&
+          point.owner === state.winner;
+        const size = 19 + eased * (winnerOwned ? 8 : 4);
+        fx.lineStyle(
+          winnerOwned ? 2.8 : 1.3,
+          pointColor,
+          winnerOwned ? 0.72 : 0.24,
+        );
+        fx.strokeRoundedRect(
+          point.x - size,
+          point.y - size,
+          size * 2,
+          size * 2,
+          8,
+        );
+      }
+      fx.lineStyle(2.2, accent, 0.38 + eased * 0.28);
+      fx.strokeRoundedRect(45, 92, 330, 376, 24);
+    } else {
+      const ring = 34 + eased * 82;
+      fx.lineStyle(3, accent, 0.54 * (1 - rawProgress * 0.45));
+      fx.strokeCircle(210, 280, ring);
+      fx.lineStyle(1.2, 0xffffff, 0.34 * (1 - rawProgress * 0.35));
+      fx.strokeCircle(210, 280, ring + 13);
     }
 
     const textIn = this.reducedMotion

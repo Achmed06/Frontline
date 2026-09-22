@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.26
+## Current v1.27
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -917,3 +917,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies exact 60% damaged and 30% critical thresholds, 0% destruction, clamping and player/enemy labels
 - release: package 1.26.0 / v1.26 / iOS 1.26 (126)
 
+
+
+## v1.27 changes
+
+- every match ending now receives the same focused 850 ms battlefield conclusion before the result modal instead of reserving the cinematic pause for Core destruction
+- completed control objectives use the exact configured relay points as the finish focus, with linked team-colored objective rings instead of a generic center flash
+- time-limit control decisions reuse those relay locations but present the outcome as held control rather than falsely implying a completed objective
+- Core-HP tiebreaks frame both surviving Cores and visualize their actual remaining HP around each structure before the verdict appears
+- territory tiebreaks emphasize all nine live sectors and visually prioritize the winning side's owned ground
+- simultaneous control completion and full score ties keep neutral wording and center-focused presentation rather than implying a false winner
+- end-of-match banner wording now comes from the same matchEndVisual helper as the arena overlay, preventing Core, relay and score-result copy from drifting apart
+- the 850 ms finish window is now a shared constant consumed by both arena presentation and result-modal timing
+- reduced-motion keeps the complete final decision wording and static focus geometry while skipping entrance travel and scale motion
+- match simulation, winner selection, tiebreak ordering, Core HP, control time and territory ownership are unchanged
+- regression coverage now verifies Core endings, relay victory/defeat/draw, control-time, Core-HP, territory, full ties and the shared finish duration
+- release: package 1.27.0 / v1.27 / iOS 1.27 (127)

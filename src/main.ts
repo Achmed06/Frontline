@@ -92,6 +92,7 @@ import {
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { resultDecision } from "./result-debrief";
+import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
 
@@ -992,19 +993,17 @@ function updateHud(force = false) {
     sound.play("capture");
   }
   if (active && !ended && s.phase === "ended") {
-    const coreBroken = s.cores.player.hp <= 0 || s.cores.enemy.hp <= 0;
-    if (!coreBroken) {
-      finish();
-    } else if (!finishReadyAt) {
-      finishReadyAt = performance.now() + 850;
+    if (!finishReadyAt) {
+      finishReadyAt = performance.now() + MATCH_END_SEQUENCE_MS;
       selected = null;
       updateSelection();
       el<HTMLButtonElement>("commander").disabled = true;
       for (const button of cardButtons.values()) button.disabled = true;
+      const visual = matchEndVisual(s);
       announceBattle(
-        s.cores.enemy.hp <= 0 ? "GEGNERISCHER CORE GEBROCHEN" : "DEIN CORE IST GEFALLEN",
-        s.cores.enemy.hp <= 0 ? "FRONT DURCHBROCHEN" : "STELLUNG VERLOREN",
-        s.cores.player.hp <= 0,
+        visual?.title ?? "MATCH BEENDET",
+        visual?.subtitle ?? s.reason.toUpperCase(),
+        s.winner === "enemy",
       );
     } else if (performance.now() >= finishReadyAt) {
       finishReadyAt = 0;
