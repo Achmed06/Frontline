@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.14
+## Current v1.15
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -765,4 +765,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - simulation and renderer consume the same controlPointPressure calculation, preventing capture-speed and ETA drift
 - regression coverage verifies Pioneer + group multiplier, exact ETA, contest freeze, counter-capture rate, passive decay and final ownership using the shared calculation
 - release: package 1.14.0 / v1.14 / iOS 1.14 (114)
+
+## v1.15 changes
+
+- completed captures now emit an exact frontline-shift event whenever connected deployment territory changes
+- the affected column briefly shows the previous boundary, the new boundary and a team-colored movement band instead of silently snapping the deployment edge
+- floating frontline feedback distinguishes VORRÜCKEN from RÜCKZUG and reports the exact connected-sector change
+- supply-chain collapses can report multiple lost sectors at once, e.g. RÜCKZUG −3 SEKTOREN, rather than pretending every capture changes the front by one step
+- the renderer receives the real old/new frontline coordinates from the engine, so the visual band cannot drift from actual deployment legality
+- frontline depth and edge calculation are now a shared pure helper used by Match.frontline and regression tests
+- reduced-motion mode keeps the old/new boundaries and text while removing the moving chevron travel
+- regression coverage verifies one-sector advance, three-sector connected-territory collapse, exact event coordinates, column clamping and team symmetry
+- release: package 1.15.0 / v1.15 / iOS 1.15 (115)
 

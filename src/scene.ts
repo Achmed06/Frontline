@@ -219,7 +219,16 @@ export class ArenaScene extends Phaser.Scene {
     effect: Effect,
   ): { text: string; color: string } | null {
     const value = effect.value ?? 0;
-    if (!Number.isFinite(value) || value <= 0) return null;
+    if (!Number.isFinite(value)) return null;
+    if (effect.type === "frontline" && value !== 0)
+      return {
+        text:
+          value > 0
+            ? `VORRÜCKEN +${Math.abs(value)} SEKTOR${Math.abs(value) === 1 ? "" : "EN"}`
+            : `RÜCKZUG −${Math.abs(value)} SEKTOR${Math.abs(value) === 1 ? "" : "EN"}`,
+        color: effect.team === "player" ? "#83ffcf" : "#ffc0a2",
+      };
+    if (value <= 0) return null;
     if (effect.type === "impact" && value >= 35)
       return { text: `−${Math.round(value)}`, color: "#ffd0a0" };
     if (effect.type === "core-hit" && value >= 35)
@@ -248,14 +257,12 @@ export class ArenaScene extends Phaser.Scene {
       const info = this.combatValueLabel(effect)!;
       const progress = 1 - effect.life / effect.maxLife;
       const alpha = Math.max(0, effect.life / effect.maxLife);
-      const x =
-        effect.type === "heal" && effect.targetX !== undefined
-          ? effect.targetX
-          : effect.x;
-      const baseY =
-        effect.type === "heal" && effect.targetY !== undefined
-          ? effect.targetY
-          : effect.y;
+      const useTarget =
+        (effect.type === "heal" || effect.type === "frontline") &&
+        effect.targetX !== undefined &&
+        effect.targetY !== undefined;
+      const x = useTarget ? effect.targetX! : effect.x;
+      const baseY = useTarget ? effect.targetY! : effect.y;
       let label = this.combatText.get(effect.id);
       if (!label) {
         label = this.add
@@ -1006,6 +1013,29 @@ export class ArenaScene extends Phaser.Scene {
     for (const e of s.effects) {
       const progress = 1 - e.life / e.maxLife,
         alpha = Math.max(0, e.life / e.maxLife);
+      if (e.type === "frontline" && e.targetY !== undefined) {
+        const teamColor = e.team === "player" ? MINT : CORAL;
+        const fromY = e.y;
+        const toY = e.targetY;
+        const top = Math.min(fromY, toY);
+        const height = Math.max(2, Math.abs(toY - fromY));
+        const direction = Math.sign(toY - fromY) || 1;
+        fx.fillStyle(teamColor, alpha * 0.055);
+        fx.fillRoundedRect(e.x - 58, top, 116, height, 8);
+        fx.lineStyle(2.5, teamColor, alpha * 0.9);
+        fx.lineBetween(e.x - 58, toY, e.x + 58, toY);
+        fx.lineStyle(1.2, 0xffffff, alpha * 0.55);
+        fx.lineBetween(e.x - 52, fromY, e.x + 52, fromY);
+        for (let i = 0; i < 5; i++) {
+          const x = e.x - 40 + i * 20;
+          const y = fromY + (toY - fromY) * (0.2 + progress * 0.6);
+          const tipY = y + direction * 7;
+          fx.lineStyle(1.8, teamColor, alpha * 0.82);
+          fx.lineBetween(x - 4, y, x, tipY);
+          fx.lineBetween(x + 4, y, x, tipY);
+        }
+        continue;
+      }
       const color = e.team === "player" ? MINT : CORAL;
       if (!this.reactedEffects.has(e.id)) {
         this.reactedEffects.add(e.id);

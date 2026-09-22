@@ -18,6 +18,7 @@ import {
   CORE_TURRET_RANGE,
   controlPointPressure,
   coreTurretTarget,
+  frontlineStatus,
   ENERGY_CAP,
   ENERGY_RATE,
   Match,
@@ -1487,5 +1488,86 @@ test("capture pressure reaches ownership using the same shared rate", () => {
         effect.y === point.y,
     ),
   );
+});
+
+test("frontline status and capture events report exact connected territory shifts", () => {
+  const advance = quietMatch();
+  assert.deepEqual(frontlineStatus(advance.state.points, "player", 1), {
+    column: 1,
+    depth: 1,
+    edge: 350,
+  });
+
+  const middle = advance.state.points[4];
+  middle.capture = 0.999;
+  middle.captureTeam = "player";
+  staticUnit(advance, "player", middle.x, middle.y);
+  advance.update(1 / 30);
+
+  assert.equal(middle.owner, "player");
+  assert.deepEqual(frontlineStatus(advance.state.points, "player", 1), {
+    column: 1,
+    depth: 2,
+    edge: 220,
+  });
+  const advanceEvent = advance.state.effects.find(
+    (effect) => effect.type === "frontline" && effect.team === "player",
+  );
+  assert.ok(advanceEvent);
+  assert.equal(advanceEvent.x, 210);
+  assert.equal(advanceEvent.y, 350);
+  assert.equal(advanceEvent.targetY, 220);
+  assert.equal(advanceEvent.value, 1);
+
+  const collapse = quietMatch();
+  collapse.state.points[1].owner = "player";
+  collapse.state.points[4].owner = "player";
+  collapse.state.points[7].owner = "player";
+  assert.deepEqual(frontlineStatus(collapse.state.points, "player", 1), {
+    column: 1,
+    depth: 3,
+    edge: 90,
+  });
+
+  const bottom = collapse.state.points[7];
+  bottom.capture = 0.999;
+  bottom.captureTeam = "enemy";
+  staticUnit(collapse, "enemy", bottom.x, bottom.y);
+  collapse.update(1 / 30);
+
+  assert.equal(bottom.owner, "enemy");
+  assert.deepEqual(frontlineStatus(collapse.state.points, "player", 1), {
+    column: 1,
+    depth: 0,
+    edge: 475,
+  });
+  const retreatEvent = collapse.state.effects.find(
+    (effect) => effect.type === "frontline" && effect.team === "player",
+  );
+  assert.ok(retreatEvent);
+  assert.equal(retreatEvent.y, 90);
+  assert.equal(retreatEvent.targetY, 475);
+  assert.equal(retreatEvent.value, -3);
+});
+
+test("frontline status clamps columns and stays symmetric for both teams", () => {
+  const match = quietMatch();
+  assert.deepEqual(frontlineStatus(match.state.points, "enemy", 1), {
+    column: 1,
+    depth: 1,
+    edge: 210,
+  });
+  assert.equal(frontlineStatus(match.state.points, "player", -5).column, 0);
+  assert.equal(frontlineStatus(match.state.points, "enemy", 99).column, 2);
+
+  match.state.points[4].owner = "player";
+  match.state.points[1].owner = "player";
+  assert.equal(frontlineStatus(match.state.points, "player", 1).depth, 3);
+  assert.equal(frontlineStatus(match.state.points, "player", 1).edge, 90);
+
+  match.state.points[4].owner = "enemy";
+  match.state.points[7].owner = "enemy";
+  assert.equal(frontlineStatus(match.state.points, "enemy", 1).depth, 3);
+  assert.equal(frontlineStatus(match.state.points, "enemy", 1).edge, 470);
 });
 

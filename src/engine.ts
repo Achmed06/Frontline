@@ -467,6 +467,35 @@ export function controlPointPressure(
   };
 }
 
+export type FrontlineStatus = {
+  column: number;
+  depth: number;
+  edge: number;
+};
+
+export function frontlineStatus(
+  points: readonly ControlPoint[],
+  team: Team,
+  column: number,
+): FrontlineStatus {
+  const safeColumn = Math.max(0, Math.min(2, Math.trunc(column)));
+  const rows = team === "player" ? [2, 1, 0] : [0, 1, 2];
+  let depth = 0;
+  let edge = team === "player" ? 475 : 85;
+  for (const row of rows) {
+    const point = points[row * 3 + safeColumn];
+    if (!point || point.owner !== team) break;
+    depth++;
+    edge = point.y + (team === "player" ? -60 : 60);
+  }
+  return { column: safeColumn, depth, edge };
+}
+
+export function frontlineColumn(x: number): number {
+  return x < 147.5 ? 0 : x < 272.5 ? 1 : 2;
+}
+
+
 export interface Unit {
   id: number;
   cardId: string;
@@ -506,7 +535,8 @@ export interface Effect {
     | "stasis"
     | "repulsor"
     | "breaker"
-    | "pioneer";
+    | "pioneer"
+    | "frontline";
   x: number;
   y: number;
   team: Team;
@@ -903,15 +933,11 @@ export class Match {
 
   /** Front edge of the connected deployment territory at this x coordinate. */
   frontline(team: Team, x: number): number {
-    const column = x < 147.5 ? 0 : x < 272.5 ? 1 : 2;
-    const rows = team === "player" ? [2, 1, 0] : [0, 1, 2];
-    let edge = team === "player" ? 475 : 85;
-    for (const row of rows) {
-      const point = this.state.points[row * 3 + column];
-      if (point.owner !== team) break;
-      edge = point.y + (team === "player" ? -60 : 60);
-    }
-    return edge;
+    return frontlineStatus(
+      this.state.points,
+      team,
+      frontlineColumn(x),
+    ).edge;
   }
 
   canDeploy(team: Team, x: number, y: number): boolean {
@@ -1677,7 +1703,32 @@ export class Match {
       if (point.captureTeam !== capturer) point.captureTeam = capturer;
       point.capture += pressure.rate * STEP;
       if (point.capture >= 1) {
+        const column = point.id % 3;
+        const columnX = COLUMN_X[column];
+        const beforeFronts = {
+          player: frontlineStatus(this.state.points, "player", column),
+          enemy: frontlineStatus(this.state.points, "enemy", column),
+        };
         point.owner = capturer;
+        const afterFronts = {
+          player: frontlineStatus(this.state.points, "player", column),
+          enemy: frontlineStatus(this.state.points, "enemy", column),
+        };
+        for (const team of ["player", "enemy"] as const) {
+          const before = beforeFronts[team];
+          const after = afterFronts[team];
+          if (before.depth !== after.depth)
+            this.effect(
+              "frontline",
+              columnX,
+              before.edge,
+              team,
+              1.35,
+              { x: columnX, y: after.edge },
+              undefined,
+              after.depth - before.depth,
+            );
+        }
         point.capture = 0;
         point.captureTeam = null;
         if (pressure.captureMultiplier > 1)
