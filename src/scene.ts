@@ -19,6 +19,7 @@ import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
 import { impactDirectionVisual } from "./impact-direction-visual";
 import { shieldImpactVisual } from "./shield-impact-visual";
+import { shieldIntegrityVisual } from "./shield-integrity-visual";
 import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
 import { weaponCycleVisual } from "./weapon-cycle-visual";
@@ -1763,21 +1764,160 @@ export class ArenaScene extends Phaser.Scene {
         );
       }
       if (u.shield > 0) {
-        const shieldColor = u.team === "player" ? MINT : CORAL;
-        fx.lineStyle(
-          2,
-          shieldColor,
-          0.5 + 0.2 * Math.sin(this.clock * 5),
-        );
-        fx.strokeCircle(u.x, u.y, 22);
-        this.statusPips(
-          fx,
-          u.x,
-          u.y,
+        const shieldVisual = shieldIntegrityVisual(
+          u.shield,
           u.shieldTime,
-          shieldColor,
-          -2.9,
         );
+        if (shieldVisual.active) {
+          const shieldColor =
+            u.team === "player" ? MINT : CORAL;
+          const brightShield =
+            u.team === "player" ? 0xd8fff1 : 0xffe1d8;
+          const pulse = this.reducedMotion
+            ? 0.82
+            : 0.74 +
+              Math.sin(this.clock * 5 + u.id * 0.43) * 0.08;
+          const startAngle =
+            -Math.PI / 2 +
+            (this.reducedMotion ? 0 : this.clock * 0.22);
+
+          fx.fillStyle(
+            shieldColor,
+            shieldVisual.alpha *
+              (0.025 + shieldVisual.integrity * 0.035),
+          );
+          fx.fillCircle(
+            u.x,
+            u.y,
+            shieldVisual.innerRadius,
+          );
+
+          for (
+            let plate = 0;
+            plate < shieldVisual.plateCount;
+            plate++
+          ) {
+            const intact =
+              plate < shieldVisual.intactPlates;
+            const angle =
+              startAngle +
+              (plate * Math.PI * 2) /
+                shieldVisual.plateCount;
+            const nextAngle =
+              startAngle +
+              ((plate + 1) * Math.PI * 2) /
+                shieldVisual.plateCount;
+            const gap =
+              (nextAngle - angle) *
+              shieldVisual.gapScale;
+            const from = angle + gap;
+            const to = nextAngle - gap;
+
+            fx.lineStyle(
+              intact ? 2.25 : 1,
+              intact ? shieldColor : 0x53676a,
+              intact
+                ? shieldVisual.alpha * pulse
+                : shieldVisual.alpha * 0.16,
+            );
+            fx.beginPath();
+            fx.arc(
+              u.x,
+              u.y,
+              shieldVisual.shellRadius,
+              from,
+              to,
+              false,
+            );
+            fx.strokePath();
+
+            if (intact && plate % 3 === 0) {
+              const mid = (from + to) / 2;
+              fx.fillStyle(
+                brightShield,
+                shieldVisual.alpha *
+                  (0.32 + shieldVisual.integrity * 0.3),
+              );
+              fx.fillCircle(
+                u.x +
+                  Math.cos(mid) *
+                    shieldVisual.shellRadius,
+                u.y +
+                  Math.sin(mid) *
+                    shieldVisual.shellRadius,
+                1.15,
+              );
+            }
+          }
+
+          if (shieldVisual.crackCount > 0) {
+            fx.lineStyle(
+              1.1,
+              brightShield,
+              shieldVisual.alpha *
+                (0.25 + (1 - shieldVisual.integrity) * 0.38),
+            );
+            for (
+              let crack = 0;
+              crack < shieldVisual.crackCount;
+              crack++
+            ) {
+              const angle =
+                -Math.PI * 0.75 +
+                crack * 0.58 +
+                u.id * 0.17;
+              const outer =
+                shieldVisual.shellRadius - 1;
+              const inner =
+                shieldVisual.innerRadius *
+                (0.62 + (crack % 2) * 0.12);
+              const sx =
+                u.x + Math.cos(angle) * outer;
+              const sy =
+                u.y + Math.sin(angle) * outer;
+              const mx =
+                u.x +
+                Math.cos(angle + 0.12) *
+                  ((outer + inner) / 2);
+              const my =
+                u.y +
+                Math.sin(angle + 0.12) *
+                  ((outer + inner) / 2);
+              const ex =
+                u.x +
+                Math.cos(angle - 0.08) * inner;
+              const ey =
+                u.y +
+                Math.sin(angle - 0.08) * inner;
+              fx.lineBetween(sx, sy, mx, my);
+              fx.lineBetween(mx, my, ex, ey);
+            }
+          }
+
+          if (shieldVisual.release > 0) {
+            fx.lineStyle(
+              1.2,
+              brightShield,
+              shieldVisual.alpha *
+                shieldVisual.release *
+                0.58,
+            );
+            fx.strokeCircle(
+              u.x,
+              u.y,
+              shieldVisual.releaseRadius,
+            );
+          }
+
+          this.statusPips(
+            fx,
+            u.x,
+            u.y,
+            u.shieldTime,
+            shieldColor,
+            -2.9,
+          );
+        }
       }
       if (u.rallyTime > 0) {
         const tempoVisual = tempoStatusVisual(u.rallyTime);

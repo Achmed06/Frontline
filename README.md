@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.47
+## Current v1.48
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1232,3 +1232,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure tempoStatusVisual helper reads the shared tempo constants and centralizes boosts, strengths, release fade, flow geometry and attack-cycle geometry
 - regression coverage verifies exact +25/+30 values, relative channel strength, release fade and malformed/expired fallback
 - release: package 1.47.0 / v1.47 / iOS 1.47 (147)
+
+
+## v1.48 changes
+
+- active ATLAS shields now expose their real remaining shield integrity instead of showing the same full circle until the shield disappears
+- the persistent shell is split into 12 plates; the number of bright intact plates derives directly from unit.shield / COMMANDERS.atlas.shield
+- damaged shields lose visible plates, open larger gaps and gain deterministic crack lines as integrity falls
+- full shields remain clean and bright with no crack clutter, while heavily damaged shields visibly look close to failure before the existing shield-break animation triggers
+- shieldTime continues to drive the exact remaining-duration pips; the final 0.8 seconds also enter a release phase with a faint expanding shell before expiry
+- team ownership remains immediately readable through the existing player/enemy shield colors, with a brighter highlight only on intact plates
+- the current shield value, duration and ATLAS maximum are the only inputs; no duplicate renderer-side shield state is introduced
+- existing shield-hit contact flashes, shield-break fragmentation, floating SCH values and shield-health-bar trail remain intact and layer with the new persistent integrity shell
+- shield amount, expiration, ATLAS refresh behavior, Breaker interaction, damage mitigation and all balance values are unchanged
+- a pure shieldIntegrityVisual helper centralizes exact integrity/time ratios, plate counts, cracks, gaps, shell geometry and release phase
+- regression coverage verifies full integrity, damaged plate loss/cracks, expiry release and malformed/expired fallback
+- release: package 1.48.0 / v1.48 / iOS 1.48 (148)
