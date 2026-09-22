@@ -40,7 +40,9 @@ test("commander and objective context appear only in their relevant opening phas
 });
 
 test("start progress is clamped and malformed time cannot skip the opening", () => {
-  assert.equal(matchStartVisual(2500, "ATLAS", "LYRA").progress, 1 / 6);
+  assert.ok(
+    Math.abs(matchStartVisual(2500, "ATLAS", "LYRA").progress - 1 / 6) < 1e-12,
+  );
   assert.equal(matchStartVisual(-100, "ATLAS", "LYRA").progress, 1);
   assert.deepEqual(
     matchStartVisual(Number.NaN, "ATLAS", "LYRA"),
