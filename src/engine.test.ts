@@ -1399,7 +1399,8 @@ test("core hit feedback scales with actual damage without changing balance", () 
 test("control point pressure exposes exact capture speed, contest, reverse and decay", () => {
   const match = quietMatch();
   const point = match.state.points[4];
-  const pioneer = staticUnit(match, "player", point.x, point.y, "pioneer");
+  const pioneer = staticUnit(match, "player", point.x, point.y);
+  pioneer.cardId = "pioneer";
   const support = staticUnit(match, "player", point.x + 8, point.y);
   let pressure = controlPointPressure(match.state, point);
 
@@ -1467,7 +1468,8 @@ test("control point pressure exposes exact capture speed, contest, reverse and d
 test("capture pressure reaches ownership using the same shared rate", () => {
   const match = quietMatch();
   const point = match.state.points[4];
-  staticUnit(match, "player", point.x, point.y, "pioneer");
+  const pioneer = staticUnit(match, "player", point.x, point.y);
+  pioneer.cardId = "pioneer";
   staticUnit(match, "player", point.x + 8, point.y);
   const pressure = controlPointPressure(match.state, point);
   assert.equal(pressure.mode, "capture");
