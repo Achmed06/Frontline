@@ -31,7 +31,7 @@ test("shield loss has its own faster trail and shield gain snaps up", () => {
   const hit = sampleUnitVitals(initial, 100, 100, 30, 70, 0.1);
   assert.equal(hit.shieldRatio, 30 / 70);
   assert.equal(hit.trailShieldRatio, 1);
-  assert.equal(hit.shieldHoldUntil, 0.24);
+  assert.ok(Math.abs(hit.shieldHoldUntil - 0.24) < 1e-12);
 
   const falling = sampleUnitVitals(hit, 100, 100, 30, 70, 0.4);
   assert.ok(falling.trailShieldRatio < 1);
