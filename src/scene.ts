@@ -17,6 +17,7 @@ import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
 import { corePressure } from "./core-pressure";
+import { commanderActivationVisual } from "./commander-activation-visual";
 import { COMMANDERS } from "./commanders";
 import {
   sampleUnitVitals,
@@ -1831,6 +1832,123 @@ export class ArenaScene extends Phaser.Scene {
             fx.strokeCircle(e.x, e.y, impactRadius + 5);
           }
         }
+        if (e.type === "commander") {
+          const visual = commanderActivationVisual(e);
+          if (visual) {
+            const wave =
+              visual.radius * (0.38 + visual.progress * 0.62);
+            const commanderColor =
+              visual.kind === "shield"
+                ? 0x9bdcff
+                : visual.kind === "tempo"
+                  ? 0xffdf6b
+                  : 0x7dffd1;
+            const glow =
+              this.reducedMotion
+                ? 0.72
+                : 0.58 +
+                  Math.sin(
+                    this.clock * (visual.kind === "tempo" ? 9 : 6) + e.id,
+                  ) *
+                    0.14;
+
+            fx.fillStyle(
+              commanderColor,
+              visual.alpha * (visual.kind === "shield" ? 0.045 : 0.035),
+            );
+            fx.fillCircle(e.x, e.y, wave);
+
+            if (visual.kind === "shield") {
+              fx.lineStyle(3, commanderColor, visual.alpha * 0.9);
+              this.polygon(
+                fx,
+                this.hex(e.x, e.y, wave),
+                0x000000,
+                0,
+                commanderColor,
+              );
+              fx.lineStyle(1.5, 0xffffff, visual.alpha * 0.58);
+              this.polygon(
+                fx,
+                this.hex(e.x, e.y, Math.max(14, wave - 9)),
+                0x000000,
+                0,
+                0xffffff,
+              );
+              for (let i = 0; i < visual.spokes; i++) {
+                const angle = i * Math.PI / 3 - Math.PI / 6;
+                const inner = wave * 0.55;
+                const outer = wave * (0.88 + glow * 0.08);
+                fx.lineStyle(1.6, commanderColor, visual.alpha * 0.64);
+                fx.lineBetween(
+                  e.x + Math.cos(angle) * inner,
+                  e.y + Math.sin(angle) * inner,
+                  e.x + Math.cos(angle) * outer,
+                  e.y + Math.sin(angle) * outer,
+                );
+              }
+            } else if (visual.kind === "tempo") {
+              const travel = this.reducedMotion
+                ? 0.62
+                : (visual.progress * 2.2) % 1;
+              fx.lineStyle(2.5, commanderColor, visual.alpha * 0.9);
+              for (let i = 0; i < visual.spokes; i++) {
+                const column = (i % 4) - 1.5;
+                const row = Math.floor(i / 4);
+                const baseX = e.x + column * (wave * 0.28);
+                const baseY =
+                  e.y -
+                  visual.direction *
+                    (wave * (0.28 + row * 0.22 + travel * 0.22));
+                const tipY = baseY + visual.direction * 11;
+                fx.lineBetween(baseX - 6, baseY, baseX, tipY);
+                fx.lineBetween(baseX + 6, baseY, baseX, tipY);
+              }
+              fx.lineStyle(1.5, 0xffffff, visual.alpha * 0.42);
+              fx.lineBetween(
+                e.x - wave * 0.72,
+                e.y - visual.direction * wave * 0.12,
+                e.x + wave * 0.72,
+                e.y - visual.direction * wave * 0.12,
+              );
+              fx.lineStyle(2.2, commanderColor, visual.alpha * 0.7);
+              fx.lineBetween(
+                e.x - wave * 0.58,
+                e.y + visual.direction * wave * 0.16,
+                e.x + wave * 0.58,
+                e.y + visual.direction * wave * 0.16,
+              );
+            } else {
+              fx.lineStyle(2.5, commanderColor, visual.alpha * 0.88);
+              fx.strokeCircle(e.x, e.y, wave);
+              fx.lineStyle(1.3, 0xffffff, visual.alpha * 0.5);
+              fx.strokeCircle(e.x, e.y, Math.max(10, wave * 0.66));
+              const cross = Math.max(9, wave * 0.18);
+              fx.fillStyle(0xe7fff5, visual.alpha * 0.86);
+              fx.fillRect(e.x - 2.5, e.y - cross, 5, cross * 2);
+              fx.fillRect(e.x - cross, e.y - 2.5, cross * 2, 5);
+              for (let i = 0; i < visual.spokes; i++) {
+                const base =
+                  i * Math.PI * 0.5 +
+                  (this.reducedMotion ? 0 : visual.progress * Math.PI * 0.8);
+                const orbit = wave * 0.78;
+                fx.fillStyle(commanderColor, visual.alpha * (0.62 + glow * 0.2));
+                fx.fillCircle(
+                  e.x + Math.cos(base) * orbit,
+                  e.y + Math.sin(base) * orbit,
+                  2.5,
+                );
+              }
+            }
+
+            fx.lineStyle(
+              1.2,
+              commanderColor,
+              visual.alpha * (0.34 + glow * 0.24),
+            );
+            fx.strokeCircle(e.x, e.y, wave + 8);
+          }
+        }
         if (e.type === "spawn") {
           const beamHeight = 54 * (1 - Math.min(1, progress * 1.45));
           const ring = 7 + 19 * progress;
@@ -2041,7 +2159,8 @@ export class ArenaScene extends Phaser.Scene {
           e.type !== "repulsor" &&
           e.type !== "breaker" &&
           e.type !== "pioneer" &&
-          e.type !== "shield"
+          e.type !== "shield" &&
+          e.type !== "commander"
         ) {
           fx.lineStyle(2, effectColor, alpha);
           fx.strokeCircle(e.x, e.y, 5 + radius * progress);

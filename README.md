@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.29
+## Current v1.30
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -961,3 +961,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - @capacitor/haptics is synced as a native dependency; gameplay, timing, damage, capture and scoring rules are unchanged
 - release: package 1.29.0 / v1.29 / iOS 1.29 (129)
 
+
+
+## v1.30 changes
+
+- Commander activation now creates one formation-level battlefield signature in addition to the existing per-unit shield, heal or tempo effects
+- the signature is centered on the actual affected troops and expands only far enough to frame their real formation rather than using a fixed full-arena animation
+- ATLAS projects a layered hexagonal Aegis lattice with radial shield braces, making the team-wide protection event visually distinct from ordinary unit shields
+- NOVA sends directional command chevrons through the formation toward the enemy front, reinforcing that STURMSIGNAL is an offensive tempo activation
+- LYRA emits a repair ring, central medical cross and orbiting repair nodes instead of looking like several unrelated healing ticks
+- player and enemy activations use the same geometry with team-aware attack direction, so hostile Commander use remains readable without inventing different mechanics
+- formation center and radius are derived from the exact units accepted by the same Commander eligibility calculation used for execution
+- reduced-motion keeps each Commander's distinct static identity while removing travelling chevrons and orbital motion
+- existing per-unit status effects, cooldowns, healing, shields, tempo values, haptics and balance are unchanged
+- a pure commanderActivationVisual helper sanitizes timing and geometry and regression coverage verifies all three identities plus real engine cue emission
+- release: package 1.30.0 / v1.30 / iOS 1.30 (130)

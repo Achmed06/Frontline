@@ -564,7 +564,8 @@ export interface Effect {
     | "repulsor"
     | "breaker"
     | "pioneer"
-    | "frontline";
+    | "frontline"
+    | "commander";
   x: number;
   y: number;
   team: Team;
@@ -1250,10 +1251,12 @@ export class Match {
   private applyCommander(team: Team): boolean {
     const commanderId = this.commanders[team];
     let affected = false;
+    const formation: Array<{ x: number; y: number }> = [];
     for (const unit of this.state.units) {
       const outcome = commanderUnitOutcome(commanderId, unit, team);
       if (!outcome.eligible) continue;
       affected = true;
+      formation.push({ x: unit.x, y: unit.y });
       if (commanderId === "nova") {
         unit.rallyTime = COMMANDERS.nova.duration;
         this.effect("rally", unit.x, unit.y, team, 0.7, undefined, 30);
@@ -1287,6 +1290,27 @@ export class Match {
           outcome.healing,
         );
       }
+    }
+    if (affected && formation.length) {
+      const x =
+        formation.reduce((sum, point) => sum + point.x, 0) / formation.length;
+      const y =
+        formation.reduce((sum, point) => sum + point.y, 0) / formation.length;
+      const spread = formation.reduce(
+        (max, point) => Math.max(max, Math.hypot(point.x - x, point.y - y)),
+        0,
+      );
+      this.effect(
+        "commander",
+        x,
+        y,
+        team,
+        0.9,
+        undefined,
+        clamp(spread + 36, 44, 120),
+        undefined,
+        commanderId,
+      );
     }
     return affected;
   }
