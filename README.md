@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.36
+## Current v1.37
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1064,3 +1064,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure weaponFireFeedback helper centralizes recoil/lunge, pose scale, muzzle geometry and malformed lifetime clamping
 - regression coverage verifies heavy-vs-precision recoil, melee forward lunge, lifetime decay and malformed timing fallback
 - release: package 1.36.0 / v1.36 / iOS 1.36 (136)
+
+
+## v1.37 changes
+
+- the Core turret emitter now reacts to its real shot event instead of remaining visually static while the beam launches
+- the inner turret head recoils opposite the actual target vector while the outer Core shell stays anchored, keeping hitbox/readability stable
+- a short bright launch channel connects the recoiling emitter to the muzzle point before the existing Core beam projectile continues toward the target
+- side vents discharge backward from the firing direction and the muzzle gets a compact team-colored flare with a white-hot center
+- full motion adds a few directional discharge rays; Reduced Motion keeps the static launch channel and flare but suppresses recoil and ray motion
+- feedback strength follows the existing 0.25 s Core turret shot lifetime and uses only the real shot source/target coordinates
+- Core turret damage, range, 1 s reload cadence, target selection and projectile timing are unchanged
+- a pure coreTurretFireFeedback helper centralizes direction, recoil, muzzle distance, flare size and vent spread
+- regression coverage verifies real target direction, lifetime decay and neutral handling for non-turret/malformed shots
+- release: package 1.37.0 / v1.37 / iOS 1.37 (137)

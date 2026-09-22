@@ -22,6 +22,10 @@ import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
 import { coreTurretVisual } from "./core-turret-visual";
 import {
+  coreTurretFireFeedback,
+  type CoreTurretFireFeedback,
+} from "./core-turret-fire";
+import {
   coreHitReaction,
   type CoreHitReaction,
 } from "./core-hit-reaction";
@@ -1173,6 +1177,25 @@ export class ArenaScene extends Phaser.Scene {
                 : "#fff0bc",
         );
     }
+    const enemyCoreShot = s.effects
+      .filter(
+        (effect) =>
+          effect.type === "shot" &&
+          effect.sourceCardId === "core-turret" &&
+          Math.abs(effect.x - s.cores.enemy.x) < 2 &&
+          Math.abs(effect.y - s.cores.enemy.y) < 2,
+      )
+      .sort((a, b) => b.id - a.id)[0];
+    const playerCoreShot = s.effects
+      .filter(
+        (effect) =>
+          effect.type === "shot" &&
+          effect.sourceCardId === "core-turret" &&
+          Math.abs(effect.x - s.cores.player.x) < 2 &&
+          Math.abs(effect.y - s.cores.player.y) < 2,
+      )
+      .sort((a, b) => b.id - a.id)[0];
+
     const enemyCoreHit = s.effects
       .filter(
         (effect) =>
@@ -1201,6 +1224,7 @@ export class ArenaScene extends Phaser.Scene {
       enemyCoreHit?.radius ?? 0,
       m.coreTurretCooldownSeconds("enemy"),
       coreHitReaction(enemyCoreHit),
+      coreTurretFireFeedback(enemyCoreShot),
     );
     this.drawCore(
       210,
@@ -1212,6 +1236,7 @@ export class ArenaScene extends Phaser.Scene {
       playerCoreHit?.radius ?? 0,
       m.coreTurretCooldownSeconds("player"),
       coreHitReaction(playerCoreHit),
+      coreTurretFireFeedback(playerCoreShot),
     );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
@@ -3262,6 +3287,7 @@ export class ArenaScene extends Phaser.Scene {
     hitWeight = 0,
     turretCooldown = 0,
     hitReaction: CoreHitReaction = coreHitReaction(undefined),
+    fireFeedback: CoreTurretFireFeedback = coreTurretFireFeedback(undefined),
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
@@ -3362,8 +3388,69 @@ export class ArenaScene extends Phaser.Scene {
       g.fillStyle(color, 0.7);
       g.fillRect(x + dx - 2, y - 7, 4, 11);
     }
+    const turretRecoil =
+      fireFeedback.active && !this.reducedMotion ? fireFeedback.recoil : 0;
+    const turretX = x - fireFeedback.nx * turretRecoil;
+    const turretY = y - 3 - fireFeedback.ny * turretRecoil;
+
     this.polygon(g, this.hex(x, y - 2, 22), 0x47635a, 1, color);
-    this.polygon(g, this.hex(x, y - 3, 15), 0x132627, 1, color);
+    this.polygon(g, this.hex(turretX, turretY, 15), 0x132627, 1, color);
+
+    if (fireFeedback.active) {
+      const tangentX = -fireFeedback.ny;
+      const tangentY = fireFeedback.nx;
+      const muzzleX =
+        turretX + fireFeedback.nx * fireFeedback.muzzleDistance;
+      const muzzleY =
+        turretY + fireFeedback.ny * fireFeedback.muzzleDistance;
+      const alpha = 0.35 + fireFeedback.strength * 0.58;
+
+      g.lineStyle(3.4, color, alpha * 0.34);
+      g.lineBetween(turretX, turretY, muzzleX, muzzleY);
+      g.lineStyle(1.6, 0xffffff, alpha * 0.92);
+      g.lineBetween(
+        turretX + fireFeedback.nx * 5,
+        turretY + fireFeedback.ny * 5,
+        muzzleX,
+        muzzleY,
+      );
+
+      g.fillStyle(color, alpha * 0.38);
+      g.fillCircle(muzzleX, muzzleY, fireFeedback.flareRadius);
+      g.fillStyle(0xffffff, alpha * 0.92);
+      g.fillCircle(muzzleX, muzzleY, Math.max(1.6, fireFeedback.flareRadius * 0.46));
+
+      g.lineStyle(1.2, color, alpha * 0.72);
+      for (const side of [-1, 1]) {
+        const ventX = turretX + tangentX * side * fireFeedback.ventSpread;
+        const ventY = turretY + tangentY * side * fireFeedback.ventSpread;
+        g.lineBetween(
+          ventX,
+          ventY,
+          ventX - fireFeedback.nx * (5 + fireFeedback.strength * 4),
+          ventY - fireFeedback.ny * (5 + fireFeedback.strength * 4),
+        );
+      }
+
+      if (!this.reducedMotion) {
+        g.lineStyle(1, 0xffffff, alpha * 0.52);
+        for (const spread of [-1, -0.35, 0.35, 1]) {
+          const lateral = spread * (3 + fireFeedback.flareRadius);
+          const sx = muzzleX + tangentX * lateral * 0.25;
+          const sy = muzzleY + tangentY * lateral * 0.25;
+          g.lineBetween(
+            sx,
+            sy,
+            sx +
+              fireFeedback.nx * (6 + fireFeedback.strength * 5) +
+              tangentX * lateral,
+            sy +
+              fireFeedback.ny * (6 + fireFeedback.strength * 5) +
+              tangentY * lateral,
+          );
+        }
+      }
+    }
     if (pressure.state !== "stable") {
       g.lineStyle(1.5, 0xffd18f, (pressure.state === "critical" || pressure.state === "destroyed") ? 0.82 : 0.52);
       g.lineBetween(x - 12, y - 13, x - 4, y - 6);
@@ -3377,13 +3464,15 @@ export class ArenaScene extends Phaser.Scene {
     this.polygon(
       g,
       [
-        [x, y - 13],
-        [x + 8, y - 3],
-        [x, y + 7],
-        [x - 8, y - 3],
+        [turretX, turretY - 10],
+        [turretX + 8, turretY],
+        [turretX, turretY + 10],
+        [turretX - 8, turretY],
       ],
       color,
-      0.65 + 0.25 * Math.sin(this.clock * 2),
+      fireFeedback.active
+        ? 0.78 + fireFeedback.strength * 0.2
+        : 0.65 + 0.25 * Math.sin(this.clock * 2),
     );
     g.fillStyle(0x061315);
     g.fillRect(x - 27, y + 26, 54, 3);
