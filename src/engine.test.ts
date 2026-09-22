@@ -1520,6 +1520,8 @@ test("frontline status and capture events report exact connected territory shift
   assert.equal(advanceEvent.value, 1);
 
   const collapse = quietMatch();
+  const bottom = collapse.state.points[7];
+  const attacker = staticUnit(collapse, "enemy", bottom.x, bottom.y);
   collapse.state.points[1].owner = "player";
   collapse.state.points[4].owner = "player";
   collapse.state.points[7].owner = "player";
@@ -1529,10 +1531,9 @@ test("frontline status and capture events report exact connected territory shift
     edge: 90,
   });
 
-  const bottom = collapse.state.points[7];
+  Object.assign(attacker, { x: bottom.x, y: bottom.y });
   bottom.capture = 0.999;
   bottom.captureTeam = "enemy";
-  staticUnit(collapse, "enemy", bottom.x, bottom.y);
   collapse.update(1 / 30);
 
   assert.equal(bottom.owner, "enemy");
@@ -1565,6 +1566,7 @@ test("frontline status clamps columns and stays symmetric for both teams", () =>
   assert.equal(frontlineStatus(match.state.points, "player", 1).depth, 3);
   assert.equal(frontlineStatus(match.state.points, "player", 1).edge, 90);
 
+  match.state.points[1].owner = "enemy";
   match.state.points[4].owner = "enemy";
   match.state.points[7].owner = "enemy";
   assert.equal(frontlineStatus(match.state.points, "enemy", 1).depth, 3);
