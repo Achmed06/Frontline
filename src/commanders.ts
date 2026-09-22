@@ -44,6 +44,7 @@ export type CommanderUnitState = {
   team: "player" | "enemy";
   hp: number;
   maxHp: number;
+  shield?: number;
   shieldTime: number;
   rallyTime: number;
   slowTime: number;
@@ -68,18 +69,124 @@ export function commanderActiveSeconds(
   return active;
 }
 
+export type CommanderUnitOutcome = {
+  eligible: boolean;
+  shieldGain: number;
+  healing: number;
+  cleanse: boolean;
+  tempo: boolean;
+};
+
+export type CommanderOutcome = {
+  affected: number;
+  shieldGain: number;
+  healing: number;
+  cleanses: number;
+  tempoUnits: number;
+};
+
+export function commanderUnitOutcome(
+  commander: CommanderId,
+  unit: CommanderUnitState,
+  team: "player" | "enemy" = "player",
+): CommanderUnitOutcome {
+  if (unit.team !== team || unit.hp <= 0)
+    return {
+      eligible: false,
+      shieldGain: 0,
+      healing: 0,
+      cleanse: false,
+      tempo: false,
+    };
+
+  if (commander === "atlas")
+    return {
+      eligible: true,
+      shieldGain: Math.max(
+        0,
+        COMMANDERS.atlas.shield - (unit.shield ?? 0),
+      ),
+      healing: 0,
+      cleanse: false,
+      tempo: false,
+    };
+
+  if (commander === "nova") {
+    const tempo = unit.rallyTime < COMMANDERS.nova.duration;
+    return {
+      eligible: tempo,
+      shieldGain: 0,
+      healing: 0,
+      cleanse: false,
+      tempo,
+    };
+  }
+
+  const healing = Math.max(
+    0,
+    Math.min(COMMANDERS.lyra.healing, unit.maxHp - unit.hp),
+  );
+  const cleanse = unit.slowTime > 0;
+  return {
+    eligible: healing > 0 || cleanse,
+    shieldGain: 0,
+    healing,
+    cleanse,
+    tempo: false,
+  };
+}
+
+export function commanderOutcome(
+  commander: CommanderId,
+  units: readonly CommanderUnitState[],
+  team: "player" | "enemy" = "player",
+): CommanderOutcome {
+  const result: CommanderOutcome = {
+    affected: 0,
+    shieldGain: 0,
+    healing: 0,
+    cleanses: 0,
+    tempoUnits: 0,
+  };
+  for (const unit of units) {
+    const outcome = commanderUnitOutcome(commander, unit, team);
+    if (!outcome.eligible) continue;
+    result.affected++;
+    result.shieldGain += outcome.shieldGain;
+    result.healing += outcome.healing;
+    if (outcome.cleanse) result.cleanses++;
+    if (outcome.tempo) result.tempoUnits++;
+  }
+  return result;
+}
+
+export function commanderOutcomeText(
+  commander: CommanderId,
+  units: readonly CommanderUnitState[],
+  team: "player" | "enemy" = "player",
+): string {
+  const outcome = commanderOutcome(commander, units, team);
+  if (outcome.affected === 0)
+    return commanderUnavailableText(commander, units, team);
+  if (commander === "atlas")
+    return [
+      `SCHILD ${outcome.affected}`,
+      outcome.shieldGain ? `+${outcome.shieldGain}` : "REFRESH",
+    ].join(" · ");
+  if (commander === "nova")
+    return `TEMPO ${outcome.tempoUnits} · ${COMMANDERS.nova.duration}s`;
+  return [
+    outcome.healing ? `+${outcome.healing} HP` : "",
+    outcome.cleanses ? `CLEANSE ${outcome.cleanses}` : "",
+  ].filter(Boolean).join(" · ");
+}
+
 export function commanderHasValidTarget(
   commander: CommanderId,
   units: readonly CommanderUnitState[],
   team: "player" | "enemy" = "player",
 ): boolean {
-  return units.some((unit) => {
-    if (unit.team !== team || unit.hp <= 0) return false;
-    if (commander === "atlas") return true;
-    if (commander === "nova")
-      return unit.rallyTime < COMMANDERS.nova.duration;
-    return unit.hp < unit.maxHp || unit.slowTime > 0;
-  });
+  return commanderOutcome(commander, units, team).affected > 0;
 }
 
 export function commanderUnavailableText(

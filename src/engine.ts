@@ -1,4 +1,11 @@
-import { COMMANDERS, isCommanderId, type CommanderId } from "./commanders";
+import {
+  COMMANDERS,
+  commanderOutcome,
+  commanderOutcomeText,
+  commanderUnitOutcome,
+  isCommanderId,
+  type CommanderId,
+} from "./commanders";
 import {
   TEMPO_ATTACK_SPEED_MULTIPLIER,
   TEMPO_MOVE_SPEED_MULTIPLIER,
@@ -1033,7 +1040,8 @@ export class Match {
   }
 
   activateCommander(team: Team = "player"): PlayResult {
-    const commander = COMMANDERS[this.commanders[team]];
+    const commanderId = this.commanders[team];
+    const commander = COMMANDERS[commanderId];
     const cooldownKey =
       team === "player" ? "commanderCooldown" : "enemyCommanderCooldown";
     if (this.state.phase === "ended")
@@ -1043,59 +1051,55 @@ export class Match {
         ok: false,
         message: `${commander.name} lädt: ${Math.ceil(this.state[cooldownKey])} s.`,
       };
-    if (!this.applyCommander(team))
+
+    const preview = commanderOutcome(commanderId, this.state.units, team);
+    if (preview.affected === 0)
       return {
         ok: false,
         message:
-          this.commanders[team] === "lyra"
+          commanderId === "lyra"
             ? "LYRA braucht verletzte oder verlangsamte eigene Truppen."
-            : this.commanders[team] === "nova"
+            : commanderId === "nova"
               ? "NOVA braucht eigene Truppen ohne vollen Angriffsschub."
               : "Setze zuerst Einheiten ein.",
       };
+
+    const outcomeText = commanderOutcomeText(
+      commanderId,
+      this.state.units,
+      team,
+    );
+    this.applyCommander(team);
     this.state[cooldownKey] = commander.cooldown;
     if (team === "player") this.state.stats.abilities++;
     return {
       ok: true,
-      message: `${commander.name}: ${commander.ability} aktiviert.`,
+      message: `${commander.name}: ${outcomeText}`,
     };
   }
 
   private applyCommander(team: Team): boolean {
-    if (this.commanders[team] === "nova") {
-      let affected = false;
-      for (const unit of this.state.units) {
-        if (
-          unit.team !== team ||
-          unit.hp <= 0 ||
-          unit.rallyTime >= COMMANDERS.nova.duration
-        )
-          continue;
-        unit.rallyTime = COMMANDERS.nova.duration;
-        this.effect("rally", unit.x, unit.y, team, 0.7, undefined, 30);
-        affected = true;
-      }
-      return affected;
-    }
-    if (this.commanders[team] === "atlas") {
-      if (!this.state.units.some((unit) => unit.team === team && unit.hp > 0))
-        return false;
-      this.shieldTeam(team);
-      return true;
-    }
+    const commanderId = this.commanders[team];
     let affected = false;
     for (const unit of this.state.units) {
-      if (
-        unit.team !== team ||
-        unit.hp <= 0 ||
-        (unit.hp >= unit.maxHp && unit.slowTime <= 0)
-      )
-        continue;
-      unit.hp = Math.min(unit.maxHp, unit.hp + COMMANDERS.lyra.healing);
-      unit.slowTime = 0;
-      unit.slowFactor = 1;
-      this.effect("heal", unit.x, unit.y, team, 0.9, undefined, 30);
+      const outcome = commanderUnitOutcome(commanderId, unit, team);
+      if (!outcome.eligible) continue;
       affected = true;
+      if (commanderId === "nova") {
+        unit.rallyTime = COMMANDERS.nova.duration;
+        this.effect("rally", unit.x, unit.y, team, 0.7, undefined, 30);
+      } else if (commanderId === "atlas") {
+        unit.shield = Math.max(unit.shield, COMMANDERS.atlas.shield);
+        unit.shieldTime = COMMANDERS.atlas.duration;
+        this.effect("shield", unit.x, unit.y, team, 0.7);
+      } else {
+        unit.hp = Math.min(unit.maxHp, unit.hp + outcome.healing);
+        if (outcome.cleanse) {
+          unit.slowTime = 0;
+          unit.slowFactor = 1;
+        }
+        this.effect("heal", unit.x, unit.y, team, 0.9, undefined, 30);
+      }
     }
     return affected;
   }
@@ -1262,15 +1266,6 @@ export class Match {
 
   private removeDead(): void {
     this.state.units = this.state.units.filter((unit) => unit.hp > 0);
-  }
-
-  private shieldTeam(team: Team): void {
-    for (const unit of this.state.units) {
-      if (unit.team !== team || unit.hp <= 0) continue;
-      unit.shield = Math.max(unit.shield, COMMANDERS.atlas.shield);
-      unit.shieldTime = COMMANDERS.atlas.duration;
-      this.effect("shield", unit.x, unit.y, team, 0.7);
-    }
   }
 
   private updateUnits(): void {

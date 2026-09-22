@@ -6,6 +6,8 @@ import {
   commanderActiveSeconds,
   commanderCooldownProgress,
   commanderHasValidTarget,
+  commanderOutcome,
+  commanderOutcomeText,
   commanderStatusText,
   commanderUnavailableText,
 } from "./commanders";
@@ -109,3 +111,127 @@ test("commander cooldown progress is clamped and reaches one at readiness", () =
   assert.equal(commanderCooldownProgress(5, 0), 0);
   assert.equal(commanderCooldownProgress(0, 0), 1);
 });
+
+test("commander outcome preview reports exact shield, heal, cleanse and tempo totals", () => {
+  const units = [
+    {
+      team: "player" as const,
+      hp: 40,
+      maxHp: 125,
+      shield: 0,
+      shieldTime: 0,
+      rallyTime: 0,
+      slowTime: 3,
+    },
+    {
+      team: "player" as const,
+      hp: 100,
+      maxHp: 125,
+      shield: 50,
+      shieldTime: 2,
+      rallyTime: 5,
+      slowTime: 0,
+    },
+    {
+      team: "player" as const,
+      hp: 125,
+      maxHp: 125,
+      shield: 80,
+      shieldTime: 4,
+      rallyTime: 6,
+      slowTime: 0,
+    },
+    {
+      team: "enemy" as const,
+      hp: 20,
+      maxHp: 125,
+      shield: 0,
+      shieldTime: 0,
+      rallyTime: 0,
+      slowTime: 4,
+    },
+  ];
+
+  assert.deepEqual(commanderOutcome("atlas", units), {
+    affected: 3,
+    shieldGain: 90,
+    healing: 0,
+    cleanses: 0,
+    tempoUnits: 0,
+  });
+  assert.equal(commanderOutcomeText("atlas", units), "SCHILD 3 · +90");
+
+  assert.deepEqual(commanderOutcome("lyra", units), {
+    affected: 2,
+    shieldGain: 0,
+    healing: 105,
+    cleanses: 1,
+    tempoUnits: 0,
+  });
+  assert.equal(commanderOutcomeText("lyra", units), "+105 HP · CLEANSE 1");
+
+  assert.deepEqual(commanderOutcome("nova", units), {
+    affected: 2,
+    shieldGain: 0,
+    healing: 0,
+    cleanses: 0,
+    tempoUnits: 2,
+  });
+  assert.equal(commanderOutcomeText("nova", units), "TEMPO 2 · 6s");
+
+  const fullyShielded = units.slice(0, 2).map((unit) => ({
+    ...unit,
+    shield: COMMANDERS.atlas.shield,
+  }));
+  assert.equal(
+    commanderOutcomeText("atlas", fullyShielded),
+    "SCHILD 2 · REFRESH",
+  );
+});
+
+test("commander execution consumes the same eligibility as its preview", () => {
+  const lyra = new Match({ playerCommander: "lyra", botEnabled: false });
+  lyra.play("player", "vanguard", 210, 450);
+  lyra.play("player", "ranger", 240, 450);
+  const first = lyra.state.units[0];
+  const second = lyra.state.units[1];
+  Object.assign(first, { hp: 50, slowTime: 2, slowFactor: 0.6 });
+  second.hp = second.maxHp - 10;
+  const before = commanderOutcome("lyra", lyra.state.units);
+  assert.deepEqual(before, {
+    affected: 2,
+    shieldGain: 0,
+    healing: 85,
+    cleanses: 1,
+    tempoUnits: 0,
+  });
+  const result = lyra.activateCommander();
+  assert.equal(result.ok, true);
+  assert.equal(first.hp, first.maxHp);
+  assert.equal(first.slowTime, 0);
+  assert.equal(first.slowFactor, 1);
+  assert.equal(second.hp, second.maxHp);
+  assert.match(result.message, /\+85 HP · CLEANSE 1/);
+
+  const atlas = new Match({ playerCommander: "atlas", botEnabled: false });
+  atlas.play("player", "vanguard", 210, 450);
+  atlas.state.units[0].shield = 50;
+  const atlasPreview = commanderOutcome("atlas", atlas.state.units);
+  assert.equal(atlasPreview.shieldGain, 20);
+  const atlasResult = atlas.activateCommander();
+  assert.equal(atlasResult.ok, true);
+  assert.equal(atlas.state.units[0].shield, COMMANDERS.atlas.shield);
+  assert.match(atlasResult.message, /SCHILD 1 · \+20/);
+
+  const nova = new Match({ playerCommander: "nova", botEnabled: false });
+  nova.play("player", "vanguard", 210, 450);
+  nova.play("player", "ranger", 240, 450);
+  nova.state.units[1].rallyTime = COMMANDERS.nova.duration;
+  assert.equal(commanderOutcome("nova", nova.state.units).tempoUnits, 1);
+  const novaResult = nova.activateCommander();
+  assert.equal(novaResult.ok, true);
+  assert.equal(nova.state.units[0].rallyTime, COMMANDERS.nova.duration);
+  assert.equal(nova.state.units[1].rallyTime, COMMANDERS.nova.duration);
+  assert.match(novaResult.message, /TEMPO 1 · 6s/);
+});
+

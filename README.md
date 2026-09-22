@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.11
+## Current v1.12
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -729,4 +729,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - damage, targeting, Core HP and all combat balance remain unchanged
 - regression coverage checks Lancer, Pulse and low-HP finishing impact weights against exact applied damage
 - release: package 1.11.0 / v1.11 / iOS 1.11 (111)
+
+## v1.12 changes
+
+- Commander abilities now expose an exact pre-activation outcome in the match HUD instead of only showing BEREIT
+- ATLAS reports affected troops and the exact total new shield points that will be added; a fully shielded force is identified as a duration refresh
+- LYRA reports exact effective HP restoration after max-HP clamping plus the exact number of slows that will be cleansed
+- NOVA reports the exact number of troops whose tempo duration will be started or refreshed and keeps the shared 6-second duration visible
+- Commander tooltip and accessibility label carry the same live outcome text as the visible button
+- the engine and HUD now consume the same per-unit Commander eligibility/outcome helper, preventing preview/execution drift
+- successful Commander toast messages echo the calculated result so activation feedback confirms what was applied
+- regression coverage checks exact aggregate outcomes and verifies LYRA, ATLAS and NOVA execution against the shared preview rules
+- release: package 1.12.0 / v1.12 / iOS 1.12 (112)
 

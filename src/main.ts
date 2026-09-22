@@ -38,6 +38,7 @@ import {
   commanderActiveSeconds,
   commanderCooldownProgress,
   commanderHasValidTarget,
+  commanderOutcomeText,
   commanderStatusText,
   type CommanderId,
 } from "./commanders";
@@ -858,11 +859,27 @@ function updateHud(force = false) {
       enemyCommanderActive <= 0 &&
       !enemyCommanderHasTarget,
   );
-  el("commander-status").textContent = commanderStatusText(
-    match.commanders.player,
-    s.commanderCooldown,
-    s.units,
-    "player",
+  const commanderStatus = commanderReady
+    ? commanderOutcomeText(
+        match.commanders.player,
+        s.units,
+        "player",
+      )
+    : commanderStatusText(
+        match.commanders.player,
+        s.commanderCooldown,
+        s.units,
+        "player",
+      );
+  el("commander-status").textContent = commanderStatus;
+  commanderButton.title = commanderReady
+    ? `${commanderDefinition.name} · ${commanderDefinition.ability} · ${commanderStatus}`
+    : `${commanderDefinition.name} · ${commanderDefinition.ability}`;
+  commanderButton.setAttribute(
+    "aria-label",
+    commanderReady
+      ? `${commanderDefinition.name} ${commanderDefinition.ability}: ${commanderStatus}`
+      : `${commanderDefinition.name} ${commanderDefinition.ability}`,
   );
   commanderButton.disabled = !commanderReady;
   commanderButton.classList.toggle("active", commanderActive > 0);
