@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.19
+## Current v1.20
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -827,4 +827,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - movement sampling and trail geometry are isolated in a pure helper with regression coverage for travel facing, target override, vertical preservation, stop detection and trail direction
 - all changes are presentation-only: speed, pathfinding, targeting, attack timing, collision and combat balance remain unchanged
 - release: package 1.19.0 / v1.19 / iOS 1.19 (119)
+
+## v1.20 changes
+
+- unit HP bars now preserve the previous health briefly after a hit and then trail down, making burst damage readable instead of instantly replacing the old value
+- healing snaps both current and trailing HP directly upward so recovery can never be misread as pending damage
+- shields now receive their own compact bar above HP while retaining the existing shield ring and duration pips
+- shield damage has an independent faster trail, clearly separating absorbed damage from real HP loss
+- ATLAS shield gain snaps the shield bar up immediately while later shield loss remains visible for a short moment
+- trail state is renderer-only and automatically removed when a unit dies or a new match replaces the current scene
+- a pure unit-vitals sampler centralizes hold, easing, clamping and heal/shield-gain behavior instead of embedding timing math in the renderer
+- regression coverage verifies HP damage hold/easing, healing snap, shield damage/gain and malformed-value clamping
+- release: package 1.20.0 / v1.20 / iOS 1.20 (120)
 

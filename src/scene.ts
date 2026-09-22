@@ -13,6 +13,11 @@ import {
 } from "./engine";
 import { unitSvg } from "./art";
 import { impactProfile } from "./combat-feedback";
+import { COMMANDERS } from "./commanders";
+import {
+  sampleUnitVitals,
+  type UnitVitalsTrail,
+} from "./unit-vitals";
 import {
   sampleUnitMotion,
   unitTrailPoint,
@@ -49,6 +54,7 @@ export class ArenaScene extends Phaser.Scene {
   private labels: Phaser.GameObjects.Text[] = [];
   private deploymentLaneLabels: Phaser.GameObjects.Text[] = [];
   private combatText = new Map<number, Phaser.GameObjects.Text>();
+  private unitVitals = new Map<number, UnitVitalsTrail>();
   private pointer: { x: number; y: number } | null = null;
   private aim: {
     pointerId: number;
@@ -207,6 +213,7 @@ export class ArenaScene extends Phaser.Scene {
       for (const label of this.combatText.values()) label.destroy();
       this.combatText.clear();
       this.unitMotion.clear();
+      this.unitVitals.clear();
       this.reactedEffects.clear();
       this.brokenCores.clear();
     }
@@ -1121,9 +1128,25 @@ export class ArenaScene extends Phaser.Scene {
         this.statusPips(fx, u.x, u.y, u.slowTime, 0x94caff, 1.72);
       }
       const healthWidth = u.cardId === "bulwark" ? 27 : 21;
-      const health = Math.max(0, u.hp / u.maxHp);
+      const vitals = sampleUnitVitals(
+        this.unitVitals.get(u.id),
+        u.hp,
+        u.maxHp,
+        u.shield,
+        COMMANDERS.atlas.shield,
+        this.clock,
+      );
+      this.unitVitals.set(u.id, vitals);
+      const health = vitals.hpRatio;
       const healthColor =
-        health <= 0.3 ? 0xff6f5f : health <= 0.55 ? 0xffcf68 : u.team === "player" ? MINT : CORAL;
+        health <= 0.3
+          ? 0xff6f5f
+          : health <= 0.55
+            ? 0xffcf68
+            : u.team === "player"
+              ? MINT
+              : CORAL;
+
       fx.fillStyle(0x061519, 0.9);
       fx.fillRoundedRect(
         u.x - healthWidth / 2 - 1,
@@ -1132,6 +1155,15 @@ export class ArenaScene extends Phaser.Scene {
         4,
         2,
       );
+      if (vitals.trailHpRatio > health + 0.002) {
+        fx.fillStyle(0xff9f68, 0.82);
+        fx.fillRect(
+          u.x - healthWidth / 2 + healthWidth * health,
+          u.y - 22,
+          healthWidth * (vitals.trailHpRatio - health),
+          2,
+        );
+      }
       fx.fillStyle(healthColor);
       fx.fillRect(
         u.x - healthWidth / 2,
@@ -1139,6 +1171,36 @@ export class ArenaScene extends Phaser.Scene {
         healthWidth * health,
         2,
       );
+
+      if (vitals.trailShieldRatio > 0.002) {
+        fx.fillStyle(0x061519, 0.86);
+        fx.fillRoundedRect(
+          u.x - healthWidth / 2 - 1,
+          u.y - 28,
+          healthWidth + 2,
+          3,
+          1.5,
+        );
+        if (vitals.trailShieldRatio > vitals.shieldRatio + 0.002) {
+          fx.fillStyle(0xa9dfff, 0.36);
+          fx.fillRect(
+            u.x - healthWidth / 2 + healthWidth * vitals.shieldRatio,
+            u.y - 27,
+            healthWidth *
+              (vitals.trailShieldRatio - vitals.shieldRatio),
+            1,
+          );
+        }
+        if (vitals.shieldRatio > 0) {
+          fx.fillStyle(0x9bdcff, 0.95);
+          fx.fillRect(
+            u.x - healthWidth / 2,
+            u.y - 27,
+            healthWidth * vitals.shieldRatio,
+            1,
+          );
+        }
+      }
       if (health <= 0.3 && u.hp > 0) {
         const danger = 0.55 + 0.4 * Math.sin(this.clock * 8 + u.id);
         fx.lineStyle(1.5, 0xff7b68, danger * 0.75);
@@ -1157,6 +1219,10 @@ export class ArenaScene extends Phaser.Scene {
         );
       }
     }
+    const livingUnitIds = new Set(s.units.map((unit) => unit.id));
+    for (const id of this.unitVitals.keys())
+      if (!livingUnitIds.has(id)) this.unitVitals.delete(id);
+
     this.syncCombatText(s.effects);
     for (const e of s.effects) {
       const progress = 1 - e.life / e.maxLife,
