@@ -1139,7 +1139,7 @@ export class Match {
       this.effect("pulse", x, y, team, 0.75);
       for (const unit of this.state.units) {
         if (targetIds.has(unit.id))
-          this.damageUnit(unit, card.damage ?? 0, team);
+          this.damageUnit(unit, card.damage ?? 0, team, card.id);
       }
       const core = this.state.cores[other(team)];
       if (targetPreview?.core) {
@@ -1155,6 +1155,7 @@ export class Match {
           undefined,
           clamp(10 + applied * 0.22, 12, 32),
           applied,
+          card.id,
         );
       }
       if (team === "player") this.state.stats.abilities++;
@@ -1423,7 +1424,12 @@ export class Match {
     });
   }
 
-  private damageUnit(unit: Unit, amount: number, source: Team): void {
+  private damageUnit(
+    unit: Unit,
+    amount: number,
+    source: Team,
+    sourceCardId?: string,
+  ): void {
     if (unit.hp <= 0) return;
     const shieldDamage = Math.min(unit.shield, amount);
     const hpDamage = Math.min(unit.hp, Math.max(0, amount - shieldDamage));
@@ -1440,6 +1446,7 @@ export class Match {
         undefined,
         clamp(6 + applied * 0.15, 7, 18),
         applied,
+        sourceCardId,
       );
     if (unit.hp <= 0) {
       this.effect(
@@ -1450,6 +1457,8 @@ export class Match {
         0.62,
         undefined,
         clamp(unit.radius * 2.2, 18, 34),
+        undefined,
+        sourceCardId,
       );
       if (source === "player") this.state.stats.kills++;
     }
@@ -1578,6 +1587,7 @@ export class Match {
           undefined,
           clamp(10 + applied * 0.22, 12, 32),
           applied,
+          attack.unit.cardId,
         );
       } else {
         const target = attack.target as Unit;
@@ -1595,7 +1605,12 @@ export class Match {
               target.radius + 18,
             );
         }
-        this.damageUnit(target, attack.amount, attack.unit.team);
+        this.damageUnit(
+          target,
+          attack.amount,
+          attack.unit.team,
+          attack.unit.cardId,
+        );
         if (card.slowDuration && target.hp > 0) {
           target.slowTime = Math.max(target.slowTime, card.slowDuration);
           target.slowFactor = Math.min(target.slowFactor, card.slowFactor ?? 1);
@@ -1618,7 +1633,12 @@ export class Match {
             nearby.hp > 0 &&
             distance(nearby, attack.target) <= card.splashRadius
           ) {
-            this.damageUnit(nearby, card.splashDamage, attack.unit.team);
+            this.damageUnit(
+              nearby,
+              card.splashDamage,
+              attack.unit.team,
+              attack.unit.cardId,
+            );
           }
         }
       }
@@ -1713,7 +1733,12 @@ export class Match {
       const core = this.state.cores[team];
       const target = coreTurretTarget(this.state, team);
       if (target) {
-        this.damageUnit(target, CORE_TURRET_DAMAGE, team);
+        this.damageUnit(
+          target,
+          CORE_TURRET_DAMAGE,
+          team,
+          "core-turret",
+        );
         this.effect(
           "shot",
           core.x,

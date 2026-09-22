@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.17
+## Current v1.18
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -801,4 +801,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - all projectile travel remains presentation-only: attack interval, damage application, targeting and balance are unchanged
 - regression coverage verifies that ranged, melee and Core-turret shot events preserve their exact source identity and target coordinates
 - release: package 1.17.0 / v1.17 / iOS 1.17 (117)
+
+## v1.18 changes
+
+- weapon identity now survives the full combat-feedback chain: shot, applied impact, lethal K.O. and Core hit all retain the actual source card
+- Ranger impacts use a tight precision cross instead of a generic burst; Lancer rail hits gain wider white shock ellipses
+- Mortar impacts receive a warmer expanding blast, debris and a larger K.O. debris field; Disruptor impacts close with an electrical ring
+- Sentinel rounds land with layered heavy shock rings while Core-turret hits use a compact concentrated beam impact
+- Breaker keeps its dedicated shield-break feedback and now also receives a distinct breach-style X impact; ordinary melee uses restrained directional sparks
+- Pulse damage carries its source identity into unit deaths and Core impacts instead of falling back to generic hit styling
+- camera impulse remains damage-aware but now receives a small cosmetic weapon-profile multiplier; reduced-motion still suppresses all camera shake
+- all impact profiles are pure presentation data and do not alter damage, attack interval, targeting, projectile timing, shields or HP
+- regression coverage verifies weapon-profile mapping plus exact source propagation through impact, death, Core-hit and Core-turret damage events
+- release: package 1.18.0 / v1.18 / iOS 1.18 (118)
 

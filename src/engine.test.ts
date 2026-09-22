@@ -1675,3 +1675,79 @@ test("shot effects preserve weapon identity for renderer-specific combat feedbac
   assert.equal(turretShot.targetY, intruder.y);
 });
 
+test("impact, death and Core-hit effects preserve their weapon source", () => {
+  const mortarMatch = new Match({ playerDeck: controlDeck, botEnabled: false });
+  const mortar = staticUnit(mortarMatch, "player", 210, 350, "mortar");
+  Object.assign(mortar, { damage: 80, range: 115, attackCooldown: 0 });
+  const mortarTarget = staticUnit(mortarMatch, "enemy", 210, 270);
+  mortarTarget.hp = 30;
+  mortarMatch.update(1 / 30);
+
+  const mortarImpact = mortarMatch.state.effects.find(
+    (effect) => effect.type === "impact",
+  );
+  const mortarDeath = mortarMatch.state.effects.find(
+    (effect) => effect.type === "death",
+  );
+  assert.ok(mortarImpact);
+  assert.ok(mortarDeath);
+  assert.equal(mortarImpact.sourceCardId, "mortar");
+  assert.equal(mortarDeath.sourceCardId, "mortar");
+
+  const pulseMatch = quietMatch();
+  const pulseTarget = staticUnit(pulseMatch, "enemy", 210, 220);
+  pulseTarget.hp = 20;
+  pulseMatch.state.energy.player = 10;
+  assert.equal(pulseMatch.play("player", "pulse", 210, 220).ok, true);
+  assert.equal(
+    pulseMatch.state.effects.find((effect) => effect.type === "impact")
+      ?.sourceCardId,
+    "pulse",
+  );
+  assert.equal(
+    pulseMatch.state.effects.find((effect) => effect.type === "death")
+      ?.sourceCardId,
+    "pulse",
+  );
+
+  const coreMatch = quietMatch();
+  const lancer = staticUnit(coreMatch, "player", 210, 145);
+  Object.assign(lancer, {
+    cardId: "lancer",
+    damage: 48,
+    range: 135,
+    radius: 10,
+    attackCooldown: 0,
+  });
+  coreMatch.update(1 / 30);
+  const coreHit = coreMatch.state.effects.find(
+    (effect) =>
+      effect.type === "core-hit" && effect.team === "player",
+  );
+  assert.ok(coreHit);
+  assert.equal(coreHit.sourceCardId, "lancer");
+
+  const pulseCore = quietMatch();
+  pulseCore.state.energy.player = 10;
+  assert.equal(pulseCore.play("player", "pulse", 210, 35).ok, true);
+  assert.equal(
+    pulseCore.state.effects.find((effect) => effect.type === "core-hit")
+      ?.sourceCardId,
+    "pulse",
+  );
+
+  const turretMatch = quietMatch();
+  const intruder = staticUnit(turretMatch, "enemy", 210, 470);
+  Object.assign(intruder, { hp: 200, maxHp: 200 });
+  turretMatch.update(1 / 30);
+  assert.equal(
+    turretMatch.state.effects.find(
+      (effect) =>
+        effect.type === "impact" &&
+        effect.team === "player" &&
+        effect.sourceCardId === "core-turret",
+    )?.sourceCardId,
+    "core-turret",
+  );
+});
+
