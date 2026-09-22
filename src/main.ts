@@ -729,7 +729,7 @@ function updateHud(force = false) {
         notice === "critical"
           ? "BASIS IN GEFAHR"
           : notice === "overtime"
-            ? "NÄCHSTER VORTEIL ENTSCHEIDET"
+            ? "45 SEKUNDEN · CORE ODER SCHLUSSWERTUNG"
             : "JETZT ENTSCHEIDET’S",
         notice === "critical",
       );

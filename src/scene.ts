@@ -13,6 +13,7 @@ import {
 } from "./engine";
 import { unitSvg } from "./art";
 import { matchEndVisual } from "./match-end-visual";
+import { matchOvertimeVisual } from "./match-overtime-visual";
 import { impactProfile } from "./combat-feedback";
 import { COMMANDERS } from "./commanders";
 import {
@@ -66,6 +67,8 @@ export class ArenaScene extends Phaser.Scene {
   private aimLabel!: Phaser.GameObjects.Text;
   private endTitle!: Phaser.GameObjects.Text;
   private endSubtitle!: Phaser.GameObjects.Text;
+  private overtimeTitle!: Phaser.GameObjects.Text;
+  private overtimeSubtitle!: Phaser.GameObjects.Text;
   private endSequenceStartedAt: number | null = null;
   private clock = 0;
   private reactedEffects = new Set<number>();
@@ -145,6 +148,33 @@ export class ArenaScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(10)
       .setVisible(false);
+    this.overtimeTitle = this.add
+      .text(210, 248, "", {
+        fontFamily: "monospace",
+        fontSize: "18px",
+        fontStyle: "bold",
+        color: "#fff0bc",
+        stroke: "#061315",
+        strokeThickness: 5,
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(9)
+      .setVisible(false);
+    this.overtimeSubtitle = this.add
+      .text(210, 274, "", {
+        fontFamily: "monospace",
+        fontSize: "8px",
+        fontStyle: "bold",
+        color: "#ffe8bf",
+        backgroundColor: "#071416cc",
+        padding: { x: 7, y: 4 },
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(9)
+      .setVisible(false);
+
     for (let i = 0; i < 9; i++)
       this.labels.push(
         this.add
@@ -2398,7 +2428,71 @@ export class ArenaScene extends Phaser.Scene {
       fx.lineBetween(x - 7, y, x + 7, y);
       fx.lineBetween(x, y - 7, x, y + 7);
     }
+    this.drawOvertimeOverlay(s);
     this.drawMatchEndOverlay(s);
+  }
+
+  private drawOvertimeOverlay(state: Match["state"]): void {
+    const visual = matchOvertimeVisual(state);
+    if (!visual) {
+      this.overtimeTitle.setVisible(false);
+      this.overtimeSubtitle.setVisible(false);
+      return;
+    }
+
+    const fx = this.fx;
+    const pulse = this.reducedMotion
+      ? 0.72
+      : 0.58 + Math.sin(this.clock * (visual.stage === "final" ? 8 : 5)) * 0.14;
+    const intensity = visual.intensity;
+    const accent = visual.stage === "final" ? CORAL : NEUTRAL;
+    const accentCss = visual.stage === "final" ? "#ffc0a2" : "#fff0bc";
+
+    fx.fillStyle(0x020709, 0.035 + intensity * 0.035);
+    fx.fillRect(0, 0, 420, 560);
+
+    const inset = 18 + visual.progress * 10;
+    fx.lineStyle(1.4, accent, 0.12 + pulse * 0.18);
+    fx.strokeRoundedRect(inset, 58, 420 - inset * 2, 444, 14);
+
+    const centerWidth = 110 + visual.progress * 130;
+    fx.fillStyle(accent, 0.02 + intensity * 0.018);
+    fx.fillRect(210 - centerWidth / 2, 262, centerWidth, 36);
+    fx.lineStyle(2.2, accent, 0.28 + pulse * 0.34);
+    fx.lineBetween(210 - centerWidth / 2, 280, 210 + centerWidth / 2, 280);
+
+    for (let i = 0; i < 7; i++) {
+      const x = 72 + i * 46;
+      const spread = this.reducedMotion ? 0 : (visual.progress * 10) % 10;
+      fx.lineStyle(1.5, accent, 0.22 + pulse * 0.28);
+      fx.lineBetween(x - 5, 265 + spread, x, 272 + spread);
+      fx.lineBetween(x + 5, 265 + spread, x, 272 + spread);
+      fx.lineBetween(x - 5, 295 - spread, x, 288 - spread);
+      fx.lineBetween(x + 5, 295 - spread, x, 288 - spread);
+    }
+
+    if (visual.stage === "entry") {
+      const entry = this.reducedMotion
+        ? 1
+        : Math.min(1, visual.elapsed / 0.75);
+      fx.fillStyle(accent, (1 - entry) * 0.09);
+      fx.fillRect(0, 0, 420, 560);
+      this.overtimeTitle
+        .setScale(this.reducedMotion ? 1 : 0.86 + entry * 0.14)
+        .setAlpha(entry);
+    } else {
+      this.overtimeTitle.setScale(1).setAlpha(0.95);
+    }
+
+    this.overtimeTitle
+      .setText(visual.title)
+      .setColor(accentCss)
+      .setVisible(true);
+    this.overtimeSubtitle
+      .setText(visual.detail)
+      .setColor(accentCss)
+      .setAlpha(0.92)
+      .setVisible(true);
   }
 
   private drawMatchEndOverlay(state: Match["state"]): void {

@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.22
+## Current v1.23
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -864,4 +864,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - reduced-motion keeps every phase, number and status message but disables scan, lane pulse and scale animations
 - a pure matchStartVisual helper centralizes phase timing and wording with boundary, objective, Daily Front, Commander and malformed-time regression coverage
 - release: package 1.22.0 / v1.22 / iOS 1.22 (122)
+
+## v1.23 changes
+
+- standard Core matches now receive a dedicated overtime presentation instead of silently switching the timer label after regulation
+- the existing 45-second overtime window opens with a VERLÄNGERUNG transition, then settles into a persistent SUDDEN DEATH arena treatment
+- the final ten seconds switch to LETZTER DRUCK with exact remaining-second text and stronger visual pressure
+- the arena gains a restrained overtime vignette, central pressure line, inward chevrons and a tightening frame without hiding units, capture state or deployment geometry
+- reduced-motion keeps all wording, countdown context and static pressure framing while removing pulse and travel motion
+- the previous NÄCHSTER VORTEIL ENTSCHEIDET copy is corrected to 45 SEKUNDEN · CORE ODER SCHLUSSWERTUNG, matching the actual engine rule
+- overtime presentation is derived by a pure matchOvertimeVisual helper and does not modify the existing 180-second regulation, 45-second extension, score resolution or Core-destruction behavior
+- regression coverage verifies hidden/entry/pressure/final phases, exact remaining time, phase boundaries and malformed-time clamping
+- release: package 1.23.0 / v1.23 / iOS 1.23 (123)
 
