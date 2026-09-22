@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.31
+## Current v1.32
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -990,3 +990,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure unitHitReaction helper centralizes direction, strength, scale and malformed-value clamping
 - regression coverage verifies left/right and vertical impact direction, neutral fallback and real Pulse source propagation through the engine
 - release: package 1.31.0 / v1.31 / iOS 1.31 (131)
+
+
+## v1.32 changes
+
+- Core turret targeting now exposes its exact internal cooldown to presentation through a read-only Match accessor instead of showing a permanently identical lock state
+- the existing sight line strengthens as the real one-second turret reload approaches readiness
+- target brackets contract through reload and tracking, then switch to a high-contrast lock state shortly before the next shot
+- each Core now draws a compact radial charge arc around the turret body using the same shared CORE_TURRET_INTERVAL that drives combat
+- the final lock phase adds a restrained target ring and center pip, making incoming Core fire readable before the projectile appears
+- player and enemy turrets use the same timing model and presentation rules; nearest-target selection remains unchanged
+- reduced-motion keeps exact static reload progress and lock state while suppressing animated pulse variation
+- turret damage, range, target selection, fire interval and simulation timing are unchanged
+- a pure coreTurretVisual helper centralizes phase thresholds, bracket contraction, sight strength and malformed cooldown clamping
+- regression coverage verifies shared-interval progress, safe clamping and that the exposed cooldown still follows the existing one-second firing cadence
+- release: package 1.32.0 / v1.32 / iOS 1.32 (132)

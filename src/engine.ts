@@ -1323,6 +1323,12 @@ export class Match {
     return affected;
   }
 
+  coreTurretCooldownSeconds(team: Team): number {
+    const cooldown = this.coreCooldown[team];
+    if (!Number.isFinite(cooldown)) return 0;
+    return Math.max(0, Math.min(CORE_TURRET_INTERVAL, cooldown));
+  }
+
   /** Only this method advances time. UI pause and hidden-tab pause require no timers. */
   update(dtSeconds: number): void {
     if (

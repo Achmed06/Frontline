@@ -19,6 +19,7 @@ import { impactProfile } from "./combat-feedback";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
+import { coreTurretVisual } from "./core-turret-visual";
 import { COMMANDERS } from "./commanders";
 import {
   sampleUnitVitals,
@@ -1081,6 +1082,7 @@ export class ArenaScene extends Phaser.Scene {
       enemyCoreHit ? enemyCoreHit.life / enemyCoreHit.maxLife : 0,
       enemyCoreTarget,
       enemyCoreHit?.radius ?? 0,
+      m.coreTurretCooldownSeconds("enemy"),
     );
     this.drawCore(
       210,
@@ -1090,6 +1092,7 @@ export class ArenaScene extends Phaser.Scene {
       playerCoreHit ? playerCoreHit.life / playerCoreHit.maxLife : 0,
       playerCoreTarget,
       playerCoreHit?.radius ?? 0,
+      m.coreTurretCooldownSeconds("player"),
     );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
@@ -2903,32 +2906,76 @@ export class ArenaScene extends Phaser.Scene {
     hitAlpha = 0,
     turretTarget?: Unit,
     hitWeight = 0,
+    turretCooldown = 0,
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
     const pressure = corePressure(fraction, 1);
     const destroyed = pressure.state === "destroyed";
     if (turretTarget && !destroyed) {
-      const defensePulse = 0.5 + 0.5 * Math.sin(this.clock * 4);
+      const cycle = coreTurretVisual(turretCooldown);
+      const defensePulse = this.reducedMotion
+        ? 0.72
+        : 0.5 + 0.5 * Math.sin(this.clock * (cycle.phase === "lock" ? 7 : 4));
       g.fillStyle(color, 0.012 + defensePulse * 0.012);
       g.fillCircle(x, y, CORE_TURRET_RANGE);
       g.lineStyle(1.2, color, 0.13 + defensePulse * 0.08);
       g.strokeCircle(x, y, CORE_TURRET_RANGE);
       g.lineStyle(1, 0xffffff, 0.05 + defensePulse * 0.04);
       g.strokeCircle(x, y, CORE_TURRET_RANGE - 5);
-      // A thin sight line and open brackets distinguish targeting from shields.
-      g.lineStyle(1, color, 0.24);
+
+      // The sight line and contracting brackets now communicate the real reload cycle.
+      g.lineStyle(
+        cycle.phase === "lock" ? 1.8 : 1,
+        color,
+        cycle.sightAlpha * (0.82 + defensePulse * 0.18),
+      );
       g.lineBetween(x, y, turretTarget.x, turretTarget.y);
+
+      const chargeRadius = 29;
+      const start = -Math.PI / 2;
+      const end = start + Math.PI * 2 * Math.max(0.025, cycle.charge);
+      g.lineStyle(3, color, cycle.chargeAlpha);
+      g.beginPath();
+      g.arc(x, y - 2, chargeRadius, start, end, false);
+      g.strokePath();
+      g.lineStyle(1, 0xffffff, 0.18 + cycle.charge * 0.34);
+      g.beginPath();
+      g.arc(x, y - 2, chargeRadius + 4, start, end, false);
+      g.strokePath();
+
       const fx = this.fx;
-      const r = Math.max(24, turretTarget.radius + 10);
-      fx.lineStyle(2, color, 0.65 + defensePulse * 0.2);
+      const r =
+        Math.max(24, turretTarget.radius + 10) *
+        cycle.bracketScale;
+      fx.lineStyle(
+        cycle.phase === "lock" ? 2.8 : 2,
+        cycle.phase === "lock" ? 0xffffff : color,
+        0.52 + cycle.charge * 0.4,
+      );
       for (const sx of [-1, 1]) {
         for (const sy of [-1, 1]) {
           const tx = turretTarget.x + sx * r;
           const ty = turretTarget.y + sy * r;
-          fx.lineBetween(tx, ty, tx - sx * 7, ty);
-          fx.lineBetween(tx, ty, tx, ty - sy * 7);
+          const arm = cycle.phase === "lock" ? 9 : 7;
+          fx.lineBetween(tx, ty, tx - sx * arm, ty);
+          fx.lineBetween(tx, ty, tx, ty - sy * arm);
         }
+      }
+
+      if (cycle.phase === "lock") {
+        const lockPulse = this.reducedMotion
+          ? 0.78
+          : 0.62 + Math.sin(this.clock * 9) * 0.18;
+        const lockRadius = Math.max(13, turretTarget.radius + 4);
+        fx.lineStyle(1.5, color, lockPulse);
+        fx.strokeCircle(turretTarget.x, turretTarget.y, lockRadius);
+        fx.fillStyle(0xffffff, 0.5 + lockPulse * 0.28);
+        fx.fillCircle(
+          turretTarget.x,
+          turretTarget.y,
+          1.8 + cycle.charge * 1.2,
+        );
       }
     }
     if (destroyed && !this.brokenCores.has(team)) {
