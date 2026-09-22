@@ -20,6 +20,7 @@ import { deathBurstDirection } from "./death-burst-direction";
 import { shieldImpactVisual } from "./shield-impact-visual";
 import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
+import { weaponCycleVisual } from "./weapon-cycle-visual";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
@@ -1389,6 +1390,115 @@ export class ArenaScene extends Phaser.Scene {
       g.fillEllipse(u.x, u.y + 6, size * 0.65, size * 0.25);
       g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
       g.strokeEllipse(u.x, u.y + 7, size * 0.75, size * 0.32);
+
+      const weaponCycle = weaponCycleVisual(
+        u.cardId,
+        u.attackCooldown,
+        u.interval,
+      );
+      if (weaponCycle.active) {
+        const cycleColor =
+          weaponCycle.kind === "rail"
+            ? 0xdff7ff
+            : weaponCycle.kind === "explosive"
+              ? 0xffc368
+              : weaponCycle.kind === "heavy"
+                ? 0xffd59a
+                : 0x9adfff;
+        const start = -Math.PI / 2;
+        const end =
+          start +
+          Math.PI *
+            2 *
+            Math.max(0.018, weaponCycle.charge);
+        const cycleY = u.y + 9;
+        const readyBoost =
+          weaponCycle.charge >= 0.82
+            ? this.reducedMotion
+              ? 0.18
+              : 0.14 +
+                Math.sin(
+                  this.clock * 8 + u.id * 0.31,
+                ) *
+                  0.06
+            : 0;
+
+        fx.lineStyle(
+          1,
+          0x071416,
+          0.42 * weaponCycle.prominence,
+        );
+        fx.strokeCircle(
+          u.x,
+          cycleY,
+          weaponCycle.radius + 1.8,
+        );
+
+        fx.lineStyle(
+          weaponCycle.thickness,
+          cycleColor,
+          (0.48 + readyBoost) *
+            weaponCycle.prominence,
+        );
+        fx.beginPath();
+        fx.arc(
+          u.x,
+          cycleY,
+          weaponCycle.radius,
+          start,
+          end,
+          false,
+        );
+        fx.strokePath();
+
+        fx.lineStyle(
+          1,
+          0xffffff,
+          (0.16 + weaponCycle.charge * 0.24) *
+            weaponCycle.prominence,
+        );
+        for (let tick = 0; tick < weaponCycle.tickCount; tick++) {
+          const a =
+            start +
+            ((tick + 1) /
+              (weaponCycle.tickCount + 1)) *
+              Math.PI *
+              2;
+          const inner = weaponCycle.radius - 2.5;
+          const outer = weaponCycle.radius + 1.5;
+          fx.lineBetween(
+            u.x + Math.cos(a) * inner,
+            cycleY + Math.sin(a) * inner,
+            u.x + Math.cos(a) * outer,
+            cycleY + Math.sin(a) * outer,
+          );
+        }
+
+        if (weaponCycle.charge >= 0.82) {
+          const pipAngle = end;
+          const pipX =
+            u.x +
+            Math.cos(pipAngle) *
+              weaponCycle.radius;
+          const pipY =
+            cycleY +
+            Math.sin(pipAngle) *
+              weaponCycle.radius;
+          fx.fillStyle(
+            0xffffff,
+            0.42 +
+              weaponCycle.charge *
+                0.45,
+          );
+          fx.fillCircle(
+            pipX,
+            pipY,
+            1.5 +
+              (weaponCycle.charge - 0.82) *
+                4,
+          );
+        }
+      }
 
       if (
         firing &&

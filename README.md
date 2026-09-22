@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.40
+## Current v1.41
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1122,3 +1122,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - real Atlas + Pulse overflow coverage verifies the engine exposes 70 shield damage and 15 HP overflow separately
 - damage, mitigation, shield values, hit radius, camera shake and all balance rules are unchanged
 - release: package 1.40.0 / v1.40 / iOS 1.40 (140)
+
+
+## v1.41 changes
+
+- high-impact ranged units now expose their exact live attack cooldown as a compact weapon-cycle ring under the unit instead of hiding the reload state after each shot
+- Lancer and Mortar use the strongest presentation, Sentinel is slightly quieter and Disruptor uses a lighter electric cycle; fast precision/melee units intentionally stay clean to avoid arena clutter
+- the ring is driven directly by the real unit.attackCooldown / unit.interval values, so Rally naturally makes the visible cycle complete faster because the simulation already burns cooldown faster
+- the completed arc represents real next-shot readiness rather than a cosmetic timer; no duplicate timers or renderer-side combat state were introduced
+- the final 18 percent gains a restrained ready highlight and moving pip in full motion, with a static equivalent under Reduced Motion
+- small interval ticks make long Lancer/Mortar reloads easier to estimate at a glance without adding text labels
+- weapon-cycle colors follow the existing weapon profile language: rail white-blue, explosive amber, heavy warm white and electric cyan
+- attack interval, Rally multiplier, target selection, shot timing, damage and all balance values remain unchanged
+- a pure weaponCycleVisual helper centralizes supported weapon types, exact charge ratio, prominence, radius, thickness and tick count
+- regression coverage verifies exact Lancer/Mortar progress, lower Sentinel/Disruptor prominence, clutter suppression for fast/melee units and malformed cooldown handling
+- release: package 1.41.0 / v1.41 / iOS 1.41 (141)
