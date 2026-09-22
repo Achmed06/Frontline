@@ -675,18 +675,22 @@ export class ArenaScene extends Phaser.Scene {
                 : "#fff0bc",
         );
     }
-    const enemyCoreHit = s.effects.find(
-      (effect) =>
-        effect.type === "core-hit" &&
-        Math.abs(effect.x - s.cores.enemy.x) < 2 &&
-        Math.abs(effect.y - s.cores.enemy.y) < 2,
-    );
-    const playerCoreHit = s.effects.find(
-      (effect) =>
-        effect.type === "core-hit" &&
-        Math.abs(effect.x - s.cores.player.x) < 2 &&
-        Math.abs(effect.y - s.cores.player.y) < 2,
-    );
+    const enemyCoreHit = s.effects
+      .filter(
+        (effect) =>
+          effect.type === "core-hit" &&
+          Math.abs(effect.x - s.cores.enemy.x) < 2 &&
+          Math.abs(effect.y - s.cores.enemy.y) < 2,
+      )
+      .sort((a, b) => (b.radius ?? 0) - (a.radius ?? 0))[0];
+    const playerCoreHit = s.effects
+      .filter(
+        (effect) =>
+          effect.type === "core-hit" &&
+          Math.abs(effect.x - s.cores.player.x) < 2 &&
+          Math.abs(effect.y - s.cores.player.y) < 2,
+      )
+      .sort((a, b) => (b.radius ?? 0) - (a.radius ?? 0))[0];
     const enemyCoreTarget = coreTurretTarget(s, "enemy");
     const playerCoreTarget = coreTurretTarget(s, "player");
     this.drawCore(
@@ -696,6 +700,7 @@ export class ArenaScene extends Phaser.Scene {
       s.cores.enemy.hp / s.cores.enemy.maxHp,
       enemyCoreHit ? enemyCoreHit.life / enemyCoreHit.maxLife : 0,
       enemyCoreTarget,
+      enemyCoreHit?.radius ?? 0,
     );
     this.drawCore(
       210,
@@ -704,6 +709,7 @@ export class ArenaScene extends Phaser.Scene {
       s.cores.player.hp / s.cores.player.maxHp,
       playerCoreHit ? playerCoreHit.life / playerCoreHit.maxLife : 0,
       playerCoreTarget,
+      playerCoreHit?.radius ?? 0,
     );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
@@ -865,8 +871,14 @@ export class ArenaScene extends Phaser.Scene {
       if (!this.reactedEffects.has(e.id)) {
         this.reactedEffects.add(e.id);
         if (!this.reducedMotion) {
-          if (e.type === "core-hit")
-            this.cameras.main.shake(90, 0.0024, true);
+          if (e.type === "core-hit") {
+            const weight = e.radius ?? 18;
+            this.cameras.main.shake(
+              80 + Math.round(weight * 2.8),
+              Math.min(0.0042, 0.0016 + weight * 0.000075),
+              true,
+            );
+          }
           else if (e.type === "death") {
             const size = e.radius ?? 18;
             this.cameras.main.shake(
@@ -1024,17 +1036,28 @@ export class ArenaScene extends Phaser.Scene {
           fx.fillRect(e.x - 7, e.y - 5 - lift, 14, 4);
         }
         if (e.type === "core-hit") {
-          const impactRadius = 8 + 22 * progress;
-          fx.fillStyle(effectColor, alpha * 0.22);
+          const weight = e.radius ?? 18;
+          const impactRadius = 7 + weight * (0.35 + progress * 0.75);
+          fx.fillStyle(effectColor, alpha * (0.17 + weight / 190));
           fx.fillCircle(e.x, e.y, impactRadius);
-          fx.lineStyle(2.2, 0xfff4cf, alpha);
-          for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4;
+          fx.lineStyle(2.2 + weight * 0.025, 0xfff4cf, alpha);
+          fx.strokeCircle(e.x, e.y, impactRadius * 0.58);
+          const rays = weight >= 24 ? 12 : weight >= 18 ? 10 : 8;
+          for (let i = 0; i < rays; i++) {
+            const angle = (i * Math.PI * 2) / rays + e.id * 0.11;
             fx.lineBetween(
-              e.x + Math.cos(angle) * impactRadius * 0.45,
-              e.y + Math.sin(angle) * impactRadius * 0.45,
+              e.x + Math.cos(angle) * impactRadius * 0.4,
+              e.y + Math.sin(angle) * impactRadius * 0.4,
               e.x + Math.cos(angle) * impactRadius,
               e.y + Math.sin(angle) * impactRadius,
+            );
+          }
+          if (weight >= 22) {
+            fx.lineStyle(1.4, effectColor, alpha * 0.62);
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              impactRadius + 7 + progress * weight * 0.35,
             );
           }
         }
@@ -1628,6 +1651,7 @@ export class ArenaScene extends Phaser.Scene {
     fraction: number,
     hitAlpha = 0,
     turretTarget?: Unit,
+    hitWeight = 0,
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
@@ -1727,10 +1751,29 @@ export class ArenaScene extends Phaser.Scene {
       }
     }
     if (hitAlpha > 0) {
-      const flash = Math.min(0.75, hitAlpha * 0.8);
-      this.polygon(g, this.hex(x, y - 3, 24), 0xffffff, flash * 0.18);
-      g.lineStyle(2, 0xffffff, flash);
-      g.strokeCircle(x, y - 2, 21 + (1 - hitAlpha) * 9);
+      const weight = Math.max(12, hitWeight || 18);
+      const flash = Math.min(0.82, hitAlpha * (0.72 + weight / 120));
+      const shell = 22 + weight * 0.12;
+      this.polygon(
+        g,
+        this.hex(x, y - 3, shell),
+        0xffffff,
+        flash * 0.16,
+      );
+      g.lineStyle(1.8 + weight * 0.025, 0xffffff, flash);
+      g.strokeCircle(
+        x,
+        y - 2,
+        shell - 2 + (1 - hitAlpha) * (6 + weight * 0.22),
+      );
+      if (weight >= 22) {
+        g.lineStyle(1.2, color, flash * 0.7);
+        g.strokeCircle(
+          x,
+          y - 2,
+          shell + 5 + (1 - hitAlpha) * weight * 0.45,
+        );
+      }
     }
     if (destroyed) {
       const pulse = 0.5 + 0.5 * Math.sin(this.clock * 10);

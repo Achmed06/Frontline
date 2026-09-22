@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.10
+## Current v1.11
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -717,4 +717,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - all combat balance, damage, health, attack timing and targeting rules remain unchanged
 - regression coverage verifies size-aware lethal effect radius and duration for standard and heavy units
 - release: package 1.10.0 / v1.10 / iOS 1.10 (110)
+
+## v1.11 changes
+
+- Core impact feedback now scales from the damage that actually reached the Core instead of rendering every hit with identical weight
+- Lancer's boosted Core strike therefore produces a larger impact ring, more rays and stronger camera response than Pulse's smaller Core hit
+- finishing blows only visualize the damage that was actually applied to the remaining Core HP, avoiding exaggerated overkill feedback
+- the Core model itself now reacts with a weight-scaled flash and an additional outer shock ring for heavier impacts
+- simultaneous Core effects select the strongest active hit for the structure flash so large strikes are not visually hidden by smaller ones
+- reduced-motion preference continues to suppress all camera shake while preserving readable impact rings and flashes
+- damage, targeting, Core HP and all combat balance remain unchanged
+- regression coverage checks Lancer, Pulse and low-HP finishing impact weights against exact applied damage
+- release: package 1.11.0 / v1.11 / iOS 1.11 (111)
 

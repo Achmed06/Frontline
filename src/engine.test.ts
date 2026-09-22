@@ -1327,3 +1327,50 @@ test("a Core destroyed by a unit cannot fire back later in the same tick", () =>
       effect.type === "shot" && effect.x === core.x && effect.y === core.y), false);
   }
 });
+
+test("core hit feedback scales with actual damage without changing balance", () => {
+  const lancerMatch = quietMatch();
+  assert.equal(lancerMatch.play("player", "lancer", 210, 400).ok, true);
+  const lancer = lancerMatch.state.units[0];
+  Object.assign(lancer, { x: 210, y: 145, speed: 0, attackCooldown: 0 });
+  const lancerCard = CARDS.find((card) => card.id === "lancer")!;
+  const expectedDamage =
+    lancerCard.damage! * (lancerCard.coreDamageMultiplier ?? 1);
+  const before = lancerMatch.state.cores.enemy.hp;
+  lancerMatch.update(1 / 30);
+  const lancerHit = lancerMatch.state.effects.find(
+    (effect) => effect.type === "core-hit",
+  );
+  assert.ok(lancerHit);
+  assert.equal(before - lancerMatch.state.cores.enemy.hp, expectedDamage);
+  assert.equal(lancerHit.maxLife, 0.42);
+  assert.equal(
+    lancerHit.radius,
+    Math.min(32, Math.max(12, 10 + expectedDamage * 0.22)),
+  );
+
+  const pulseMatch = quietMatch();
+  pulseMatch.state.energy.player = 10;
+  const pulseCard = CARDS.find((card) => card.id === "pulse")!;
+  assert.equal(pulseMatch.play("player", "pulse", 210, 35).ok, true);
+  const pulseHit = pulseMatch.state.effects.find(
+    (effect) => effect.type === "core-hit",
+  );
+  assert.ok(pulseHit);
+  assert.equal(
+    pulseHit.radius,
+    Math.min(32, Math.max(12, 10 + pulseCard.coreDamage! * 0.22)),
+  );
+  assert.ok((lancerHit.radius ?? 0) > (pulseHit.radius ?? 0));
+
+  const lethal = quietMatch();
+  lethal.state.energy.player = 10;
+  lethal.state.cores.enemy.hp = 10;
+  assert.equal(lethal.play("player", "pulse", 210, 35).ok, true);
+  const lethalHit = lethal.state.effects.find(
+    (effect) => effect.type === "core-hit",
+  );
+  assert.ok(lethalHit);
+  assert.equal(lethalHit.radius, 12.2);
+});
+

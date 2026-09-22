@@ -978,8 +978,18 @@ export class Match {
       }
       const core = this.state.cores[other(team)];
       if (targetPreview?.core) {
+        const before = core.hp;
         core.hp = Math.max(0, core.hp - (card.coreDamage ?? 0));
-        this.effect("core-hit", core.x, core.y, team, 0.5);
+        const applied = before - core.hp;
+        this.effect(
+          "core-hit",
+          core.x,
+          core.y,
+          team,
+          0.5,
+          undefined,
+          clamp(10 + applied * 0.22, 12, 32),
+        );
       }
       if (team === "player") this.state.stats.abilities++;
       this.removeDead();
@@ -1357,13 +1367,17 @@ export class Match {
         attack.target,
       );
       if (attack.core) {
+        const before = attack.target.hp;
         attack.target.hp = Math.max(0, attack.target.hp - attack.amount);
+        const applied = before - attack.target.hp;
         this.effect(
           "core-hit",
           attack.target.x,
           attack.target.y,
           attack.unit.team,
-          0.35,
+          0.42,
+          undefined,
+          clamp(10 + applied * 0.22, 12, 32),
         );
       } else {
         const target = attack.target as Unit;
