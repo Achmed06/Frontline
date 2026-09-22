@@ -12,6 +12,7 @@ import {
   type Unit,
 } from "./engine";
 import { unitSvg } from "./art";
+import { matchEndVisual } from "./match-end-visual";
 import { impactProfile } from "./combat-feedback";
 import { COMMANDERS } from "./commanders";
 import {
@@ -63,6 +64,9 @@ export class ArenaScene extends Phaser.Scene {
   } | null = null;
   private deploymentGhosts: Phaser.GameObjects.Image[] = [];
   private aimLabel!: Phaser.GameObjects.Text;
+  private endTitle!: Phaser.GameObjects.Text;
+  private endSubtitle!: Phaser.GameObjects.Text;
+  private endSequenceStartedAt: number | null = null;
   private clock = 0;
   private reactedEffects = new Set<number>();
   private brokenCores = new Set<"player" | "enemy">();
@@ -114,6 +118,32 @@ export class ArenaScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(7)
+      .setVisible(false);
+    this.endTitle = this.add
+      .text(210, 250, "", {
+        fontFamily: "monospace",
+        fontSize: "20px",
+        fontStyle: "bold",
+        color: "#83ffcf",
+        stroke: "#061315",
+        strokeThickness: 5,
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(10)
+      .setVisible(false);
+    this.endSubtitle = this.add
+      .text(210, 278, "", {
+        fontFamily: "monospace",
+        fontSize: "9px",
+        fontStyle: "bold",
+        color: "#e8fff8",
+        backgroundColor: "#071416dd",
+        padding: { x: 8, y: 5 },
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(10)
       .setVisible(false);
     for (let i = 0; i < 9; i++)
       this.labels.push(
@@ -216,6 +246,9 @@ export class ArenaScene extends Phaser.Scene {
       this.unitVitals.clear();
       this.reactedEffects.clear();
       this.brokenCores.clear();
+      this.endSequenceStartedAt = null;
+      this.endTitle.setVisible(false);
+      this.endSubtitle.setVisible(false);
     }
     if (running) {
       this.clock += Math.min(delta, 100) / 1000;
@@ -2365,7 +2398,105 @@ export class ArenaScene extends Phaser.Scene {
       fx.lineBetween(x - 7, y, x + 7, y);
       fx.lineBetween(x, y - 7, x, y + 7);
     }
+    this.drawMatchEndOverlay(s);
   }
+
+  private drawMatchEndOverlay(state: Match["state"]): void {
+    const visual = matchEndVisual(state);
+    if (!visual?.coreBreak) {
+      this.endSequenceStartedAt = null;
+      this.endTitle.setVisible(false);
+      this.endSubtitle.setVisible(false);
+      return;
+    }
+
+    if (this.endSequenceStartedAt === null)
+      this.endSequenceStartedAt = this.clock;
+
+    const rawProgress = Math.max(
+      0,
+      Math.min(1, (this.clock - this.endSequenceStartedAt) / 0.85),
+    );
+    const progress = this.reducedMotion ? 1 : rawProgress;
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const accent =
+      visual.kind === "victory"
+        ? MINT
+        : visual.kind === "defeat"
+          ? CORAL
+          : NEUTRAL;
+    const accentCss =
+      visual.kind === "victory"
+        ? "#83ffcf"
+        : visual.kind === "defeat"
+          ? "#ffc0a2"
+          : "#fff0bc";
+    const fx = this.fx;
+
+    const vignette = 0.08 + eased * 0.14;
+    fx.fillStyle(0x020709, vignette);
+    fx.fillRect(0, 0, 420, 52);
+    fx.fillRect(0, 508, 420, 52);
+    fx.fillRect(0, 52, 24, 456);
+    fx.fillRect(396, 52, 24, 456);
+
+    const flash = Math.max(0, 1 - rawProgress / 0.24);
+    if (flash > 0) {
+      fx.fillStyle(accent, flash * 0.09);
+      fx.fillRect(0, 0, 420, 560);
+    }
+
+    if (visual.focus === "center") {
+      const ring = 34 + eased * 82;
+      fx.lineStyle(3, accent, 0.54 * (1 - rawProgress * 0.45));
+      fx.strokeCircle(210, 280, ring);
+      fx.lineStyle(1.2, 0xffffff, 0.34 * (1 - rawProgress * 0.35));
+      fx.strokeCircle(210, 280, ring + 13);
+    } else {
+      const focus =
+        visual.focus === "enemy" ? state.cores.enemy : state.cores.player;
+      const direction = focus.y < 280 ? 1 : -1;
+      const sweepY = focus.y + (280 - focus.y) * eased;
+      const bandHeight = 26 + eased * 34;
+
+      fx.fillStyle(accent, 0.035 + (1 - rawProgress) * 0.035);
+      fx.fillRect(24, sweepY - bandHeight / 2, 372, bandHeight);
+      fx.lineStyle(3, accent, 0.78 - rawProgress * 0.18);
+      fx.lineBetween(30, sweepY, 390, sweepY);
+      fx.lineStyle(1.2, 0xffffff, 0.32);
+      fx.lineBetween(54, sweepY - direction * 8, 366, sweepY - direction * 8);
+
+      for (let i = 0; i < 7; i++) {
+        const x = 72 + i * 46;
+        const arrowY = sweepY - direction * 18;
+        fx.lineStyle(1.8, accent, 0.62);
+        fx.lineBetween(x - 5, arrowY, x, arrowY + direction * 7);
+        fx.lineBetween(x + 5, arrowY, x, arrowY + direction * 7);
+      }
+
+      const ring = 28 + eased * 42;
+      fx.lineStyle(2.6, accent, 0.78 * (1 - rawProgress * 0.35));
+      fx.strokeCircle(focus.x, focus.y, ring);
+      fx.lineStyle(1.2, 0xffffff, 0.45 * (1 - rawProgress * 0.3));
+      fx.strokeCircle(focus.x, focus.y, ring + 10);
+    }
+
+    const textIn = this.reducedMotion
+      ? 1
+      : Math.max(0, Math.min(1, (rawProgress - 0.12) / 0.3));
+    this.endTitle
+      .setText(visual.title)
+      .setColor(accentCss)
+      .setAlpha(textIn)
+      .setScale(this.reducedMotion ? 1 : 0.92 + textIn * 0.08)
+      .setVisible(true);
+    this.endSubtitle
+      .setText(visual.subtitle)
+      .setColor(accentCss)
+      .setAlpha(Math.max(0, Math.min(1, textIn * 1.15)))
+      .setVisible(true);
+  }
+
   private drawCore(
     x: number,
     y: number,
@@ -2403,7 +2534,8 @@ export class ArenaScene extends Phaser.Scene {
     }
     if (destroyed && !this.brokenCores.has(team)) {
       this.brokenCores.add(team);
-      this.cameras.main.shake(260, 0.0065, true);
+      if (!this.reducedMotion)
+        this.cameras.main.shake(260, 0.0065, true);
     }
     g.fillStyle(0x07151b, destroyed ? 0.92 : 0.7);
     g.fillEllipse(x, y + 9, 98, 26);

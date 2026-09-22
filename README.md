@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.20
+## Current v1.21
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -839,4 +839,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure unit-vitals sampler centralizes hold, easing, clamping and heal/shield-gain behavior instead of embedding timing math in the renderer
 - regression coverage verifies HP damage hold/easing, healing snap, shield damage/gain and malformed-value clamping
 - release: package 1.20.0 / v1.20 / iOS 1.20 (120)
+
+## v1.21 changes
+
+- Core-destruction match endings now use the existing 850 ms result delay as an arena-wide finish sequence instead of leaving the battlefield visually static before the result modal
+- victory, defeat and simultaneous-Core draw states receive distinct FRONT DURCHBROCHEN, STELLUNG GEFALLEN or BEIDE CORES GEFALLEN messaging derived from the actual final MatchState
+- the destroyed Core is emphasized with expanding concentric rings while a team-colored sweep travels from the broken position toward the center of the arena
+- simultaneous Core destruction uses a neutral center-collapse treatment rather than incorrectly favoring either side
+- the finish sequence adds a restrained arena vignette and directional chevrons while preserving all existing unit, impact and destroyed-Core rendering beneath it
+- no additional result delay was introduced; the existing finish timing and all match logic remain unchanged
+- reduced-motion mode keeps the static end-state boundaries and text but removes the moving sweep, scaling entrance and Core-destruction camera shake
+- a pure matchEndVisual helper centralizes outcome wording/focus with regression coverage for victory, defeat, simultaneous Core destruction and non-Core endings
+- release: package 1.21.0 / v1.21 / iOS 1.21 (121)
 
