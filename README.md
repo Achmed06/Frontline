@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.50
+## Current v1.51
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1280,3 +1280,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure medicCycleVisual helper centralizes exact charge/remaining ratios, segment fill, nanite packet count, ring geometry and ready cross size
 - regression coverage verifies exact half-charge, ready state, non-Medic suppression and malformed cooldown fallback
 - release: package 1.50.0 / v1.50 / iOS 1.50 (150)
+
+
+## v1.51 changes
+
+- Repulsor now visualizes the exact displacement of every affected unit instead of showing only the initial area wave while units instantly appear at their landing positions
+- each changed AbilityTargetMovement emits a short presentation-only repulsor-move effect from the unit's real pre-push position to the exact clamped landing position already calculated by the engine
+- displacement streak count, trail width, landing ring and recoil wake scale from the real moved distance (up to the existing 55-unit push)
+- a violet/white multi-streak corridor makes the push direction readable even when several units are displaced at once
+- the landing point gains a short shock ring and perpendicular compression line, making wall/board-edge-clamped pushes easier to read visually
+- the original Repulsor area pulse remains intact, so the ability now reads as source wave → unit shove → landing response
+- Reduced Motion keeps a static start-to-landing corridor and landing mark instead of animated streak travel
+- no interpolation is applied to simulation positions: units still move immediately according to the existing deterministic engine result, while the effect only explains that displacement visually
+- push distance, board clamping, target selection, collision rules, ability cost and all balance values are unchanged
+- a pure repulsorDisplacementVisual helper centralizes exact vector, distance, progress, trail geometry and landing response
+- regression coverage verifies direction, distance-scaled feedback, real engine effect emission and malformed/coincident fallback
+- release: package 1.51.0 / v1.51 / iOS 1.51 (151)

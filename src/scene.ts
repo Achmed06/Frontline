@@ -56,6 +56,7 @@ import {
 import { movementFootprintVisual } from "./movement-footprint-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
 import { slowStatusVisual } from "./slow-status-visual";
+import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 
 const MINT = 0x41ffc1,
@@ -2703,7 +2704,183 @@ export class ArenaScene extends Phaser.Scene {
         }
       }
       if (e.targetX !== undefined && e.targetY !== undefined) {
-        if (e.type === "heal") {
+        if (e.type === "repulsor-move") {
+          const visual = repulsorDisplacementVisual(e);
+          if (visual) {
+            const dx = e.targetX - e.x;
+            const dy = e.targetY - e.y;
+            const travel = this.reducedMotion
+              ? 1
+              : Math.min(
+                  1,
+                  visual.progress * 1.55,
+                );
+            const centerX = e.x + dx * travel;
+            const centerY = e.y + dy * travel;
+            const repulsorColor = 0xc29aff;
+            const bright = 0xf1e7ff;
+
+            fx.lineStyle(
+              visual.trailWidth,
+              repulsorColor,
+              visual.alpha * 0.08,
+            );
+            fx.lineBetween(
+              e.x,
+              e.y,
+              e.targetX,
+              e.targetY,
+            );
+
+            for (
+              let streak = 0;
+              streak < visual.streakCount;
+              streak++
+            ) {
+              const centered =
+                streak -
+                (visual.streakCount - 1) / 2;
+              const offset =
+                centered *
+                (visual.trailWidth /
+                  Math.max(1, visual.streakCount - 1));
+              const stagger =
+                (streak % 2) * 0.08;
+              const localTravel = this.reducedMotion
+                ? 1
+                : Math.max(
+                    0,
+                    Math.min(
+                      1,
+                      travel - stagger,
+                    ),
+                  );
+              const headX =
+                e.x +
+                dx * localTravel +
+                visual.px * offset;
+              const headY =
+                e.y +
+                dy * localTravel +
+                visual.py * offset;
+              const tail =
+                visual.shockLength *
+                (0.62 +
+                  (streak % 3) * 0.14);
+
+              fx.lineStyle(
+                streak % 2 === 0 ? 1.6 : 1,
+                streak % 2 === 0 ? bright : repulsorColor,
+                visual.alpha *
+                  (0.5 +
+                    (1 -
+                      Math.abs(centered) /
+                        Math.max(
+                          1,
+                          visual.streakCount,
+                        )) *
+                      0.24),
+              );
+              fx.lineBetween(
+                headX -
+                  visual.nx * tail,
+                headY -
+                  visual.ny * tail,
+                headX,
+                headY,
+              );
+            }
+
+            fx.fillStyle(
+              repulsorColor,
+              visual.alpha * 0.08,
+            );
+            fx.fillEllipse(
+              centerX,
+              centerY,
+              visual.trailWidth * 1.5,
+              visual.trailWidth * 0.72,
+            );
+
+            const landingProgress =
+              Math.max(
+                0,
+                Math.min(
+                  1,
+                  (visual.progress - 0.55) /
+                    0.45,
+                ),
+              );
+            if (landingProgress > 0) {
+              const landingAlpha =
+                visual.alpha *
+                (0.45 +
+                  landingProgress * 0.45);
+              fx.lineStyle(
+                2.2,
+                repulsorColor,
+                landingAlpha,
+              );
+              fx.strokeCircle(
+                e.targetX,
+                e.targetY,
+                visual.landingRadius *
+                  (0.72 +
+                    landingProgress * 0.34),
+              );
+
+              fx.lineStyle(
+                1.2,
+                bright,
+                landingAlpha * 0.72,
+              );
+              const tangent = visual.landingRadius * 0.62;
+              fx.lineBetween(
+                e.targetX -
+                  visual.px * tangent -
+                  visual.nx * 3,
+                e.targetY -
+                  visual.py * tangent -
+                  visual.ny * 3,
+                e.targetX +
+                  visual.px * tangent -
+                  visual.nx * 3,
+                e.targetY +
+                  visual.py * tangent -
+                  visual.ny * 3,
+              );
+
+              for (const side of [-1, 1]) {
+                const sx =
+                  e.targetX +
+                  visual.px *
+                    side *
+                    visual.landingRadius *
+                    0.42;
+                const sy =
+                  e.targetY +
+                  visual.py *
+                    side *
+                    visual.landingRadius *
+                    0.42;
+                fx.lineBetween(
+                  sx,
+                  sy,
+                  sx -
+                    visual.nx *
+                      visual.shockLength *
+                      0.7 +
+                    visual.px * side * 3,
+                  sy -
+                    visual.ny *
+                      visual.shockLength *
+                      0.7 +
+                    visual.py * side * 3,
+                );
+              }
+            }
+          }
+        } else if (e.type === "heal") {
           const visual = healLinkVisual(e);
           if (visual) {
             const dx = e.targetX - e.x;
@@ -3031,7 +3208,7 @@ export class ArenaScene extends Phaser.Scene {
               : 0xffb9a5
             : e.type === "stasis"
               ? 0x88d5ff
-              : e.type === "repulsor"
+              : e.type === "repulsor" || e.type === "repulsor-move"
               ? 0xc29aff
               : e.type === "breaker"
                 ? 0xffcf67
@@ -3994,6 +4171,7 @@ export class ArenaScene extends Phaser.Scene {
           e.type !== "rally" &&
           e.type !== "stasis" &&
           e.type !== "repulsor" &&
+          e.type !== "repulsor-move" &&
           e.type !== "breaker" &&
           e.type !== "pioneer" &&
           e.type !== "shield" &&

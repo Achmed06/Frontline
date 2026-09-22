@@ -564,6 +564,7 @@ export interface Effect {
     | "blast"
     | "stasis"
     | "repulsor"
+    | "repulsor-move"
     | "breaker"
     | "pioneer"
     | "frontline"
@@ -1221,6 +1222,22 @@ export class Match {
         } else {
           const movement = targetMovements.get(unit.id);
           if (!movement) continue;
+          if (movement.changed) {
+            const startX = unit.x;
+            const startY = unit.y;
+            this.effect(
+              "repulsor-move",
+              startX,
+              startY,
+              team,
+              0.52,
+              { x: movement.x, y: movement.y },
+              unit.radius,
+              movement.distance,
+              "repulsor",
+              { x, y },
+            );
+          }
           unit.x = movement.x;
           unit.y = movement.y;
         }
