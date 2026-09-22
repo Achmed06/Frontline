@@ -14,6 +14,7 @@ import {
 import { unitSvg } from "./art";
 import { matchEndVisual } from "./match-end-visual";
 import { matchOvertimeVisual } from "./match-overtime-visual";
+import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
 import { COMMANDERS } from "./commanders";
 import {
@@ -765,18 +766,108 @@ export class ArenaScene extends Phaser.Scene {
     }
     for (const p of s.points) {
       const pressure = controlPointPressure(s, p);
-      if (m.controlObjective?.pointIds.includes(p.id)) {
+      const relayVisual = controlPointVisual(
+        p,
+        pressure,
+        m.controlObjective?.pointIds.includes(p.id) ?? false,
+      );
+      if (relayVisual) {
         const relayColor =
-          p.owner === "player" && p.supplied
+          relayVisual.team === "player"
             ? MINT
-            : p.owner === "enemy" && p.supplied
+            : relayVisual.team === "enemy"
               ? CORAL
-              : 0xf3dc82;
-        const relayPulse = 0.55 + 0.3 * Math.sin(this.clock * 3 + p.id);
-        g.lineStyle(4, relayColor, 0.08 + relayPulse * 0.08);
-        g.strokeRoundedRect(p.x - 41, p.y - 41, 82, 82, 14);
-        g.lineStyle(2, relayColor, 0.62 + relayPulse * 0.28);
+              : NEUTRAL;
+        const relayPulse = this.reducedMotion
+          ? 0.72
+          : 0.55 + 0.3 * Math.sin(this.clock * (relayVisual.critical ? 6 : 3) + p.id);
+        const outerRadius = 40 + relayVisual.intensity * 6;
+
+        g.lineStyle(5, relayColor, 0.055 + relayPulse * relayVisual.intensity * 0.12);
+        g.strokeRoundedRect(
+          p.x - outerRadius,
+          p.y - outerRadius,
+          outerRadius * 2,
+          outerRadius * 2,
+          14,
+        );
+        g.lineStyle(2, relayColor, 0.42 + relayPulse * 0.35);
         g.strokeRoundedRect(p.x - 38, p.y - 38, 76, 76, 12);
+
+        if (relayVisual.stage === "contested") {
+          g.lineStyle(3, MINT, 0.72);
+          g.beginPath();
+          g.arc(p.x, p.y, 44, 0, Math.PI, false);
+          g.strokePath();
+          g.lineStyle(3, CORAL, 0.72);
+          g.beginPath();
+          g.arc(p.x, p.y, 44, Math.PI, Math.PI * 2, false);
+          g.strokePath();
+          for (let i = 0; i < 4; i++) {
+            const angle = Math.PI * 0.25 + i * Math.PI * 0.5;
+            g.lineStyle(2, NEUTRAL, 0.7 + relayPulse * 0.2);
+            g.lineBetween(
+              p.x + Math.cos(angle) * 47,
+              p.y + Math.sin(angle) * 47,
+              p.x + Math.cos(angle) * 54,
+              p.y + Math.sin(angle) * 54,
+            );
+          }
+        } else if (
+          relayVisual.stage === "capture" ||
+          relayVisual.stage === "reverse"
+        ) {
+          const sweep = Math.max(0.08, relayVisual.progress) * Math.PI * 2;
+          const start = -Math.PI / 2;
+          const direction = relayVisual.team === "enemy" ? -1 : 1;
+          const end = start + sweep * direction;
+          g.lineStyle(
+            relayVisual.critical ? 4.5 : 3.2,
+            relayColor,
+            0.66 + relayPulse * 0.28,
+          );
+          g.beginPath();
+          g.arc(p.x, p.y, 44, start, end, direction < 0);
+          g.strokePath();
+          g.fillStyle(relayColor, 0.92);
+          g.fillCircle(
+            p.x + Math.cos(end) * 44,
+            p.y + Math.sin(end) * 44,
+            relayVisual.critical ? 3.5 : 2.6,
+          );
+          if (relayVisual.stage === "reverse") {
+            g.lineStyle(1.8, NEUTRAL, 0.48);
+            g.beginPath();
+            g.arc(p.x, p.y, 49, end, start, direction < 0);
+            g.strokePath();
+          }
+          if (relayVisual.critical) {
+            for (let i = 0; i < 6; i++) {
+              const angle =
+                i * (Math.PI / 3) +
+                (this.reducedMotion ? 0 : this.clock * 0.7 * direction);
+              g.lineStyle(2, relayColor, 0.46 + relayPulse * 0.28);
+              g.lineBetween(
+                p.x + Math.cos(angle) * 49,
+                p.y + Math.sin(angle) * 49,
+                p.x + Math.cos(angle) * 57,
+                p.y + Math.sin(angle) * 57,
+              );
+            }
+          }
+        } else if (relayVisual.stage === "decay") {
+          for (let i = 0; i < 8; i++) {
+            const angle = i * (Math.PI / 4) - Math.PI / 2;
+            const lit = i / 8 <= relayVisual.progress;
+            g.lineStyle(2, relayColor, lit ? 0.48 : 0.14);
+            g.lineBetween(
+              p.x + Math.cos(angle) * 43,
+              p.y + Math.sin(angle) * 43,
+              p.x + Math.cos(angle) * 49,
+              p.y + Math.sin(angle) * 49,
+            );
+          }
+        }
       }
       const color =
         p.owner === "player" ? MINT : p.owner === "enemy" ? CORAL : NEUTRAL;

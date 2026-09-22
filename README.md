@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.24
+## Current v1.25
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -889,3 +889,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies immediate Core wins, control-objective wins, all three time-limit tiebreak layers and neutral draw handling
 - release: package 1.24.0 / v1.24 / iOS 1.24 (124)
 
+
+
+## v1.25 changes
+
+- Control-objective relays now communicate live pressure as a dedicated battlefield signal instead of relying mainly on the small sector status text
+- active captures receive a team-colored progress sweep around the relay, with a brighter terminal marker that makes direction and completion readable at a glance
+- captures above 75% enter a critical visual state with stronger objective framing and radial pressure marks without changing capture speed
+- reverse captures use the pushing team's color plus a neutral counter-arc, clearly separating undoing enemy progress from ordinary forward capture
+- contested relays split their outer signal between player and enemy colors and add neutral cardinal pressure marks, while the existing KAMPF count remains intact
+- decaying capture progress becomes a segmented fading relay signal rather than looking like an active push
+- reduced-motion preserves every objective state and static emphasis while suppressing rotating or travelling pressure motion
+- a pure controlPointVisual helper centralizes objective presentation with regression coverage for hidden, capture, critical, contested, reverse, decay and held states
+- all changes are presentation-only: capture radius, capture rates, group bonuses, supply, ownership and win conditions are unchanged
+- release: package 1.25.0 / v1.25 / iOS 1.25 (125)
