@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.13
+## Current v1.14
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -753,4 +753,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - reduced-motion mode keeps the values readable but removes their upward float and scale pulse
 - regression coverage verifies applied damage, Core damage, Rally healing, Medic healing and Commander shield/heal values on the emitted effects
 - release: package 1.13.0 / v1.13 / iOS 1.13 (113)
+
+## v1.14 changes
+
+- control points now expose the exact live capture pressure instead of only a raw percentage ring
+- active capture labels show percentage, estimated seconds remaining and the effective capture-speed multiplier from group support plus specialist bonus
+- contested sectors show the exact nearby troop split, e.g. KAMPF 2:1, while progress remains frozen
+- enemy counter-pressure is distinguished from passive progress decay so players can read whether a capture is actively being reversed or merely fading
+- active pressure gains an outer team-colored push arc and up to three troop pips without obscuring the existing ownership ring
+- the previous hidden 15% group support and 18%/s passive decay values are now shared exported constants
+- simulation and renderer consume the same controlPointPressure calculation, preventing capture-speed and ETA drift
+- regression coverage verifies Pioneer + group multiplier, exact ETA, contest freeze, counter-capture rate, passive decay and final ownership using the shared calculation
+- release: package 1.14.0 / v1.14 / iOS 1.14 (114)
 

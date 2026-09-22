@@ -4,6 +4,8 @@ import {
   abilityTargetPreview,
   BOARD_HEIGHT,
   BOARD_WIDTH,
+  CAPTURE_DECAY_RATE,
+  CAPTURE_GROUP_SUPPORT,
   CAPTURE_RADIUS,
   CAPTURE_SECONDS,
   CARDS,
@@ -14,6 +16,7 @@ import {
   CORE_TURRET_DAMAGE,
   CORE_TURRET_INTERVAL,
   CORE_TURRET_RANGE,
+  controlPointPressure,
   coreTurretTarget,
   ENERGY_CAP,
   ENERGY_RATE,
@@ -1391,5 +1394,96 @@ test("core hit feedback scales with actual damage without changing balance", () 
   assert.ok(lethalHit);
   assert.equal(lethalHit.value, 10);
   assert.ok(Math.abs((lethalHit.radius ?? 0) - 12.2) < 1e-9);
+});
+
+test("control point pressure exposes exact capture speed, contest, reverse and decay", () => {
+  const match = quietMatch();
+  const point = match.state.points[4];
+  const pioneer = staticUnit(match, "player", point.x, point.y, "pioneer");
+  const support = staticUnit(match, "player", point.x + 8, point.y);
+  let pressure = controlPointPressure(match.state, point);
+
+  assert.equal(CAPTURE_GROUP_SUPPORT, 0.15);
+  assert.equal(CAPTURE_DECAY_RATE, 0.18);
+  assert.equal(pressure.mode, "capture");
+  assert.equal(pressure.playerCount, 2);
+  assert.equal(pressure.enemyCount, 0);
+  assert.equal(pressure.captureMultiplier, 1.5);
+  assert.equal(pressure.groupMultiplier, 1.15);
+  assert.ok(
+    Math.abs(
+      pressure.rate -
+        (1 / CAPTURE_SECONDS) * 1.15 * 1.5,
+    ) < 1e-12,
+  );
+  assert.ok(
+    Math.abs(
+      pressure.secondsRemaining -
+        CAPTURE_SECONDS / (1.15 * 1.5),
+    ) < 1e-12,
+  );
+
+  const before = point.capture;
+  match.update(1 / 30);
+  assert.ok(
+    Math.abs(
+      point.capture - before - pressure.rate / 30,
+    ) < 1e-10,
+  );
+
+  const enemy = staticUnit(match, "enemy", point.x - 8, point.y);
+  pressure = controlPointPressure(match.state, point);
+  assert.equal(pressure.mode, "contested");
+  assert.equal(pressure.playerCount, 2);
+  assert.equal(pressure.enemyCount, 1);
+  assert.equal(pressure.rate, 0);
+  const contestedProgress = point.capture;
+  match.update(1 / 30);
+  assert.equal(point.capture, contestedProgress);
+
+  pioneer.hp = 0;
+  support.hp = 0;
+  point.capture = 0.5;
+  point.captureTeam = "player";
+  pressure = controlPointPressure(match.state, point);
+  assert.equal(pressure.mode, "reverse");
+  assert.equal(pressure.capturer, "enemy");
+  assert.ok(Math.abs(pressure.rate + 1 / CAPTURE_SECONDS) < 1e-12);
+  assert.ok(
+    Math.abs(pressure.secondsRemaining - CAPTURE_SECONDS * 0.5) < 1e-12,
+  );
+
+  enemy.hp = 0;
+  pressure = controlPointPressure(match.state, point);
+  assert.equal(pressure.mode, "decay");
+  assert.equal(pressure.rate, -CAPTURE_DECAY_RATE);
+  assert.ok(
+    Math.abs(
+      pressure.secondsRemaining - 0.5 / CAPTURE_DECAY_RATE,
+    ) < 1e-12,
+  );
+});
+
+test("capture pressure reaches ownership using the same shared rate", () => {
+  const match = quietMatch();
+  const point = match.state.points[4];
+  staticUnit(match, "player", point.x, point.y, "pioneer");
+  staticUnit(match, "player", point.x + 8, point.y);
+  const pressure = controlPointPressure(match.state, point);
+  assert.equal(pressure.mode, "capture");
+
+  match.update(pressure.secondsRemaining + 0.1);
+
+  assert.equal(point.owner, "player");
+  assert.equal(point.capture, 0);
+  assert.equal(point.captureTeam, null);
+  assert.ok(
+    match.state.effects.some(
+      (effect) =>
+        effect.type === "pioneer" &&
+        effect.x === point.x &&
+        effect.y === point.y,
+    ),
+  );
 });
 

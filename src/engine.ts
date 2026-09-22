@@ -72,6 +72,8 @@ export const ENERGY_CAP = 10;
 export const ENERGY_RATE = 0.72;
 export const CAPTURE_RADIUS = 48;
 export const CAPTURE_SECONDS = 4.2;
+export const CAPTURE_GROUP_SUPPORT = 0.15;
+export const CAPTURE_DECAY_RATE = 0.18;
 export const COMMANDER_COOLDOWN = COMMANDERS.atlas.cooldown;
 export const CORE_HP = 2300;
 export const CORE_TURRET_DAMAGE = 24;
@@ -368,6 +370,101 @@ export interface ControlPoint {
   captureTeam: Team | null;
   contested: boolean;
   supplied: boolean;
+}
+
+export type ControlPointPressure = {
+  playerCount: number;
+  enemyCount: number;
+  contested: boolean;
+  capturer: Team | null;
+  mode: "idle" | "contested" | "decay" | "reverse" | "capture";
+  captureMultiplier: number;
+  groupMultiplier: number;
+  rate: number;
+  secondsRemaining: number;
+};
+
+export function controlPointPressure(
+  state: Pick<MatchState, "units">,
+  point: ControlPoint,
+): ControlPointPressure {
+  const nearby = state.units.filter(
+    (unit) => unit.hp > 0 && distance(unit, point) <= CAPTURE_RADIUS,
+  );
+  const playerUnits = nearby.filter((unit) => unit.team === "player");
+  const enemyUnits = nearby.filter((unit) => unit.team === "enemy");
+  const playerCount = playerUnits.length;
+  const enemyCount = enemyUnits.length;
+  const contested = playerCount > 0 && enemyCount > 0;
+  if (contested)
+    return {
+      playerCount,
+      enemyCount,
+      contested: true,
+      capturer: null,
+      mode: "contested",
+      captureMultiplier: 1,
+      groupMultiplier: 1,
+      rate: 0,
+      secondsRemaining: 0,
+    };
+
+  const capturer: Team | null =
+    playerCount > 0 ? "player" : enemyCount > 0 ? "enemy" : null;
+  if (!capturer || point.owner === capturer) {
+    const rate = point.capture > 0 ? -CAPTURE_DECAY_RATE : 0;
+    return {
+      playerCount,
+      enemyCount,
+      contested: false,
+      capturer,
+      mode: rate < 0 ? "decay" : "idle",
+      captureMultiplier: 1,
+      groupMultiplier: 1,
+      rate,
+      secondsRemaining: rate < 0 ? point.capture / -rate : 0,
+    };
+  }
+
+  if (point.captureTeam !== capturer && point.capture > 0) {
+    const rate = -1 / CAPTURE_SECONDS;
+    return {
+      playerCount,
+      enemyCount,
+      contested: false,
+      capturer,
+      mode: "reverse",
+      captureMultiplier: 1,
+      groupMultiplier: 1,
+      rate,
+      secondsRemaining: point.capture / -rate,
+    };
+  }
+
+  const capturers = capturer === "player" ? playerUnits : enemyUnits;
+  let captureMultiplier = 1;
+  for (const unit of capturers) {
+    const definition = CARDS.find((card) => card.id === unit.cardId);
+    captureMultiplier = Math.max(
+      captureMultiplier,
+      definition?.captureMultiplier ?? 1,
+    );
+  }
+  const groupMultiplier =
+    1 + Math.min(2, capturers.length - 1) * CAPTURE_GROUP_SUPPORT;
+  const rate =
+    (1 / CAPTURE_SECONDS) * groupMultiplier * captureMultiplier;
+  return {
+    playerCount,
+    enemyCount,
+    contested: false,
+    capturer,
+    mode: "capture",
+    captureMultiplier,
+    groupMultiplier,
+    rate,
+    secondsRemaining: Math.max(0, 1 - point.capture) / rate,
+  };
 }
 
 export interface Unit {
@@ -1560,49 +1657,30 @@ export class Match {
 
   private updatePoints(): void {
     for (const point of this.state.points) {
-      const nearby = this.state.units.filter(
-        (unit) => unit.hp > 0 && distance(unit, point) <= CAPTURE_RADIUS,
-      );
-      const playerCount = nearby.filter(
-        (unit) => unit.team === "player",
-      ).length;
-      const enemyCount = nearby.length - playerCount;
-      point.contested = playerCount > 0 && enemyCount > 0;
-      if (point.contested) continue;
-      const capturer: Team | null =
-        playerCount > 0 ? "player" : enemyCount > 0 ? "enemy" : null;
-      if (!capturer || point.owner === capturer) {
-        point.capture = Math.max(0, point.capture - STEP * 0.18);
+      const pressure = controlPointPressure(this.state, point);
+      point.contested = pressure.contested;
+      if (pressure.mode === "contested" || pressure.mode === "idle") continue;
+
+      if (pressure.mode === "decay") {
+        point.capture = Math.max(0, point.capture + pressure.rate * STEP);
         if (point.capture === 0) point.captureTeam = null;
         continue;
       }
-      if (point.captureTeam !== capturer) {
-        if (point.capture > 0) {
-          point.capture = Math.max(0, point.capture - STEP / CAPTURE_SECONDS);
-          if (point.capture === 0) point.captureTeam = capturer;
-          continue;
-        }
-        point.captureTeam = capturer;
+
+      if (pressure.mode === "reverse") {
+        point.capture = Math.max(0, point.capture + pressure.rate * STEP);
+        if (point.capture === 0) point.captureTeam = pressure.capturer;
+        continue;
       }
-      const count = capturer === "player" ? playerCount : enemyCount;
-      // Only the strongest specialist bonus applies; ordinary group support remains.
-      let captureMultiplier = 1;
-      for (const unit of nearby) {
-        const definition = CARDS.find((card) => card.id === unit.cardId);
-        captureMultiplier = Math.max(
-          captureMultiplier,
-          definition?.captureMultiplier ?? 1,
-        );
-      }
-      point.capture +=
-        (STEP / CAPTURE_SECONDS) *
-        (1 + Math.min(2, count - 1) * 0.15) *
-        captureMultiplier;
+
+      const capturer = pressure.capturer!;
+      if (point.captureTeam !== capturer) point.captureTeam = capturer;
+      point.capture += pressure.rate * STEP;
       if (point.capture >= 1) {
         point.owner = capturer;
         point.capture = 0;
         point.captureTeam = null;
-        if (captureMultiplier > 1)
+        if (pressure.captureMultiplier > 1)
           this.effect(
             "pioneer",
             point.x,

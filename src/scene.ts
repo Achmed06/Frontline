@@ -5,6 +5,7 @@ import {
   Match,
   CARDS,
   CORE_TURRET_RANGE,
+  controlPointPressure,
   coreTurretTarget,
   type Effect,
   type Unit,
@@ -615,6 +616,7 @@ export class ArenaScene extends Phaser.Scene {
       g.lineBetween(x - 4, y - 5, x + 6, y - 4 + angle * 4);
     }
     for (const p of s.points) {
+      const pressure = controlPointPressure(s, p);
       if (m.controlObjective?.pointIds.includes(p.id)) {
         const relayColor =
           p.owner === "player" && p.supplied
@@ -688,13 +690,21 @@ export class ArenaScene extends Phaser.Scene {
       if (p.capture > 0.01) {
         const captureColor = p.captureTeam === "player" ? MINT : CORAL;
         const endAngle = -Math.PI / 2 + p.capture * Math.PI * 2;
+        const activeCapture = pressure.mode === "capture";
+        const captureWidth = activeCapture
+          ? 5 + Math.min(2.4, (pressure.captureMultiplier - 1) * 3.2)
+          : 4.5;
         g.lineStyle(8, 0x102540, 0.92);
         g.strokeCircle(p.x, p.y, 30);
-        g.lineStyle(5, captureColor, 0.95);
+        g.lineStyle(
+          captureWidth,
+          captureColor,
+          pressure.mode === "decay" ? 0.55 : 0.95,
+        );
         g.beginPath();
         g.arc(p.x, p.y, 30, -Math.PI / 2, endAngle, false);
         g.strokePath();
-        g.lineStyle(2, 0xffffff, 0.32);
+        g.lineStyle(2, 0xffffff, pressure.mode === "decay" ? 0.18 : 0.32);
         g.beginPath();
         g.arc(
           p.x,
@@ -705,12 +715,41 @@ export class ArenaScene extends Phaser.Scene {
           false,
         );
         g.strokePath();
-        g.fillStyle(0xffffff, 0.9);
+        g.fillStyle(0xffffff, pressure.mode === "decay" ? 0.55 : 0.9);
         g.fillCircle(
           p.x + Math.cos(endAngle) * 30,
           p.y + Math.sin(endAngle) * 30,
           2.5,
         );
+
+        if (pressure.mode === "capture" || pressure.mode === "reverse") {
+          const pushColor = pressure.capturer === "player" ? MINT : CORAL;
+          const pulse = this.reducedMotion
+            ? 0.72
+            : 0.62 + Math.sin(this.clock * 6 + p.id) * 0.16;
+          g.lineStyle(
+            pressure.mode === "capture" ? 2.8 : 2,
+            pushColor,
+            pulse,
+          );
+          g.beginPath();
+          g.arc(
+            p.x,
+            p.y,
+            38,
+            -Math.PI * 0.72,
+            -Math.PI * 0.28,
+            false,
+          );
+          g.strokePath();
+          const direction = pressure.capturer === "player" ? 1 : -1;
+          for (let i = 0; i < Math.min(3, pressure.capturer === "player" ? pressure.playerCount : pressure.enemyCount); i++) {
+            const px = p.x + (i - 1) * 8;
+            const py = p.y + (direction > 0 ? 37 : -37);
+            g.fillStyle(pushColor, 0.9);
+            g.fillCircle(px, py, 2.4);
+          }
+        }
       }
       const secured = s.effects.find(
         (effect) =>
@@ -736,10 +775,33 @@ export class ArenaScene extends Phaser.Scene {
           );
         }
       }
+      const sector = `${"ABC"[p.id % 3]}${Math.floor(p.id / 3) + 1}`;
+      const capturePercent = Math.floor(p.capture * 100);
+      const seconds = pressure.secondsRemaining
+        ? pressure.secondsRemaining.toFixed(1).replace(".", ",")
+        : "0,0";
+      const pressureCount =
+        pressure.capturer === "player"
+          ? pressure.playerCount
+          : pressure.capturer === "enemy"
+            ? pressure.enemyCount
+            : 0;
+      const pointStatus =
+        pressure.mode === "contested"
+          ? ` · KAMPF ${pressure.playerCount}:${pressure.enemyCount}`
+          : pressure.mode === "capture"
+            ? ` · ${capturePercent}% · ${seconds}s · ×${(
+                pressure.groupMultiplier * pressure.captureMultiplier
+              ).toFixed(2).replace(".", ",")}`
+            : pressure.mode === "reverse"
+              ? ` · KONTER ${pressureCount} · ${capturePercent}%`
+              : pressure.mode === "decay"
+                ? ` · VERFÄLLT · ${capturePercent}%`
+                : p.owner && !p.supplied
+                  ? " · GETRENNT"
+                  : "";
       this.labels[p.id]
-        ?.setText(
-          `${"ABC"[p.id % 3]}${Math.floor(p.id / 3) + 1}${p.contested ? " · KAMPF" : p.capture > 0.01 ? ` · ${Math.floor(p.capture * 100)}%` : p.owner && !p.supplied ? " · GETRENNT" : ""}`,
-        )
+        ?.setText(`${sector}${pointStatus}`)
         .setPosition(p.x, p.y + 40)
         .setColor(
           p.contested || (p.owner && !p.supplied)
