@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.44
+## Current v1.45
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1186,3 +1186,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure movementFootprintVisual helper centralizes role classification, trail distance, dust strength, footprint geometry and settle dimensions
 - regression coverage verifies heavy vs standard weight, siege geometry, compact Swarm movement and malformed-motion fallback
 - release: package 1.44.0 / v1.44 / iOS 1.44 (144)
+
+
+## v1.45 changes
+
+- damaged units now carry a persistent visual damage state instead of looking fully pristine until the existing critical-HP warning ring appears
+- below 55 percent HP, units gain restrained armor-scuff lines and low-intensity mechanical spark feedback; heavy/siege units may also begin venting a small smoke puff
+- below 30 percent HP, the damage state escalates into denser smoke, more frequent orange-white sparks and a subtle dark/warm ground leak underneath the unit
+- Bulwark and Sentinel produce the strongest critical smoke/spark footprint, Lancer/Mortar keep a mechanical siege-style profile and Swarm remains compact so clustered units do not become unreadable
+- the existing critical danger ring and warning diamond remain intact and layer on top of the new persistent damage state
+- smoke/spark motion is deterministic from scene clock plus unit id; no random simulation state or persistent particle objects are introduced
+- Reduced Motion freezes the damage presentation to restrained static smoke/spark cues rather than removing damage readability entirely
+- HP, movement, targeting, attack cadence, collision, damage intake, death threshold and all balance values remain unchanged
+- a pure unitDamageStateVisual helper centralizes healthy/damaged/critical thresholds, role-aware smoke/spark counts, rise/spread and ground-mark geometry
+- regression coverage verifies healthy suppression, damaged mechanical wear, critical escalation, compact Swarm feedback and malformed HP fallback
+- release: package 1.45.0 / v1.45 / iOS 1.45 (145)

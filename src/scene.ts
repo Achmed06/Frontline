@@ -51,6 +51,7 @@ import {
   type UnitFacing,
 } from "./unit-motion";
 import { movementFootprintVisual } from "./movement-footprint-visual";
+import { unitDamageStateVisual } from "./unit-damage-state-visual";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
@@ -1802,6 +1803,11 @@ export class ArenaScene extends Phaser.Scene {
       );
       this.unitVitals.set(u.id, vitals);
       const health = vitals.hpRatio;
+      const damageState = unitDamageStateVisual(
+        u.hp,
+        u.maxHp,
+        u.cardId,
+      );
       const healthColor =
         health <= 0.3
           ? 0xff6f5f
@@ -1865,6 +1871,147 @@ export class ArenaScene extends Phaser.Scene {
           );
         }
       }
+      if (damageState.state !== "healthy" && u.hp > 0) {
+        const damagePulse = this.reducedMotion
+          ? 0.76
+          : 0.66 +
+            Math.sin(this.clock * 5.4 + u.id * 0.73) * 0.1;
+
+        fx.lineStyle(
+          1,
+          0xffb36a,
+          damageState.armorAlpha * damagePulse,
+        );
+        const scarY = u.y - 2;
+        fx.lineBetween(
+          u.x - size * 0.2,
+          scarY - size * 0.12,
+          u.x + size * 0.08,
+          scarY + size * 0.04,
+        );
+        fx.lineBetween(
+          u.x + size * 0.02,
+          scarY + size * 0.02,
+          u.x + size * 0.22,
+          scarY - size * 0.13,
+        );
+
+        if (damageState.groundWidth > 0) {
+          fx.fillStyle(
+            0x45352f,
+            damageState.intensity *
+              (damageState.state === "critical" ? 0.2 : 0.1),
+          );
+          fx.fillEllipse(
+            u.x + 2,
+            u.y + 10,
+            damageState.groundWidth,
+            damageState.groundHeight,
+          );
+          fx.lineStyle(
+            1,
+            0xff8c54,
+            damageState.intensity * 0.16,
+          );
+          fx.lineBetween(
+            u.x - damageState.groundWidth * 0.28,
+            u.y + 10,
+            u.x + damageState.groundWidth * 0.32,
+            u.y + 10,
+          );
+        }
+
+        for (let spark = 0; spark < damageState.sparkCount; spark++) {
+          const phaseOffset =
+            this.clock * (7 + spark * 0.8) +
+            u.id * 0.91 +
+            spark * 1.73;
+          const activeSpark =
+            this.reducedMotion
+              ? spark === 0
+              : Math.sin(phaseOffset) > 0.35;
+          if (!activeSpark) continue;
+
+          const angle =
+            -Math.PI * 0.72 +
+            spark * 0.58 +
+            Math.sin(u.id + spark) * 0.16;
+          const startX =
+            u.x +
+            Math.cos(angle) *
+              (size * 0.16 + spark * 0.8);
+          const startY =
+            u.y - 3 +
+            Math.sin(angle) *
+              (size * 0.12 + spark * 0.5);
+          const reach =
+            damageState.sparkReach *
+            (0.58 + (spark % 3) * 0.2) *
+            damageState.intensity;
+          const endX =
+            startX +
+            Math.cos(angle) *
+              reach;
+          const endY =
+            startY +
+            Math.sin(angle) *
+              reach -
+            (this.reducedMotion ? 0 : spark * 0.45);
+          fx.lineStyle(
+            spark % 2 === 0 ? 1.4 : 1,
+            spark % 2 === 0 ? 0xffd27a : 0xff8a5b,
+            damageState.intensity *
+              (damageState.state === "critical" ? 0.78 : 0.5),
+          );
+          fx.lineBetween(startX, startY, endX, endY);
+          fx.fillStyle(
+            0xffffff,
+            damageState.intensity * 0.52,
+          );
+          fx.fillCircle(endX, endY, 1);
+        }
+
+        for (let puff = 0; puff < damageState.smokeCount; puff++) {
+          const riseProgress = this.reducedMotion
+            ? 0.45 + puff * 0.08
+            : (this.clock * (0.42 + puff * 0.05) +
+                u.id * 0.17 +
+                puff * 0.23) %
+              1;
+          const side =
+            Math.sin(u.id * 0.61 + puff * 2.1) *
+            damageState.smokeSpread;
+          const smokeX =
+            u.x +
+            side +
+            (this.reducedMotion
+              ? 0
+              : Math.sin(
+                    this.clock * 1.8 +
+                      puff +
+                      u.id * 0.3,
+                  ) *
+                  1.6);
+          const smokeY =
+            u.y -
+            7 -
+            riseProgress * damageState.smokeRise;
+          const smokeSize =
+            2.8 +
+            riseProgress * 3.5 +
+            (puff % 2) * 0.8;
+          const smokeAlpha =
+            damageState.intensity *
+            (0.18 +
+              (1 - riseProgress) * 0.16);
+          fx.fillStyle(
+            puff % 2 === 0 ? 0x53605d : 0x37413f,
+            smokeAlpha,
+          );
+          fx.fillCircle(smokeX, smokeY, smokeSize);
+        }
+      }
+
       if (health <= 0.3 && u.hp > 0) {
         const danger = 0.55 + 0.4 * Math.sin(this.clock * 8 + u.id);
         fx.lineStyle(1.5, 0xff7b68, danger * 0.75);
