@@ -16,6 +16,7 @@ import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
+import { weaponFireFeedback } from "./weapon-fire-feedback";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
@@ -1288,18 +1289,31 @@ export class ArenaScene extends Phaser.Scene {
       let recoilX = 0;
       let recoilY = 0;
       let recoilScale = 1;
-      if (firing && firing.targetX !== undefined && firing.targetY !== undefined) {
+      let fireWidthScale = 1;
+      let fireHeightScale = 1;
+      const fireFeedback = firing
+        ? weaponFireFeedback(
+            firing.sourceCardId,
+            firing.life,
+            firing.maxLife,
+          )
+        : null;
+      if (
+        firing &&
+        fireFeedback &&
+        firing.targetX !== undefined &&
+        firing.targetY !== undefined
+      ) {
         const dx = firing.targetX - firing.x;
         const dy = firing.targetY - firing.y;
         const d = Math.max(0.01, Math.hypot(dx, dy));
-        const recoil = Math.min(1, firing.life / firing.maxLife) * 3.2;
-        recoilX = -(dx / d) * recoil;
-        recoilY = -(dy / d) * recoil;
-        recoilScale = 1.035;
+        recoilX = (dx / d) * fireFeedback.displacement;
+        recoilY = (dy / d) * fireFeedback.displacement;
+        recoilScale = fireFeedback.scale;
+        fireWidthScale = fireFeedback.widthScale;
+        fireHeightScale = fireFeedback.heightScale;
       }
-      const attackPose = firing
-        ? Math.max(0, Math.min(1, firing.life / firing.maxLife))
-        : 0;
+      const attackPose = fireFeedback?.strength ?? 0;
       const horizontalLean =
         !this.reducedMotion && motion.moving && motion.moved > 0.001
           ? Math.max(
@@ -1328,6 +1342,7 @@ export class ArenaScene extends Phaser.Scene {
             spawnScale *
             walkScale *
             recoilScale *
+            fireWidthScale *
             hitScale *
             hitReaction.widthScale *
             settleWidth *
@@ -1336,6 +1351,7 @@ export class ArenaScene extends Phaser.Scene {
             spawnScale *
             walkScale *
             recoilScale *
+            fireHeightScale *
             hitScale *
             hitReaction.heightScale *
             settleHeight *
@@ -1362,6 +1378,119 @@ export class ArenaScene extends Phaser.Scene {
       g.fillEllipse(u.x, u.y + 6, size * 0.65, size * 0.25);
       g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
       g.strokeEllipse(u.x, u.y + 7, size * 0.75, size * 0.32);
+
+      if (
+        firing &&
+        fireFeedback &&
+        fireFeedback.muzzleRays > 0 &&
+        firing.targetX !== undefined &&
+        firing.targetY !== undefined
+      ) {
+        const dx = firing.targetX - firing.x;
+        const dy = firing.targetY - firing.y;
+        const d = Math.max(0.01, Math.hypot(dx, dy));
+        const nx = dx / d;
+        const ny = dy / d;
+        const px = -ny;
+        const py = nx;
+        const forward = size * 0.34;
+        const muzzleX = u.x + nx * forward;
+        const muzzleY = u.y - 3 + ny * forward;
+        const muzzleColor =
+          fireFeedback.kind === "electric"
+            ? 0x9adfff
+            : fireFeedback.kind === "explosive"
+              ? 0xffc368
+              : fireFeedback.kind === "rail"
+                ? 0xe7f8ff
+                : fireFeedback.kind === "heavy"
+                  ? 0xffd59a
+                  : u.team === "player"
+                    ? MINT
+                    : CORAL;
+        const muzzleAlpha = 0.38 + fireFeedback.strength * 0.5;
+
+        fx.fillStyle(0xffffff, muzzleAlpha * 0.72);
+        fx.fillCircle(
+          muzzleX,
+          muzzleY,
+          Math.max(1.2, fireFeedback.muzzleRadius * 0.62),
+        );
+        fx.fillStyle(muzzleColor, muzzleAlpha * 0.34);
+        fx.fillCircle(
+          muzzleX,
+          muzzleY,
+          Math.max(2.4, fireFeedback.muzzleRadius),
+        );
+
+        fx.lineStyle(
+          fireFeedback.kind === "rail" ? 2.4 : 1.6,
+          muzzleColor,
+          muzzleAlpha,
+        );
+        fx.lineBetween(
+          muzzleX,
+          muzzleY,
+          muzzleX + nx * fireFeedback.muzzleLength,
+          muzzleY + ny * fireFeedback.muzzleLength,
+        );
+
+        for (let ray = 0; ray < fireFeedback.muzzleRays; ray++) {
+          const t =
+            fireFeedback.muzzleRays <= 1
+              ? 0
+              : ray / (fireFeedback.muzzleRays - 1) - 0.5;
+          const spread =
+            t *
+            (4 + fireFeedback.muzzleRadius * 1.7);
+          const rayLength =
+            fireFeedback.muzzleLength *
+            (0.48 + (ray % 3) * 0.12);
+          const startX = muzzleX + px * spread * 0.35;
+          const startY = muzzleY + py * spread * 0.35;
+          fx.lineStyle(
+            1,
+            ray % 2 === 0 ? 0xffffff : muzzleColor,
+            muzzleAlpha * 0.55,
+          );
+          fx.lineBetween(
+            startX,
+            startY,
+            startX +
+              nx * rayLength +
+              px * spread,
+            startY +
+              ny * rayLength +
+              py * spread,
+          );
+        }
+
+        if (fireFeedback.kind === "electric") {
+          fx.lineStyle(1.2, 0xcdf3ff, muzzleAlpha * 0.72);
+          for (const side of [-1, 1]) {
+            const sx = muzzleX + px * side * 2;
+            const sy = muzzleY + py * side * 2;
+            const mx =
+              sx +
+              nx * fireFeedback.muzzleLength * 0.45 +
+              px * side * 3;
+            const my =
+              sy +
+              ny * fireFeedback.muzzleLength * 0.45 +
+              py * side * 3;
+            fx.lineBetween(sx, sy, mx, my);
+            fx.lineBetween(
+              mx,
+              my,
+              muzzleX +
+                nx * fireFeedback.muzzleLength * 0.86,
+              muzzleY +
+                ny * fireFeedback.muzzleLength * 0.86,
+            );
+          }
+        }
+      }
+
       if (!this.reducedMotion && motion.moving && motion.moved > 0.04) {
         const trail = unitTrailPoint(
           u.x,

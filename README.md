@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.35
+## Current v1.36
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1048,3 +1048,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure coreHitReaction helper centralizes source direction, weight scaling, rim placement and malformed-value handling
 - regression coverage verifies vertical and horizontal source direction, neutral fallback and real Pulse source propagation into a core-hit event
 - release: package 1.35.0 / v1.35 / iOS 1.35 (135)
+
+
+## v1.36 changes
+
+- firing units now use weapon-specific attack motion instead of the same generic 3.2 px recoil and scale for every card
+- precision fire stays controlled, rail and heavy weapons kick back harder, explosive weapons compress more noticeably, electric weapons use a lighter snap and melee/breach units lunge toward the target instead of recoiling backwards
+- the sprite pose still follows the exact existing shot event lifetime, so presentation remains synchronized with real attacks without introducing wind-up or timing changes
+- ranged attacks now emit a compact muzzle/energy discharge directly from the firing unit before the existing projectile presentation takes over
+- muzzle length, bloom size and ray count derive from the same existing impact profile used by projectile/impact/death feedback
+- electric fire adds a restrained forked discharge while rail fire gets a narrower, brighter launch impulse
+- melee and breach profiles intentionally draw no muzzle flash and rely on their forward attack lunge plus existing slash feedback
+- Reduced Motion still suppresses movement-derived animation while static combat readability remains intact
+- damage, fire interval, target selection, projectile travel, hit timing and all balance values are unchanged
+- a pure weaponFireFeedback helper centralizes recoil/lunge, pose scale, muzzle geometry and malformed lifetime clamping
+- regression coverage verifies heavy-vs-precision recoil, melee forward lunge, lifetime decay and malformed timing fallback
+- release: package 1.36.0 / v1.36 / iOS 1.36 (136)
