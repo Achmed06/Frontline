@@ -671,6 +671,7 @@ test("combat damage emits scaled hit impacts and lethal hits keep size-aware dea
   const death = m.state.effects.find((effect) => effect.type === "death");
   assert.ok(impact);
   assert.ok((impact.radius ?? 0) >= 12);
+  assert.equal(impact.value, 50);
   assert.equal(target.hp, 0);
   assert.ok(death);
   assert.equal(death.radius, 22);
@@ -1015,6 +1016,11 @@ test("Rally preview reports exact healing and tempo changes", () => {
   assert.deepEqual(preview.tempoUnitIds, [hurt.id]);
 
   assert.ok(match.play("player", "rally", 210, 390).ok);
+  assert.ok(
+    match.state.effects.some(
+      (effect) => effect.type === "heal" && effect.value === 40,
+    ),
+  );
   assert.equal(hurt.hp, hurt.maxHp);
   assert.equal(hurt.rallyTime, 6);
   assert.equal(full.hp, full.maxHp);
@@ -1139,6 +1145,10 @@ test("Medic support timing and healing come from card data", () => {
   assert.equal(card.supportInterval, 1.1);
   assert.equal(card.followDistance, 65);
   assert.equal(patient.hp, 50 + card.heal!);
+  assert.equal(
+    match.state.effects.find((effect) => effect.type === "heal")?.value,
+    card.heal,
+  );
   assert.equal(medic.healCooldown, card.supportInterval);
 });
 
@@ -1346,6 +1356,7 @@ test("core hit feedback scales with actual damage without changing balance", () 
     Math.abs(before - lancerMatch.state.cores.enemy.hp - expectedDamage) < 1e-9,
   );
   assert.equal(lancerHit.maxLife, 0.42);
+  assert.ok(Math.abs((lancerHit.value ?? 0) - expectedDamage) < 1e-9);
   assert.ok(
     Math.abs(
       (lancerHit.radius ?? 0) -
@@ -1361,6 +1372,7 @@ test("core hit feedback scales with actual damage without changing balance", () 
     (effect) => effect.type === "core-hit",
   );
   assert.ok(pulseHit);
+  assert.equal(pulseHit.value, pulseCard.coreDamage);
   assert.ok(
     Math.abs(
       (pulseHit.radius ?? 0) -
@@ -1377,6 +1389,7 @@ test("core hit feedback scales with actual damage without changing balance", () 
     (effect) => effect.type === "core-hit",
   );
   assert.ok(lethalHit);
+  assert.equal(lethalHit.value, 10);
   assert.ok(Math.abs((lethalHit.radius ?? 0) - 12.2) < 1e-9);
 });
 

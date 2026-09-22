@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.12
+## Current v1.13
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -741,4 +741,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - successful Commander toast messages echo the calculated result so activation feedback confirms what was applied
 - regression coverage checks exact aggregate outcomes and verifies LYRA, ATLAS and NOVA execution against the shared preview rules
 - release: package 1.12.0 / v1.12 / iOS 1.12 (112)
+
+## v1.13 changes
+
+- important combat outcomes now surface as compact floating numbers directly in the arena instead of requiring players to infer every result from health bars
+- damage text is intentionally limited to heavy unit hits of 35+ applied damage; frequent chip fire stays clean and readable
+- Core hits of 35+ show their actual applied damage, including Lancer's boosted Core strike and clamped finishing blows
+- effective healing of 30+ and ATLAS shield gains of 20+ are shown at the affected unit; low Medic ticks remain visual-only to avoid number spam
+- floating values come from the same post-clamp values already resolved by the engine, so shields, max HP and low remaining Core HP cannot overstate a result
+- at most five high-signal values render simultaneously; newest events win when the battlefield is busy
+- reduced-motion mode keeps the values readable but removes their upward float and scale pulse
+- regression coverage verifies applied damage, Core damage, Rally healing, Medic healing and Commander shield/heal values on the emitted effects
+- release: package 1.13.0 / v1.13 / iOS 1.13 (113)
 

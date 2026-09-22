@@ -6,6 +6,7 @@ import {
   CARDS,
   CORE_TURRET_RANGE,
   coreTurretTarget,
+  type Effect,
   type Unit,
 } from "./engine";
 import { unitSvg } from "./art";
@@ -28,6 +29,7 @@ export class ArenaScene extends Phaser.Scene {
   private sprites = new Map<number, Phaser.GameObjects.Image>();
   private unitMotion = new Map<number, { x: number; y: number; phase: number }>();
   private labels: Phaser.GameObjects.Text[] = [];
+  private combatText = new Map<number, Phaser.GameObjects.Text>();
   private pointer: { x: number; y: number } | null = null;
   private aim: {
     pointerId: number;
@@ -169,6 +171,8 @@ export class ArenaScene extends Phaser.Scene {
       this.scale.refresh();
       for (const sprite of this.sprites.values()) sprite.destroy();
       this.sprites.clear();
+      for (const label of this.combatText.values()) label.destroy();
+      this.combatText.clear();
       this.unitMotion.clear();
       this.reactedEffects.clear();
       this.brokenCores.clear();
@@ -208,6 +212,78 @@ export class ArenaScene extends Phaser.Scene {
       x + Math.cos((i * Math.PI) / 3 - Math.PI / 6) * r,
       y + Math.sin((i * Math.PI) / 3 - Math.PI / 6) * r,
     ]);
+  }
+
+  private combatValueLabel(
+    effect: Effect,
+  ): { text: string; color: string } | null {
+    const value = effect.value ?? 0;
+    if (!Number.isFinite(value) || value <= 0) return null;
+    if (effect.type === "impact" && value >= 35)
+      return { text: `−${Math.round(value)}`, color: "#ffd0a0" };
+    if (effect.type === "core-hit" && value >= 35)
+      return { text: `−${Math.round(value)} CORE`, color: "#ffe39a" };
+    if (effect.type === "heal" && value >= 30)
+      return { text: `+${Math.round(value)}`, color: "#9dffd0" };
+    if (effect.type === "shield" && value >= 20)
+      return { text: `+${Math.round(value)} SCH`, color: "#a9dfff" };
+    return null;
+  }
+
+  private syncCombatText(effects: readonly Effect[]): void {
+    const visible = effects
+      .filter((effect) => this.combatValueLabel(effect))
+      .sort((a, b) => b.id - a.id)
+      .slice(0, 5);
+    const visibleIds = new Set(visible.map((effect) => effect.id));
+
+    for (const [id, label] of this.combatText)
+      if (!visibleIds.has(id)) {
+        label.destroy();
+        this.combatText.delete(id);
+      }
+
+    for (const effect of visible) {
+      const info = this.combatValueLabel(effect)!;
+      const progress = 1 - effect.life / effect.maxLife;
+      const alpha = Math.max(0, effect.life / effect.maxLife);
+      const x =
+        effect.type === "heal" && effect.targetX !== undefined
+          ? effect.targetX
+          : effect.x;
+      const baseY =
+        effect.type === "heal" && effect.targetY !== undefined
+          ? effect.targetY
+          : effect.y;
+      let label = this.combatText.get(effect.id);
+      if (!label) {
+        label = this.add
+          .text(x, baseY - 18, info.text, {
+            fontFamily: "monospace",
+            fontSize: "9px",
+            fontStyle: "bold",
+            color: info.color,
+            stroke: "#071416",
+            strokeThickness: 3,
+          })
+          .setOrigin(0.5)
+          .setDepth(8);
+        this.combatText.set(effect.id, label);
+      }
+      label
+        .setText(info.text)
+        .setColor(info.color)
+        .setPosition(
+          x,
+          baseY - 18 - (this.reducedMotion ? 0 : progress * 18),
+        )
+        .setAlpha(Math.min(1, alpha * 1.35))
+        .setScale(
+          this.reducedMotion
+            ? 1
+            : 0.9 + Math.sin(Math.min(1, progress * 2) * Math.PI) * 0.1,
+        );
+    }
   }
   private statusPips(
     g: Phaser.GameObjects.Graphics,
@@ -864,6 +940,7 @@ export class ArenaScene extends Phaser.Scene {
         );
       }
     }
+    this.syncCombatText(s.effects);
     for (const e of s.effects) {
       const progress = 1 - e.life / e.maxLife,
         alpha = Math.max(0, e.life / e.maxLife);

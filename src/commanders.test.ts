@@ -211,6 +211,12 @@ test("commander execution consumes the same eligibility as its preview", () => {
   assert.equal(first.slowTime, 0);
   assert.equal(first.slowFactor, 1);
   assert.equal(second.hp, second.maxHp);
+  assert.deepEqual(
+    lyra.state.effects
+      .filter((effect) => effect.type === "heal")
+      .map((effect) => effect.value),
+    [75, 10],
+  );
   assert.match(result.message, /\+85 HP · CLEANSE 1/);
 
   const atlas = new Match({ playerCommander: "atlas", botEnabled: false });
@@ -221,6 +227,10 @@ test("commander execution consumes the same eligibility as its preview", () => {
   const atlasResult = atlas.activateCommander();
   assert.equal(atlasResult.ok, true);
   assert.equal(atlas.state.units[0].shield, COMMANDERS.atlas.shield);
+  assert.equal(
+    atlas.state.effects.find((effect) => effect.type === "shield")?.value,
+    20,
+  );
   assert.match(atlasResult.message, /SCHILD 1 · \+20/);
 
   const nova = new Match({ playerCommander: "nova", botEnabled: false });

@@ -416,6 +416,7 @@ export interface Effect {
   life: number;
   maxLife: number;
   radius?: number;
+  value?: number;
   targetX?: number;
   targetY?: number;
 }
@@ -996,6 +997,7 @@ export class Match {
           0.5,
           undefined,
           clamp(10 + applied * 0.22, 12, 32),
+          applied,
         );
       }
       if (team === "player") this.state.stats.abilities++;
@@ -1008,7 +1010,16 @@ export class Match {
         const healing = targetHealing.get(unit.id) ?? 0;
         if (healing > 0) {
           unit.hp = Math.min(unit.maxHp, unit.hp + healing);
-          this.effect("heal", unit.x, unit.y, team, 0.65);
+          this.effect(
+            "heal",
+            unit.x,
+            unit.y,
+            team,
+            0.65,
+            undefined,
+            undefined,
+            healing,
+          );
         }
         if (tempoUnitIds.has(unit.id))
           unit.rallyTime = Math.max(
@@ -1091,14 +1102,32 @@ export class Match {
       } else if (commanderId === "atlas") {
         unit.shield = Math.max(unit.shield, COMMANDERS.atlas.shield);
         unit.shieldTime = COMMANDERS.atlas.duration;
-        this.effect("shield", unit.x, unit.y, team, 0.7);
+        this.effect(
+          "shield",
+          unit.x,
+          unit.y,
+          team,
+          0.7,
+          undefined,
+          undefined,
+          outcome.shieldGain,
+        );
       } else {
         unit.hp = Math.min(unit.maxHp, unit.hp + outcome.healing);
         if (outcome.cleanse) {
           unit.slowTime = 0;
           unit.slowFactor = 1;
         }
-        this.effect("heal", unit.x, unit.y, team, 0.9, undefined, 30);
+        this.effect(
+          "heal",
+          unit.x,
+          unit.y,
+          team,
+          0.9,
+          undefined,
+          30,
+          outcome.healing,
+        );
       }
     }
     return affected;
@@ -1219,6 +1248,7 @@ export class Match {
     duration: number,
     target?: { x: number; y: number },
     radius?: number,
+    value?: number,
   ): void {
     this.state.effects.push({
       id: this.nextId++,
@@ -1229,6 +1259,7 @@ export class Match {
       life: duration,
       maxLife: duration,
       radius,
+      value,
       ...(target ? { targetX: target.x, targetY: target.y } : {}),
     });
   }
@@ -1249,6 +1280,7 @@ export class Match {
         0.24,
         undefined,
         clamp(6 + applied * 0.15, 7, 18),
+        applied,
       );
     if (unit.hp <= 0) {
       this.effect(
@@ -1302,11 +1334,21 @@ export class Match {
           )
           .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || a.id - b.id)[0];
         if (patient) {
+          const before = patient.hp;
           patient.hp = Math.min(
             patient.maxHp,
             patient.hp + (card.heal ?? 0),
           );
-          this.effect("heal", unit.x, unit.y, unit.team, 0.45, patient);
+          this.effect(
+            "heal",
+            unit.x,
+            unit.y,
+            unit.team,
+            0.45,
+            patient,
+            undefined,
+            patient.hp - before,
+          );
           unit.healCooldown = card.supportInterval ?? unit.interval;
         }
       }
@@ -1373,6 +1415,7 @@ export class Match {
           0.42,
           undefined,
           clamp(10 + applied * 0.22, 12, 32),
+          applied,
         );
       } else {
         const target = attack.target as Unit;
