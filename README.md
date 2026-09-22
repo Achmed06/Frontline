@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.28
+## Current v1.29
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -947,4 +947,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - reduced-motion keeps static readiness information and spend value while suppressing ready/spend animations
 - energy cap, regeneration rate, card costs and all gameplay balance remain unchanged
 - release: package 1.28.0 / v1.28 / iOS 1.28 (128)
+
+## v1.29 changes
+
+- native iPhone builds now use Capacitor Haptics for tactile feedback while the browser build remains a safe no-op
+- card selection uses a light impact, unit deployment a medium impact and Commander or targeted ability activation a heavy impact
+- successful captures and victories use success notification feedback; lost sectors and local Core danger use warning feedback; invalid actions and defeats use error feedback
+- enemy Commander activations also trigger a warning cue so important hostile abilities can be felt when visual attention is on another lane
+- enemy Core critical pressure uses a strong opportunity cue while the persistent DURCHBRUCHFENSTER HUD state remains visible
+- routine auto-attacks, projectile impacts, healing ticks and movement never trigger haptics, preventing vibration spam during dense fights
+- the haptic wrapper executes only on a native Capacitor platform and safely degrades if the device cannot provide Taptic feedback
+- haptic cue mapping is centralized and regression-tested so UI call sites cannot silently change intensity semantics
+- @capacitor/haptics is synced as a native dependency; gameplay, timing, damage, capture and scoring rules are unchanged
+- release: package 1.29.0 / v1.29 / iOS 1.29 (129)
 

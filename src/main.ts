@@ -6,6 +6,7 @@ import { energyReadiness, energySpent } from "./energy-feedback";
 import { corePressure, corePressureLabel } from "./core-pressure";
 import { initializeStore, renderStore, supporterOwned } from "./store";
 import { watchAppState } from "./mobile";
+import { haptics } from "./haptics";
 import { ARENA_THEMES, isArenaTheme, type ArenaThemeId } from "./arena-themes";
 import { renderDraft } from "./draft";
 import {
@@ -262,6 +263,7 @@ function selectCard(id: string) {
   selected = selected === id ? null : id;
   updateSelection();
   sound.play("select");
+  haptics.play("select");
   if (selected) {
     const readiness = energyReadiness(
       match.state.energy.player,
@@ -300,6 +302,7 @@ function deploy(x: number, y: number) {
   if (!matchLive()) return;
   if (!selected) {
     showToast("Wähle zuerst unten eine Karte.");
+    haptics.play("error");
     return;
   }
   const playedCard = CARDS.find((card) => card.id === selected);
@@ -308,10 +311,13 @@ function deploy(x: number, y: number) {
   if (!result.ok) {
     showToast(result.message, true);
     sound.play("error");
+    haptics.play("error");
     return;
   }
   showEnergySpend(energySpent(beforeEnergy, match.state.energy.player));
-  sound.play(playedCard?.kind === "ability" ? "ability" : "deploy");
+  const playedAbility = playedCard?.kind === "ability";
+  sound.play(playedAbility ? "ability" : "deploy");
+  haptics.play(playedAbility ? "ability" : "deploy");
   selected = null;
   updateSelection();
   updateHud(true);
@@ -539,6 +545,7 @@ function finish() {
   saveStats(stats);
   updateRecord();
   sound.play(won ? "win" : "lose");
+  haptics.play(won ? "success" : draw ? "warning" : "error");
   const st = match.state.stats;
   const wasSeries = activeSeries;
   const wasDraft = activeDraftDeck !== null;
@@ -759,6 +766,8 @@ function updateHud(force = false) {
               : null;
     if (notice) {
       battleNotices.add(notice);
+      if (notice === "playerCritical") haptics.play("warning");
+      else if (notice === "enemyCritical") haptics.play("ability");
       announceBattle(
         notice === "playerCritical"
           ? "DEIN CORE BRAUCHT SCHUTZ"
@@ -949,6 +958,7 @@ function updateHud(force = false) {
       true,
     );
     sound.play("ability");
+    haptics.play("warning");
   }
   lastEnemyCommanderCooldown = s.enemyCommanderCooldown;
   const enemyCommanderActive = commanderActiveSeconds(
@@ -1033,6 +1043,7 @@ function updateHud(force = false) {
     if (el("battle-banner").hidden)
       announceBattle("FRONT VERLOREN", `${pointName} IST GEFALLEN`);
     else showToast(`${pointName} verloren. Front neu stabilisieren.`, true);
+    haptics.play("warning");
   }
   lastPointOwners = s.points.map((point) => point.owner);
   if (active && !ended && s.stats.captured > lastCaptured) {
@@ -1041,6 +1052,7 @@ function updateHud(force = false) {
       announceBattle("GEBIET GESICHERT", "DEINE FRONT RÜCKT VOR");
     else showToast("Punkt erobert. Deine Front rückt vor.");
     sound.play("capture");
+    haptics.play("capture");
   }
   if (active && !ended && s.phase === "ended") {
     if (!finishReadyAt) {
@@ -1066,6 +1078,7 @@ function commander() {
   const result = match.activateCommander();
   showToast(result.message, !result.ok);
   sound.play(result.ok ? "ability" : "error");
+  haptics.play(result.ok ? "ability" : "error");
   updateHud(true);
 }
 function updateSound() {
