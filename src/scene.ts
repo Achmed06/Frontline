@@ -53,6 +53,7 @@ import {
 import { movementFootprintVisual } from "./movement-footprint-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
 import { slowStatusVisual } from "./slow-status-visual";
+import { tempoStatusVisual } from "./tempo-status-visual";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
@@ -1779,14 +1780,164 @@ export class ArenaScene extends Phaser.Scene {
         );
       }
       if (u.rallyTime > 0) {
-        // Two gold chevrons make the tempo boost legible even without its initial pulse.
-        fx.lineStyle(2, 0xffdf6b, 0.9);
-        for (let i = 0; i < 2; i++) {
-          const y = u.y + 14 + i * 5;
-          fx.lineBetween(u.x - 5, y + 3, u.x, y);
-          fx.lineBetween(u.x, y, u.x + 5, y + 3);
+        const tempoVisual = tempoStatusVisual(u.rallyTime);
+        if (tempoVisual.active) {
+          const tempoColor = 0xffdf6b;
+          const brightTempo = 0xfff5bc;
+          const direction =
+            u.team === "player" ? -1 : 1;
+          const motionPulse = this.reducedMotion
+            ? 0.82
+            : 0.74 +
+              Math.sin(
+                this.clock * tempoVisual.flowSpeed +
+                  u.id * 0.61,
+              ) *
+                0.08;
+
+          fx.fillStyle(
+            tempoColor,
+            tempoVisual.alpha *
+              (0.035 + tempoVisual.moveStrength * 0.03),
+          );
+          fx.fillEllipse(
+            u.x,
+            u.y + 12,
+            24 + tempoVisual.moveStrength * 12,
+            7 + tempoVisual.moveStrength * 2,
+          );
+
+          for (
+            let chevron = 0;
+            chevron < tempoVisual.chevronCount;
+            chevron++
+          ) {
+            const phaseOffset = this.reducedMotion
+              ? chevron * tempoVisual.chevronSpacing
+              : ((this.clock * tempoVisual.flowSpeed * 7 +
+                    chevron * tempoVisual.chevronSpacing) %
+                  (tempoVisual.flowLength +
+                    tempoVisual.chevronSpacing));
+            const y =
+              u.y +
+              12 +
+              direction *
+                (3 +
+                  phaseOffset);
+            const halfWidth =
+              4.5 +
+              tempoVisual.moveStrength * 2;
+
+            fx.lineStyle(
+              chevron === 0 ? 2.2 : 1.5,
+              chevron === 0 ? brightTempo : tempoColor,
+              tempoVisual.alpha *
+                motionPulse *
+                (1 - chevron * 0.08),
+            );
+            fx.lineBetween(
+              u.x - halfWidth,
+              y - direction * 3,
+              u.x,
+              y,
+            );
+            fx.lineBetween(
+              u.x + halfWidth,
+              y - direction * 3,
+              u.x,
+              y,
+            );
+          }
+
+          const ringAngle = this.reducedMotion
+            ? -Math.PI / 2
+            : -Math.PI / 2 +
+              this.clock * tempoVisual.cycleSpeed;
+          fx.lineStyle(
+            tempoVisual.ringThickness,
+            tempoColor,
+            tempoVisual.alpha *
+              (0.58 + tempoVisual.attackStrength * 0.28),
+          );
+          fx.strokeCircle(
+            u.x,
+            u.y,
+            tempoVisual.ringRadius,
+          );
+
+          fx.lineStyle(
+            1,
+            brightTempo,
+            tempoVisual.alpha * 0.58,
+          );
+          for (
+            let tick = 0;
+            tick < tempoVisual.tickCount;
+            tick++
+          ) {
+            const angle =
+              ringAngle +
+              (tick * Math.PI * 2) /
+                tempoVisual.tickCount;
+            const inner =
+              tempoVisual.ringRadius - 2.5;
+            const outer =
+              tempoVisual.ringRadius + 2;
+            fx.lineBetween(
+              u.x + Math.cos(angle) * inner,
+              u.y + Math.sin(angle) * inner,
+              u.x + Math.cos(angle) * outer,
+              u.y + Math.sin(angle) * outer,
+            );
+          }
+
+          if (!this.reducedMotion) {
+            const attackPipX =
+              u.x +
+              Math.cos(ringAngle) *
+                tempoVisual.ringRadius;
+            const attackPipY =
+              u.y +
+              Math.sin(ringAngle) *
+                tempoVisual.ringRadius;
+            fx.fillStyle(
+              0xffffff,
+              tempoVisual.alpha *
+                (0.62 + tempoVisual.attackStrength * 0.24),
+            );
+            fx.fillCircle(
+              attackPipX,
+              attackPipY,
+              1.5 +
+                tempoVisual.attackStrength * 1.4,
+            );
+          }
+
+          if (tempoVisual.release > 0) {
+            fx.lineStyle(
+              1.2,
+              brightTempo,
+              tempoVisual.alpha *
+                tempoVisual.release *
+                0.52,
+            );
+            fx.strokeCircle(
+              u.x,
+              u.y,
+              tempoVisual.ringRadius +
+                tempoVisual.release * 7,
+            );
+          }
+
+          this.statusPips(
+            fx,
+            u.x,
+            u.y,
+            u.rallyTime,
+            tempoColor,
+            0.18,
+          );
         }
-        this.statusPips(fx, u.x, u.y, u.rallyTime, 0xffdf6b, 0.18);
       }
       if (u.slowTime > 0) {
         const slowVisual = slowStatusVisual(

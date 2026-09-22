@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.46
+## Current v1.47
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1216,3 +1216,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure slowStatusVisual helper centralizes activation, exact severity, release fade, cage geometry, orbit speed and floor footprint
 - regression coverage verifies exact 40 percent severity, stronger-vs-lighter slow geometry, release fade and malformed/expired fallback
 - release: package 1.46.0 / v1.46 / iOS 1.46 (146)
+
+
+## v1.47 changes
+
+- persistent Rally/NOVA tempo feedback now exposes the two real tempo channels instead of showing the same two static gold chevrons for the entire buff
+- movement tempo reads from the shared TEMPO_MOVE_SPEED_MULTIPLIER (currently +25 percent) and drives a directional gold flow/chevron stream under the affected unit
+- attack tempo reads from the shared TEMPO_ATTACK_SPEED_MULTIPLIER (currently +30 percent) and drives a separate segmented cycle ring around the unit
+- because the current attack bonus is slightly stronger than the movement bonus, the attack ring is intentionally a little denser/more prominent than the movement flow
+- rallyTime remains the only duration state; the final 0.8 seconds enter a subtle release ring/fade before the tempo field disappears
+- player and enemy movement flow points toward their natural advance direction while the actual unit facing and pathing remain untouched
+- Rally and NOVA continue to share the exact same non-stacking tempo state, so identical mechanics now also produce identical persistent visuals
+- Reduced Motion freezes the chevron/cycle motion while preserving both move-vs-attack channels and exact remaining-duration pips
+- movement speed multiplier, attack-speed multiplier, Rally healing, NOVA behavior, refresh/non-stacking rules and all balance values are unchanged
+- a pure tempoStatusVisual helper reads the shared tempo constants and centralizes boosts, strengths, release fade, flow geometry and attack-cycle geometry
+- regression coverage verifies exact +25/+30 values, relative channel strength, release fade and malformed/expired fallback
+- release: package 1.47.0 / v1.47 / iOS 1.47 (147)
