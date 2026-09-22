@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.37
+## Current v1.38
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1078,3 +1078,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure coreTurretFireFeedback helper centralizes direction, recoil, muzzle distance, flare size and vent spread
 - regression coverage verifies real target direction, lifetime decay and neutral handling for non-turret/malformed shots
 - release: package 1.37.0 / v1.37 / iOS 1.37 (137)
+
+
+## v1.38 changes
+
+- unit K.O. bursts now use the real attack source already carried by death effects instead of always exploding symmetrically
+- shards and debris are biased away from the incoming hit direction while preserving part of the existing radial spread so kills still read clearly from every angle
+- the bright burst center shifts slightly in the outgoing direction and the main burst ring stretches along that vector
+- heavy, explosive and rail K.O.s use an elongated shock ellipse aligned with the impact direction; electric K.O. arcs inherit the same directional bias
+- when a source is unavailable or coincides with the destroyed unit, the existing radial K.O. presentation remains unchanged
+- battlefield scars, camera shake and weapon-specific death colors remain intact
+- the directional effect is presentation-only: destroyed units are never physically displaced and simulation positions, damage, targeting and collision remain unchanged
+- a pure deathBurstDirection helper centralizes source vector, lifetime decay, directional bias, stretch and visual offset
+- regression coverage verifies source-to-target direction, lifetime decay, radial fallback and malformed timing handling
+- release: package 1.38.0 / v1.38 / iOS 1.38 (138)

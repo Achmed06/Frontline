@@ -16,6 +16,7 @@ import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
+import { deathBurstDirection } from "./death-burst-direction";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
@@ -2562,6 +2563,7 @@ export class ArenaScene extends Phaser.Scene {
         }
         if (e.type === "death") {
           const profile = impactProfile(e.sourceCardId);
+          const direction = deathBurstDirection(e);
           const burst =
             radius *
             (0.38 + progress * 0.92) *
@@ -2575,26 +2577,81 @@ export class ArenaScene extends Phaser.Scene {
                 : profile.kind === "breach"
                   ? 0xffcf67
                   : color;
+          const centerX =
+            e.x + (direction.active ? direction.nx * direction.offset : 0);
+          const centerY =
+            e.y + (direction.active ? direction.ny * direction.offset : 0);
+          const tangentX = -direction.ny;
+          const tangentY = direction.nx;
+
           fx.fillStyle(0xffffff, fade * 0.42);
-          fx.fillCircle(e.x, e.y, 4 + radius * 0.14 * (1 - progress));
+          fx.fillCircle(
+            centerX,
+            centerY,
+            4 + radius * 0.14 * (1 - progress),
+          );
           fx.lineStyle(2.4, deathAccent, fade * 0.9);
-          fx.strokeCircle(e.x, e.y, 5 + burst);
+          if (direction.active) {
+            const angle = Math.atan2(direction.ny, direction.nx);
+            fx.strokeEllipse(
+              centerX,
+              centerY,
+              (10 + burst * 2) * direction.stretch,
+              10 + burst * 1.28,
+              angle,
+            );
+          } else {
+            fx.strokeCircle(centerX, centerY, 5 + burst);
+          }
+
           fx.lineStyle(1.2, 0xffe5ba, fade * 0.58);
           fx.strokeEllipse(
-            e.x,
-            e.y + 7,
-            14 + burst * 1.55,
+            centerX,
+            centerY + 7,
+            (14 + burst * 1.55) * (direction.active ? direction.stretch : 1),
             5 + burst * 0.5,
+            direction.active ? Math.atan2(direction.ny, direction.nx) : 0,
           );
+
           for (let i = 0; i < profile.shards; i++) {
             const a =
               i * (Math.PI * 2 / profile.shards) + e.id * 0.47;
-            const distance = burst * (0.58 + (i % 3) * 0.12);
+            const radialX = Math.cos(a);
+            const radialY = Math.sin(a);
+            const biasedX =
+              radialX * (1 - direction.bias) +
+              direction.nx * direction.bias;
+            const biasedY =
+              radialY * (1 - direction.bias) +
+              direction.ny * direction.bias;
+            const biasedLength = Math.max(
+              0.001,
+              Math.hypot(biasedX, biasedY),
+            );
+            const shardNx = biasedX / biasedLength;
+            const shardNy = biasedY / biasedLength;
+            const lateral =
+              direction.active
+                ? Math.sin(a - Math.atan2(direction.ny, direction.nx)) *
+                  burst *
+                  0.11 *
+                  (1 - direction.bias)
+                : 0;
+            const distance =
+              burst *
+              (0.58 + (i % 3) * 0.12) *
+              (direction.active
+                ? 1 + direction.bias * (0.18 + (i % 2) * 0.12)
+                : 1);
             const shard = 2.5 + (i % 2) * 1.8;
-            const sx = e.x + Math.cos(a) * distance;
+            const sx =
+              centerX +
+              shardNx * distance +
+              tangentX * lateral;
             const sy =
-              e.y +
-              Math.sin(a) * distance * 0.78 -
+              centerY +
+              shardNy * distance * 0.78 +
+              tangentY * lateral * 0.78 -
               progress * (i % 4) * 3;
             fx.fillStyle(
               i % 3 === 0 ? 0xffe5ba : deathAccent,
@@ -2608,12 +2665,13 @@ export class ArenaScene extends Phaser.Scene {
             );
             fx.lineStyle(1, deathAccent, fade * 0.55);
             fx.lineBetween(
-              e.x + Math.cos(a) * burst * 0.24,
-              e.y + Math.sin(a) * burst * 0.18,
+              centerX + shardNx * burst * 0.24,
+              centerY + shardNy * burst * 0.18,
               sx,
               sy,
             );
           }
+
           if (
             profile.kind === "explosive" ||
             profile.kind === "heavy" ||
@@ -2624,20 +2682,43 @@ export class ArenaScene extends Phaser.Scene {
               deathAccent,
               fade * 0.5,
             );
-            fx.strokeCircle(
-              e.x,
-              e.y,
-              burst + 8 + profile.scale * 4,
-            );
+            if (direction.active) {
+              fx.strokeEllipse(
+                centerX,
+                centerY,
+                (burst + 8 + profile.scale * 4) *
+                  2 *
+                  direction.stretch,
+                (burst + 8 + profile.scale * 4) * 1.5,
+                Math.atan2(direction.ny, direction.nx),
+              );
+            } else {
+              fx.strokeCircle(
+                centerX,
+                centerY,
+                burst + 8 + profile.scale * 4,
+              );
+            }
           } else if (profile.kind === "electric") {
             fx.lineStyle(1.4, 0xbcecff, fade * 0.62);
             for (let i = 0; i < 6; i++) {
               const a = i * Math.PI / 3 + e.id * 0.23;
+              const radialX = Math.cos(a);
+              const radialY = Math.sin(a);
+              const biasedX =
+                radialX * (1 - direction.bias * 0.72) +
+                direction.nx * direction.bias * 0.72;
+              const biasedY =
+                radialY * (1 - direction.bias * 0.72) +
+                direction.ny * direction.bias * 0.72;
+              const length = Math.max(0.001, Math.hypot(biasedX, biasedY));
+              const nx = biasedX / length;
+              const ny = biasedY / length;
               fx.lineBetween(
-                e.x + Math.cos(a) * burst * 0.4,
-                e.y + Math.sin(a) * burst * 0.4,
-                e.x + Math.cos(a + 0.18) * (burst + 8),
-                e.y + Math.sin(a + 0.18) * (burst + 8),
+                centerX + nx * burst * 0.4,
+                centerY + ny * burst * 0.4,
+                centerX + nx * (burst + 8),
+                centerY + ny * (burst + 8),
               );
             }
           }
