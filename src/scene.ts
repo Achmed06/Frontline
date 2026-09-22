@@ -7,6 +7,7 @@ import {
   CORE_TURRET_RANGE,
   controlPointPressure,
   coreTurretTarget,
+  deploymentColumns,
   type Effect,
   type Unit,
 } from "./engine";
@@ -30,6 +31,7 @@ export class ArenaScene extends Phaser.Scene {
   private sprites = new Map<number, Phaser.GameObjects.Image>();
   private unitMotion = new Map<number, { x: number; y: number; phase: number }>();
   private labels: Phaser.GameObjects.Text[] = [];
+  private deploymentLaneLabels: Phaser.GameObjects.Text[] = [];
   private combatText = new Map<number, Phaser.GameObjects.Text>();
   private pointer: { x: number; y: number } | null = null;
   private aim: {
@@ -102,6 +104,20 @@ export class ArenaScene extends Phaser.Scene {
           .setOrigin(0.5)
           .setDepth(3),
       );
+    this.deploymentLaneLabels = Array.from({ length: 3 }, (_, column) =>
+      this.add
+        .text(0, 0, `EINSATZ ${column + 1}/3`, {
+          fontFamily: "monospace",
+          fontSize: "8px",
+          fontStyle: "bold",
+          color: "#83ffcf",
+          backgroundColor: "#0b1d1dcc",
+          padding: { x: 5, y: 3 },
+        })
+        .setOrigin(0.5)
+        .setDepth(4)
+        .setVisible(false),
+    );
     this.add.text(27, 26, "SEKTOR 07", {
       fontFamily: "monospace",
       fontSize: "8px",
@@ -528,27 +544,66 @@ export class ArenaScene extends Phaser.Scene {
         g.fillRect(x + 47, y + 35, 3, 12);
         this.drawSectorTexture(g, themeId, x, y, row * 3 + col, theme.accent);
       }
-    // Continuous supply boundary, with a highlighted deploy zone when selecting a unit.
-    const frontShape = (team: "player" | "enemy") => [
-      [18, m.frontline(team, 85)],
-      [147.5, m.frontline(team, 85)],
-      [147.5, m.frontline(team, 210)],
-      [272.5, m.frontline(team, 210)],
-      [272.5, m.frontline(team, 335)],
-      [402, m.frontline(team, 335)],
-    ];
-    const front = frontShape("player"),
-      enemyFront = frontShape("enemy");
+    // Continuous supply boundary, with exact per-column deploy geometry.
+    const playerZones = deploymentColumns(s.points, "player");
+    const enemyZones = deploymentColumns(s.points, "enemy");
+    const front = playerZones.flatMap((zone) => [
+      [zone.xMin, zone.edge],
+      [zone.xMax, zone.edge],
+    ]);
+    const enemyFront = enemyZones.flatMap((zone) => [
+      [zone.xMin, zone.edge],
+      [zone.xMax, zone.edge],
+    ]);
+    const deploymentCardId = this.bridge.selected();
+    const deploymentCard = deploymentCardId
+      ? CARDS.find((card) => card.id === deploymentCardId)
+      : undefined;
+    const unitDeploymentSelected =
+      deploymentCard?.kind === "unit" && this.bridge.running();
+
     this.polygon(g, [...enemyFront, [402, 65], [18, 65]], CORAL, 0.045);
     this.polygon(
       g,
       [...front, [402, 495], [18, 495]],
       MINT,
-      this.bridge.selected() &&
-        CARDS.find((c) => c.id === this.bridge.selected())?.kind === "unit"
-        ? 0.12
-        : 0.045,
+      unitDeploymentSelected ? 0.09 : 0.045,
     );
+
+    for (const label of this.deploymentLaneLabels) label.setVisible(false);
+    if (unitDeploymentSelected) {
+      for (const zone of playerZones) {
+        const zoneHeight = Math.max(0, 495 - zone.edge);
+        g.fillStyle(MINT, 0.045 + zone.depth * 0.012);
+        g.fillRect(zone.xMin + 1, zone.edge, zone.xMax - zone.xMin - 2, zoneHeight);
+
+        g.lineStyle(1, MINT, 0.11);
+        for (let y = zone.edge + 12; y < 495; y += 18)
+          g.lineBetween(zone.xMin + 5, y, zone.xMax - 5, y);
+
+        g.lineStyle(1, 0xffffff, 0.075);
+        for (let x = zone.xMin + 16; x < zone.xMax; x += 24)
+          g.lineBetween(x, zone.edge + 4, x, 491);
+
+        g.lineStyle(2.6, MINT, 0.82);
+        g.lineBetween(zone.xMin + 3, zone.edge, zone.xMax - 3, zone.edge);
+        g.lineStyle(1.4, 0xffffff, 0.52);
+        for (let x = zone.xMin + 14; x < zone.xMax - 5; x += 22) {
+          g.lineBetween(x - 4, zone.edge + 7, x, zone.edge + 11);
+          g.lineBetween(x + 4, zone.edge + 7, x, zone.edge + 11);
+        }
+
+        const labelY = Math.max(
+          92,
+          Math.min(466, zone.edge + (zone.edge > 445 ? -15 : 17)),
+        );
+        this.deploymentLaneLabels[zone.column]
+          ?.setText(`EINSATZ ${zone.column + 1}/3 · FRONT ${zone.depth}/3`)
+          .setPosition(zone.centerX, labelY)
+          .setVisible(true);
+      }
+    }
+
     const playerCaptureWave = s.effects.find(
       (effect) => effect.type === "capture" && effect.team === "player",
     );
@@ -565,7 +620,7 @@ export class ArenaScene extends Phaser.Scene {
       g.lineStyle(6, CORAL, 0.06 + pulse * 0.14);
       g.strokePoints(enemyFront.map(([x, y]) => ({ x, y })), false);
     }
-    g.lineStyle(2, MINT, playerCaptureWave ? 0.92 : 0.65);
+    g.lineStyle(2, MINT, playerCaptureWave ? 0.92 : unitDeploymentSelected ? 0.88 : 0.65);
     g.strokePoints(
       front.map(([x, y]) => ({ x, y })),
       false,

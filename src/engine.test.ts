@@ -18,6 +18,7 @@ import {
   CORE_TURRET_RANGE,
   controlPointPressure,
   coreTurretTarget,
+  deploymentColumns,
   frontlineStatus,
   ENERGY_CAP,
   ENERGY_RATE,
@@ -1571,5 +1572,51 @@ test("frontline status clamps columns and stays symmetric for both teams", () =>
   match.state.points[7].owner = "enemy";
   assert.equal(frontlineStatus(match.state.points, "enemy", 1).depth, 3);
   assert.equal(frontlineStatus(match.state.points, "enemy", 1).edge, 470);
+});
+
+test("deployment columns expose exact legal front geometry", () => {
+  const match = quietMatch();
+  assert.deepEqual(deploymentColumns(match.state.points, "player"), [
+    { column: 0, depth: 1, edge: 350, xMin: 18, xMax: 147.5, centerX: 82.75 },
+    { column: 1, depth: 1, edge: 350, xMin: 147.5, xMax: 272.5, centerX: 210 },
+    { column: 2, depth: 1, edge: 350, xMin: 272.5, xMax: 402, centerX: 337.25 },
+  ]);
+
+  match.state.points[3].owner = "player";
+  match.state.points[4].owner = "player";
+  match.state.points[1].owner = "player";
+  const zones = deploymentColumns(match.state.points, "player");
+  assert.equal(zones[0].depth, 2);
+  assert.equal(zones[0].edge, 220);
+  assert.equal(zones[1].depth, 3);
+  assert.equal(zones[1].edge, 90);
+  assert.equal(zones[2].depth, 1);
+  assert.equal(zones[2].edge, 350);
+
+  for (const zone of zones) {
+    const x = zone.centerX;
+    assert.equal(match.canDeploy("player", x, zone.edge), true);
+    if (zone.edge > 65)
+      assert.equal(match.canDeploy("player", x, zone.edge - 0.01), false);
+  }
+  assert.equal(match.canDeploy("player", 17.99, 490), false);
+  assert.equal(match.canDeploy("player", 402.01, 490), false);
+});
+
+test("enemy deployment columns mirror the same three-column geometry", () => {
+  const match = quietMatch();
+  const zones = deploymentColumns(match.state.points, "enemy");
+  assert.deepEqual(
+    zones.map(({ column, depth, edge }) => ({ column, depth, edge })),
+    [
+      { column: 0, depth: 1, edge: 210 },
+      { column: 1, depth: 1, edge: 210 },
+      { column: 2, depth: 1, edge: 210 },
+    ],
+  );
+  for (const zone of zones) {
+    assert.equal(match.canDeploy("enemy", zone.centerX, zone.edge), true);
+    assert.equal(match.canDeploy("enemy", zone.centerX, zone.edge + 0.01), false);
+  }
 });
 

@@ -82,6 +82,11 @@ export const CORE_TURRET_INTERVAL = 1;
 const STEP = 1 / 30;
 const COLUMN_X = [85, 210, 335];
 const ROW_Y = [150, 280, 410];
+export const DEPLOYMENT_COLUMN_BOUNDS = [
+  [18, 147.5],
+  [147.5, 272.5],
+  [272.5, 402],
+] as const;
 const other = (team: Team): Team => (team === "player" ? "enemy" : "player");
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -473,6 +478,12 @@ export type FrontlineStatus = {
   edge: number;
 };
 
+export type DeploymentColumn = FrontlineStatus & {
+  xMin: number;
+  xMax: number;
+  centerX: number;
+};
+
 export function frontlineStatus(
   points: readonly ControlPoint[],
   team: Team,
@@ -492,7 +503,24 @@ export function frontlineStatus(
 }
 
 export function frontlineColumn(x: number): number {
-  return x < 147.5 ? 0 : x < 272.5 ? 1 : 2;
+  if (x < DEPLOYMENT_COLUMN_BOUNDS[0][1]) return 0;
+  if (x < DEPLOYMENT_COLUMN_BOUNDS[1][1]) return 1;
+  return 2;
+}
+
+export function deploymentColumns(
+  points: readonly ControlPoint[],
+  team: Team,
+): DeploymentColumn[] {
+  return DEPLOYMENT_COLUMN_BOUNDS.map(([xMin, xMax], column) => {
+    const status = frontlineStatus(points, team, column);
+    return {
+      ...status,
+      xMin,
+      xMax,
+      centerX: (xMin + xMax) / 2,
+    };
+  });
 }
 
 
@@ -947,7 +975,12 @@ export class Match {
       !Number.isFinite(y)
     )
       return false;
-    if (x < 18 || x > BOARD_WIDTH - 18 || y < 65 || y > BOARD_HEIGHT - 65)
+    if (
+      x < DEPLOYMENT_COLUMN_BOUNDS[0][0] ||
+      x > DEPLOYMENT_COLUMN_BOUNDS[2][1] ||
+      y < 65 ||
+      y > BOARD_HEIGHT - 65
+    )
       return false;
     return team === "player"
       ? y >= this.frontline(team, x)

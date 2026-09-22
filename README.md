@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.15
+## Current v1.16
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -777,4 +777,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - reduced-motion mode keeps the old/new boundaries and text while removing the moving chevron travel
 - regression coverage verifies one-sector advance, three-sector connected-territory collapse, exact event coordinates, column clamping and team symmetry
 - release: package 1.15.0 / v1.15 / iOS 1.15 (115)
+
+## v1.16 changes
+
+- selecting any unit card now reveals the exact legal deployment area as three separate supply columns instead of only a broad green territory wash
+- each column shows EINSATZ 1/3, 2/3 or 3/3 together with its exact connected FRONT depth, making asymmetric supply immediately readable
+- the legal area receives a restrained tactical grid and a brighter exact boundary while the rest of the arena stays visually quiet
+- columns with collapsed supply remain visibly shallow rather than implying that territory in neighboring columns grants deployment rights
+- deployment-column geometry is now a shared engine helper used by the renderer and validated against Match.canDeploy at every exact front edge
+- board-side deployment limits now consume the same exported column-bound constants instead of separate 18/402 magic values
+- enemy deployment geometry is covered by the same symmetric helper even though only the local player's placement overlay is shown interactively
+- regression coverage verifies initial column geometry, asymmetric 2/3 and 3/3 advances, exact legal front edges and outer board rejection
+- release: package 1.16.0 / v1.16 / iOS 1.16 (116)
 
