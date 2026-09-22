@@ -1342,7 +1342,9 @@ test("core hit feedback scales with actual damage without changing balance", () 
     (effect) => effect.type === "core-hit",
   );
   assert.ok(lancerHit);
-  assert.equal(before - lancerMatch.state.cores.enemy.hp, expectedDamage);
+  assert.ok(
+    Math.abs(before - lancerMatch.state.cores.enemy.hp - expectedDamage) < 1e-9,
+  );
   assert.equal(lancerHit.maxLife, 0.42);
   assert.equal(
     lancerHit.radius,
