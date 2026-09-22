@@ -30,7 +30,7 @@ function seconds(value: number): string {
 
 export function resultDecision(
   state: MatchState,
-  objective?: ControlObjective,
+  objective?: ControlObjective | null,
 ): ResultDecision {
   const playerPoints = state.points.filter(
     (point) => point.owner === "player",
