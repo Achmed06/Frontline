@@ -18,6 +18,7 @@ import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
+import { unitHitReaction } from "./unit-hit-reaction";
 import { COMMANDERS } from "./commanders";
 import {
   sampleUnitVitals,
@@ -1161,7 +1162,8 @@ export class ArenaScene extends Phaser.Scene {
       const hitStrength = hitImpact
         ? Math.max(0, hitImpact.life / hitImpact.maxLife)
         : 0;
-      const hitScale = 1 + hitStrength * 0.055;
+      const hitReaction = unitHitReaction(hitImpact);
+      const hitScale = 1 + hitStrength * 0.028;
       let recoilX = 0;
       let recoilY = 0;
       let recoilScale = 1;
@@ -1190,8 +1192,15 @@ export class ArenaScene extends Phaser.Scene {
       const attackHeight = 1 - attackPose * 0.014;
       sprite
         .setPosition(
-          u.x + recoilX,
-          u.y - 3 - (1 - spawnProgress) * 8 + walkBob + recoilY,
+          u.x +
+            recoilX +
+            (this.reducedMotion ? 0 : hitReaction.offsetX),
+          u.y -
+            3 -
+            (1 - spawnProgress) * 8 +
+            walkBob +
+            recoilY +
+            (this.reducedMotion ? 0 : hitReaction.offsetY),
         )
         .setDisplaySize(
           size *
@@ -1199,6 +1208,7 @@ export class ArenaScene extends Phaser.Scene {
             walkScale *
             recoilScale *
             hitScale *
+            hitReaction.widthScale *
             settleWidth *
             attackWidth,
           size *
@@ -1206,6 +1216,7 @@ export class ArenaScene extends Phaser.Scene {
             walkScale *
             recoilScale *
             hitScale *
+            hitReaction.heightScale *
             settleHeight *
             attackHeight,
         )
@@ -1213,7 +1224,9 @@ export class ArenaScene extends Phaser.Scene {
         .setAngle(
           this.reducedMotion
             ? 0
-            : horizontalLean + (motion.moving ? Math.sin(phase) * 1.2 : 0),
+            : horizontalLean +
+              (motion.moving ? Math.sin(phase) * 1.2 : 0) +
+              hitReaction.angle,
         )
         .setAlpha(
           u.hp > 0

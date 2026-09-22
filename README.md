@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.30
+## Current v1.31
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -976,3 +976,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - existing per-unit status effects, cooldowns, healing, shields, tempo values, haptics and balance are unchanged
 - a pure commanderActivationVisual helper sanitizes timing and geometry and regression coverage verifies all three identities plus real engine cue emission
 - release: package 1.30.0 / v1.30 / iOS 1.30 (130)
+
+
+## v1.31 changes
+
+- unit damage now carries the real attack origin into presentation events so hit response can follow the direction the damage actually came from
+- living units visually kick a few pixels away from the source of a hit, lean with the impact and compress slightly instead of reacting only with a generic scale flash
+- reaction strength is derived from the existing applied-damage impact radius and remaining effect lifetime, so heavy hits feel weightier without changing damage or knockback
+- direct attacks use the attacking unit as their visual source, Core turret hits use the Core, Pulse uses the cast center and splash damage radiates from the blast center
+- the underlying unit coordinates never move from this feedback; pathfinding, capture position, collision, target selection and simulation remain exactly unchanged
+- reduced-motion keeps the existing hit flash and restrained scale response while suppressing directional translation and tilt
+- impact events expose optional source coordinates only for presentation and remain backwards-compatible when a source is unavailable
+- a pure unitHitReaction helper centralizes direction, strength, scale and malformed-value clamping
+- regression coverage verifies left/right and vertical impact direction, neutral fallback and real Pulse source propagation through the engine
+- release: package 1.31.0 / v1.31 / iOS 1.31 (131)

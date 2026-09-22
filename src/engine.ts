@@ -574,6 +574,8 @@ export interface Effect {
   radius?: number;
   value?: number;
   sourceCardId?: string;
+  sourceX?: number;
+  sourceY?: number;
   targetX?: number;
   targetY?: number;
 }
@@ -1140,7 +1142,13 @@ export class Match {
       this.effect("pulse", x, y, team, 0.75);
       for (const unit of this.state.units) {
         if (targetIds.has(unit.id))
-          this.damageUnit(unit, card.damage ?? 0, team, card.id);
+          this.damageUnit(
+            unit,
+            card.damage ?? 0,
+            team,
+            card.id,
+            { x, y },
+          );
       }
       const core = this.state.cores[other(team)];
       if (targetPreview?.core) {
@@ -1432,6 +1440,7 @@ export class Match {
     radius?: number,
     value?: number,
     sourceCardId?: string,
+    source?: { x: number; y: number },
   ): void {
     this.state.effects.push({
       id: this.nextId++,
@@ -1444,6 +1453,7 @@ export class Match {
       radius,
       value,
       sourceCardId,
+      ...(source ? { sourceX: source.x, sourceY: source.y } : {}),
       ...(target ? { targetX: target.x, targetY: target.y } : {}),
     });
   }
@@ -1453,6 +1463,7 @@ export class Match {
     amount: number,
     source: Team,
     sourceCardId?: string,
+    sourcePosition?: { x: number; y: number },
   ): void {
     if (unit.hp <= 0) return;
     const shieldDamage = Math.min(unit.shield, amount);
@@ -1471,6 +1482,7 @@ export class Match {
         clamp(6 + applied * 0.15, 7, 18),
         applied,
         sourceCardId,
+        sourcePosition,
       );
     if (unit.hp <= 0) {
       this.effect(
@@ -1483,6 +1495,7 @@ export class Match {
         clamp(unit.radius * 2.2, 18, 34),
         undefined,
         sourceCardId,
+        sourcePosition,
       );
       if (source === "player") this.state.stats.kills++;
     }
@@ -1634,6 +1647,7 @@ export class Match {
           attack.amount,
           attack.unit.team,
           attack.unit.cardId,
+          attack.unit,
         );
         if (card.slowDuration && target.hp > 0) {
           target.slowTime = Math.max(target.slowTime, card.slowDuration);
@@ -1662,6 +1676,7 @@ export class Match {
               card.splashDamage,
               attack.unit.team,
               attack.unit.cardId,
+              attack.target,
             );
           }
         }
@@ -1762,6 +1777,7 @@ export class Match {
           CORE_TURRET_DAMAGE,
           team,
           "core-turret",
+          core,
         );
         this.effect(
           "shot",
