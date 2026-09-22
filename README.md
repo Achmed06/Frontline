@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.49
+## Current v1.50
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1264,3 +1264,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure coreTurretAimVisual helper centralizes target vector, phase, charge, head offset, barrel geometry and muzzle size
 - regression coverage verifies real target direction, reload→track→lock extension, shared charge progression and malformed/coincident target fallback
 - release: package 1.49.0 / v1.49 / iOS 1.49 (149)
+
+
+## v1.50 changes
+
+- Medic now exposes its real healing-support cooldown between heal pulses instead of looking identical whether the nanite heal is ready or still recharging
+- an eight-segment support ring fills directly from unit.healCooldown / Medic supportInterval (currently 1.1 seconds)
+- the ring is presentation-only and uses the exact engine cooldown already consumed by Medic healing; no duplicate timer or renderer-side support state was added
+- as charge builds, one to three small nanite packets appear around the Medic, matching the established v1.33 heal-link language
+- once healCooldown reaches ready state, all eight segments are lit and a compact medical cross plus outer ready ring appear
+- when an injured ally enters support range while ready, the existing real Medic logic fires immediately, resets healCooldown and the visible cycle naturally restarts
+- if no valid damaged ally exists, the Medic stays visually ready rather than inventing a fake target or consuming the cooldown
+- Reduced Motion freezes cycle rotation/orbit motion while preserving charge, packet count and ready-state readability
+- Medic heal amount, support range, support interval, patient priority, follow behavior, attack behavior and all balance values are unchanged
+- a pure medicCycleVisual helper centralizes exact charge/remaining ratios, segment fill, nanite packet count, ring geometry and ready cross size
+- regression coverage verifies exact half-charge, ready state, non-Medic suppression and malformed cooldown fallback
+- release: package 1.50.0 / v1.50 / iOS 1.50 (150)

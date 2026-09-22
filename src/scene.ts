@@ -38,6 +38,7 @@ import {
   type CoreHitReaction,
 } from "./core-hit-reaction";
 import { healLinkVisual } from "./heal-link-visual";
+import { medicCycleVisual } from "./medic-cycle-visual";
 import {
   battlefieldScarVisual,
   type BattlefieldScar,
@@ -1764,6 +1765,152 @@ export class ArenaScene extends Phaser.Scene {
               (1 - settle) * 0.06),
         );
       }
+      if (u.cardId === "medic") {
+        const medicCard = CARDS.find(
+          (card) => card.id === "medic",
+        );
+        const medicCycle = medicCycleVisual(
+          u.cardId,
+          u.healCooldown,
+          medicCard?.supportInterval ?? u.interval,
+        );
+        if (medicCycle.active) {
+          const medicColor =
+            u.team === "player" ? 0x78ffd0 : 0xffb58d;
+          const medicBright =
+            u.team === "player" ? 0xd8fff0 : 0xffeadf;
+          const cycleStart = -Math.PI / 2;
+          const segmentSpan =
+            (Math.PI * 2) / medicCycle.segmentCount;
+          const cycleRotation = this.reducedMotion
+            ? 0
+            : this.clock *
+              (medicCycle.ready ? 0.38 : 0.18);
+
+          fx.fillStyle(
+            medicColor,
+            medicCycle.alpha *
+              (medicCycle.ready ? 0.07 : 0.035),
+          );
+          fx.fillCircle(
+            u.x,
+            u.y,
+            medicCycle.ringRadius - 4,
+          );
+
+          for (
+            let segment = 0;
+            segment < medicCycle.segmentCount;
+            segment++
+          ) {
+            const filled =
+              segment < medicCycle.filledSegments;
+            const from =
+              cycleStart +
+              cycleRotation +
+              segment * segmentSpan +
+              segmentSpan * 0.12;
+            const to =
+              cycleStart +
+              cycleRotation +
+              (segment + 1) * segmentSpan -
+              segmentSpan * 0.12;
+
+            fx.lineStyle(
+              filled
+                ? medicCycle.ringThickness
+                : 1,
+              filled ? medicColor : 0x425b57,
+              filled
+                ? medicCycle.alpha *
+                  (medicCycle.ready ? 0.9 : 0.68)
+                : 0.22,
+            );
+            fx.beginPath();
+            fx.arc(
+              u.x,
+              u.y,
+              medicCycle.ringRadius,
+              from,
+              to,
+              false,
+            );
+            fx.strokePath();
+          }
+
+          for (
+            let packet = 0;
+            packet < medicCycle.packetCount;
+            packet++
+          ) {
+            const angle =
+              -Math.PI / 2 +
+              (packet * Math.PI * 2) /
+                Math.max(1, medicCycle.packetCount) +
+              (this.reducedMotion
+                ? 0
+                : this.clock *
+                  (0.65 + medicCycle.charge * 0.55));
+            const packetX =
+              u.x +
+              Math.cos(angle) *
+                medicCycle.packetRadius;
+            const packetY =
+              u.y +
+              Math.sin(angle) *
+                medicCycle.packetRadius;
+
+            fx.fillStyle(
+              packet === 0 ? 0xffffff : medicColor,
+              medicCycle.alpha *
+                (0.62 + medicCycle.charge * 0.24),
+            );
+            fx.fillCircle(
+              packetX,
+              packetY,
+              1.3 + medicCycle.charge * 0.7,
+            );
+          }
+
+          if (medicCycle.ready) {
+            const readyPulse = this.reducedMotion
+              ? 0.8
+              : 0.68 +
+                Math.sin(
+                  this.clock * 6.5 + u.id * 0.5,
+                ) *
+                  0.12;
+            fx.fillStyle(
+              medicBright,
+              medicCycle.alpha * readyPulse,
+            );
+            fx.fillRect(
+              u.x - 1.2,
+              u.y - medicCycle.crossReach,
+              2.4,
+              medicCycle.crossReach * 2,
+            );
+            fx.fillRect(
+              u.x - medicCycle.crossReach,
+              u.y - 1.2,
+              medicCycle.crossReach * 2,
+              2.4,
+            );
+
+            fx.lineStyle(
+              1,
+              medicColor,
+              medicCycle.alpha * 0.52,
+            );
+            fx.strokeCircle(
+              u.x,
+              u.y,
+              medicCycle.ringRadius + 3,
+            );
+          }
+        }
+      }
+
       if (u.shield > 0) {
         const shieldVisual = shieldIntegrityVisual(
           u.shield,
