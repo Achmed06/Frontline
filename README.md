@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.21
+## Current v1.22
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -851,4 +851,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - reduced-motion mode keeps the static end-state boundaries and text but removes the moving sweep, scaling entrance and Core-destruction camera shake
 - a pure matchEndVisual helper centralizes outcome wording/focus with regression coverage for victory, defeat, simultaneous Core destruction and non-Core endings
 - release: package 1.21.0 / v1.21 / iOS 1.21 (121)
+
+## v1.22 changes
+
+- the existing three-second pre-match countdown is now a staged battlefield synchronization sequence instead of three isolated numbers
+- second 3 performs a CORE-LINK system check, confirms both Cores online and visually scans the tactical HUD
+- second 2 switches to SUPPLY-LINK and confirms all three deployment columns, with synchronized three-lane status bars
+- second 1 performs a KOMMANDO-LINK between the actual selected player and enemy Commanders before abilities become usable
+- LOS inherits the current objective: Core matches show CORE BRECHEN while control matches show RELAIS SICHERN
+- Daily Front matches identify themselves during the first Core-link phase without adding another modal or delaying control
+- the sequence reuses the existing 3000 ms preparation and 650 ms LOS window, so match timing, energy generation and first-action timing remain unchanged
+- reduced-motion keeps every phase, number and status message but disables scan, lane pulse and scale animations
+- a pure matchStartVisual helper centralizes phase timing and wording with boundary, objective, Daily Front, Commander and malformed-time regression coverage
+- release: package 1.22.0 / v1.22 / iOS 1.22 (122)
 

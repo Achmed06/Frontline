@@ -2395,34 +2395,158 @@ h1 em {
   letter-spacing: 1px;
 }
 .deployment-countdown {
+  --start-progress: 0;
   position: absolute;
   z-index: 10;
   top: 43%;
   left: 50%;
-  min-width: 78px;
+  width: min(88%, 320px);
+  min-width: 230px;
   transform: translate(-50%, -50%);
-  padding: 8px 15px 10px;
+  padding: 12px 18px 14px;
+  overflow: hidden;
   border: 1px solid #9be8cf88;
   border-radius: 10px;
   background:
+    linear-gradient(90deg, transparent, #48d7ae12 18%, #48d7ae12 82%, transparent),
     radial-gradient(circle at 50% 30%, #48d7ae2f, transparent 64%),
     #102736ee;
   color: #d9fff0;
-  box-shadow: 0 10px 28px #06131d88, inset 0 0 18px #48d7ae1c;
+  box-shadow:
+    0 10px 28px #06131d88,
+    inset 0 0 18px #48d7ae1c;
   text-align: center;
-  font: 800 44px/1 "Barlow Condensed", Impact, sans-serif;
-  letter-spacing: 1px;
   pointer-events: none;
   animation: deployment-count .55s ease-out;
 }
+.deployment-countdown::before,
+.deployment-countdown::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+.deployment-countdown::before {
+  inset: 0;
+  opacity: .36;
+  background:
+    linear-gradient(90deg, transparent 0 9%, #8fffd31c 9% 9.5%, transparent 9.5% 90%, #8fffd31c 90% 90.5%, transparent 90.5%),
+    repeating-linear-gradient(0deg, transparent 0 16px, #baffdf0b 16px 17px);
+}
+.deployment-countdown::after {
+  left: 7%;
+  right: 7%;
+  top: 16%;
+  height: 1px;
+  opacity: .75;
+  background: linear-gradient(90deg, transparent, #d9fff0, transparent);
+  box-shadow: 0 0 10px #6cffc777;
+  animation: deployment-scan .95s linear infinite;
+}
+.deployment-countdown small,
+.deployment-countdown strong,
+.deployment-countdown span,
+.deployment-countdown b,
+.deployment-sync {
+  position: relative;
+  z-index: 1;
+}
+.deployment-countdown small {
+  display: block;
+  min-height: 10px;
+  color: #8fbbb4;
+  font: 700 7px/1.2 monospace;
+  letter-spacing: 1.8px;
+}
+.deployment-countdown b {
+  display: block;
+  margin: 3px 0 1px;
+  color: #e2fff5;
+  font: 800 44px/1 "Barlow Condensed", Impact, sans-serif;
+  letter-spacing: 1px;
+  text-shadow: 0 0 16px #54e9b955;
+}
+.deployment-countdown strong {
+  display: block;
+  color: #c9f9e8;
+  font: 800 15px/1.05 "Barlow Condensed", Impact, sans-serif;
+  letter-spacing: .8px;
+}
+.deployment-countdown > span {
+  display: block;
+  margin-top: 4px;
+  color: #83a9a3;
+  font: 700 7px/1.3 monospace;
+  letter-spacing: .8px;
+}
+.deployment-sync {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  width: 76%;
+  margin: 10px auto 0;
+}
+.deployment-sync i {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: #45625f;
+  box-shadow: inset 0 0 0 1px #baffdf12;
+}
+.deployment-countdown[data-phase="cores"] .deployment-sync i:first-child,
+.deployment-countdown[data-phase="cores"] .deployment-sync i:last-child {
+  background: #6fffd2;
+  box-shadow: 0 0 10px #6fffd277;
+  animation: deployment-core-ping .62s ease-in-out infinite alternate;
+}
+.deployment-countdown[data-phase="supply"] .deployment-sync i {
+  background: #71e9c1;
+  box-shadow: 0 0 8px #71e9c155;
+  animation: deployment-lane-sync .7s ease-in-out infinite alternate;
+}
+.deployment-countdown[data-phase="supply"] .deployment-sync i:nth-child(2) {
+  animation-delay: .1s;
+}
+.deployment-countdown[data-phase="supply"] .deployment-sync i:nth-child(3) {
+  animation-delay: .2s;
+}
+.deployment-countdown[data-phase="commanders"] {
+  border-color: #a7d4ff88;
+  background:
+    linear-gradient(90deg, #6fb8ff0d, transparent 32% 68%, #ff826b0d),
+    radial-gradient(circle at 50% 30%, #86c4ff22, transparent 64%),
+    #102736ee;
+}
+.deployment-countdown[data-phase="commanders"] .deployment-sync i:first-child {
+  background: #75efc7;
+  box-shadow: 0 0 10px #75efc777;
+}
+.deployment-countdown[data-phase="commanders"] .deployment-sync i:nth-child(2) {
+  background: linear-gradient(90deg, #75efc7, #ff8c76);
+  box-shadow: 0 0 8px #d8fff044;
+}
+.deployment-countdown[data-phase="commanders"] .deployment-sync i:last-child {
+  background: #ff8c76;
+  box-shadow: 0 0 10px #ff8c7677;
+}
 .deployment-countdown.go {
-  min-width: 112px;
   border-color: #ffe39a;
   color: #fff0ad;
   background:
     radial-gradient(circle at 50% 30%, #ffdd7338, transparent 64%),
     #26303cee;
   animation: deployment-go .38s ease-out;
+}
+.deployment-countdown.go::after {
+  display: none;
+}
+.deployment-countdown.go b,
+.deployment-countdown.go strong {
+  color: #fff0ad;
+  text-shadow: 0 0 16px #ffdd7366;
+}
+.deployment-countdown.go .deployment-sync i {
+  background: #ffe28a;
+  box-shadow: 0 0 10px #ffe28a77;
 }
 @keyframes deployment-count {
   from { opacity: .35; transform: translate(-50%, -50%) scale(.82); }
@@ -2433,9 +2557,26 @@ h1 em {
   55% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
   to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
+@keyframes deployment-scan {
+  from { transform: translateY(0); opacity: .15; }
+  45% { opacity: .8; }
+  to { transform: translateY(82px); opacity: .08; }
+}
+@keyframes deployment-core-ping {
+  from { opacity: .5; transform: scaleX(.72); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+@keyframes deployment-lane-sync {
+  from { opacity: .45; transform: scaleX(.62); }
+  to { opacity: 1; transform: scaleX(1); }
+}
 @media (prefers-reduced-motion: reduce) {
   .deployment-countdown,
-  .deployment-countdown.go { animation: none; }
+  .deployment-countdown.go,
+  .deployment-countdown::after,
+  .deployment-sync i {
+    animation: none !important;
+  }
 }
 .battle-banner {
   position: absolute;

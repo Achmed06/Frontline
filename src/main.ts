@@ -89,6 +89,7 @@ import {
   type MatchFeedback,
 } from "./storage";
 import { resultComparison, renderMatchHistory } from "./match-report";
+import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
 
@@ -616,6 +617,34 @@ function setCoachFocus(focus: BattleCoachFocus | null) {
   el("arena").parentElement?.classList.toggle("coach-focus", focus === "arena");
   el("commander").classList.toggle("coach-focus", focus === "commander");
 }
+
+function renderMatchStartCountdown(
+  countdown: HTMLElement,
+  visual: MatchStartVisual,
+): void {
+  const key = [
+    visual.phase,
+    visual.count ?? "go",
+    visual.kicker,
+    visual.title,
+    visual.detail,
+  ].join("|");
+  countdown.dataset.phase = visual.phase;
+  countdown.style.setProperty("--start-progress", String(visual.progress));
+  countdown.classList.toggle("go", visual.phase === "go");
+  countdown.setAttribute(
+    "aria-label",
+    `${visual.kicker}. ${visual.title}. ${visual.detail}.`,
+  );
+  if (countdown.dataset.key === key) return;
+  countdown.dataset.key = key;
+  countdown.innerHTML =
+    `<small>${visual.kicker}</small>` +
+    `<b>${visual.count ?? "LOS"}</b>` +
+    `<strong>${visual.title}</strong>` +
+    `<span>${visual.detail}</span>` +
+    '<div class="deployment-sync" aria-hidden="true"><i></i><i></i><i></i></div>';
+}
 function updateHud(force = false) {
   if (!force && (!active || paused || ended)) return;
   const now = performance.now();
@@ -623,14 +652,28 @@ function updateHud(force = false) {
   const countdown = el("deployment-countdown");
   if (active && !ended && now < matchReadyAt) {
     countdown.hidden = false;
-    countdown.classList.remove("go");
-    countdown.textContent = String(
-      Math.max(1, Math.ceil((matchReadyAt - now) / 1000)),
+    renderMatchStartCountdown(
+      countdown,
+      matchStartVisual(
+        matchReadyAt - now,
+        COMMANDERS[match.commanders.player].name,
+        COMMANDERS[match.commanders.enemy].name,
+        Boolean(match.controlObjective),
+        Boolean(activeDaily),
+      ),
     );
   } else if (active && !ended && now < matchGoUntil) {
     countdown.hidden = false;
-    countdown.classList.add("go");
-    countdown.textContent = "LOS";
+    renderMatchStartCountdown(
+      countdown,
+      matchStartVisual(
+        0,
+        COMMANDERS[match.commanders.player].name,
+        COMMANDERS[match.commanders.enemy].name,
+        Boolean(match.controlObjective),
+        Boolean(activeDaily),
+      ),
+    );
     if (!startBannerShown) {
       startBannerShown = true;
       announceBattle(
@@ -641,6 +684,8 @@ function updateHud(force = false) {
   } else {
     countdown.hidden = true;
     countdown.classList.remove("go");
+    delete countdown.dataset.phase;
+    delete countdown.dataset.key;
   }
   if (!force && now - lastHud < 100) return;
   lastHud = now;
