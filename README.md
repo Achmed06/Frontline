@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.33
+## Current v1.34
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1019,3 +1019,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure healLinkVisual helper centralizes lifetime progress, intensity, packet staging and malformed-value clamping
 - regression coverage verifies staged transfer, non-targeted fallback and safe handling of malformed timing/value data
 - release: package 1.33.0 / v1.33 / iOS 1.33 (133)
+
+
+## v1.34 changes
+
+- destroyed units now leave short-lived battlefield scars so intense fights have a visible aftermath instead of resetting visually as soon as the K.O. burst expires
+- scars are presentation-only and never participate in collision, pathfinding, targeting, capture or deployment logic
+- the finishing weapon profile determines the mark: explosive/heavy/rail kills leave compact crater rings and fractures, electric kills leave residual discharge traces, melee/breach kills leave directional scrape marks and other weapons leave restrained burn marks
+- scar size derives from the existing death-effect radius and weapon impact profile rather than introducing new combat data
+- marks settle in after the death burst, remain readable for several seconds and then fade out cleanly
+- the arena keeps at most 16 marks at once to avoid clutter and rendering growth during long battles
+- marks reset immediately with a new Match and pause naturally with the match clock
+- reduced-motion requires no alternate motion path because scars are static ground feedback
+- a pure battlefieldScarVisual helper centralizes lifetime, fade, radius and weapon-profile styling
+- regression coverage verifies settle/hold/fade behavior, source weapon styling and malformed-value clamping
+- release: package 1.34.0 / v1.34 / iOS 1.34 (134)

@@ -21,6 +21,10 @@ import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
 import { coreTurretVisual } from "./core-turret-visual";
 import { healLinkVisual } from "./heal-link-visual";
+import {
+  battlefieldScarVisual,
+  type BattlefieldScar,
+} from "./battlefield-scar";
 import { COMMANDERS } from "./commanders";
 import {
   sampleUnitVitals,
@@ -78,6 +82,7 @@ export class ArenaScene extends Phaser.Scene {
   private endSequenceStartedAt: number | null = null;
   private clock = 0;
   private reactedEffects = new Set<number>();
+  private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
   private reducedMotion = false;
   private lastMatch: Match | null = null;
@@ -281,6 +286,7 @@ export class ArenaScene extends Phaser.Scene {
       this.unitMotion.clear();
       this.unitVitals.clear();
       this.reactedEffects.clear();
+      this.battleScars = [];
       this.brokenCores.clear();
       this.endSequenceStartedAt = null;
       this.endTitle.setVisible(false);
@@ -769,6 +775,112 @@ export class ArenaScene extends Phaser.Scene {
       g.lineStyle(1, 0x698176, 0.25);
       g.lineBetween(x - 4, y - 5, x + 6, y - 4 + angle * 4);
     }
+
+    this.battleScars = this.battleScars.filter((scar) =>
+      battlefieldScarVisual(scar, this.clock),
+    );
+    for (const scar of this.battleScars) {
+      const visual = battlefieldScarVisual(scar, this.clock);
+      if (!visual) continue;
+      const angle = scar.id * 0.73;
+      const accent =
+        scar.kind === undefined ? 0x738078 : 0x738078;
+      const teamNeutral = 0x0a1012;
+
+      g.fillStyle(teamNeutral, visual.alpha * 0.72);
+      g.fillEllipse(
+        scar.x,
+        scar.y + 7,
+        visual.radius * 2.1,
+        visual.radius * 0.68,
+      );
+
+      if (
+        visual.kind === "explosive" ||
+        visual.kind === "heavy" ||
+        visual.kind === "rail"
+      ) {
+        g.lineStyle(
+          visual.kind === "explosive" ? 2 : 1.4,
+          0x8f735c,
+          visual.ringAlpha,
+        );
+        g.strokeEllipse(
+          scar.x,
+          scar.y + 4,
+          visual.radius * 1.8,
+          visual.radius * 0.72,
+        );
+        g.lineStyle(1, 0xc49b6b, visual.debrisAlpha * 0.62);
+        for (let i = 0; i < 5; i++) {
+          const a = angle + i * (Math.PI * 2) / 5;
+          const inner = visual.radius * 0.34;
+          const outer = visual.radius * (0.66 + (i % 2) * 0.12);
+          g.lineBetween(
+            scar.x + Math.cos(a) * inner,
+            scar.y + 4 + Math.sin(a) * inner * 0.42,
+            scar.x + Math.cos(a) * outer,
+            scar.y + 4 + Math.sin(a) * outer * 0.42,
+          );
+        }
+      } else if (visual.kind === "electric") {
+        g.lineStyle(1.4, 0x88d5ff, visual.ringAlpha * 0.72);
+        for (let i = 0; i < 4; i++) {
+          const a = angle + i * Math.PI * 0.5;
+          const r = visual.radius * 0.62;
+          const x1 = scar.x + Math.cos(a) * r * 0.35;
+          const y1 = scar.y + Math.sin(a) * r * 0.2;
+          const x2 = scar.x + Math.cos(a + 0.24) * r;
+          const y2 = scar.y + Math.sin(a + 0.24) * r * 0.42;
+          g.lineBetween(x1, y1, x2, y2);
+        }
+        g.fillStyle(0x88d5ff, visual.debrisAlpha * 0.35);
+        g.fillCircle(scar.x, scar.y + 4, 2.2);
+      } else if (
+        visual.kind === "melee" ||
+        visual.kind === "breach"
+      ) {
+        g.lineStyle(
+          visual.kind === "breach" ? 1.7 : 1.2,
+          visual.kind === "breach" ? 0xc99e57 : 0x77817c,
+          visual.ringAlpha * 0.75,
+        );
+        for (let i = -1; i <= 1; i++) {
+          const dx = Math.cos(angle) * visual.radius * 0.72;
+          const dy = Math.sin(angle) * visual.radius * 0.36;
+          const px = -Math.sin(angle) * i * 4;
+          const py = Math.cos(angle) * i * 2;
+          g.lineBetween(
+            scar.x - dx + px,
+            scar.y + 4 - dy + py,
+            scar.x + dx + px,
+            scar.y + 4 + dy + py,
+          );
+        }
+      } else {
+        g.lineStyle(1.2, accent, visual.ringAlpha * 0.72);
+        g.strokeEllipse(
+          scar.x,
+          scar.y + 4,
+          visual.radius * 1.25,
+          visual.radius * 0.46,
+        );
+        g.fillStyle(0x8b6d58, visual.debrisAlpha * 0.28);
+        g.fillCircle(scar.x, scar.y + 4, Math.max(2, visual.radius * 0.18));
+      }
+
+      g.fillStyle(0x0b1012, visual.alpha * 0.48);
+      for (let i = 0; i < 3; i++) {
+        const a = angle + i * 2.1;
+        g.fillRect(
+          scar.x + Math.cos(a) * visual.radius * 0.55 - 1.5,
+          scar.y + 4 + Math.sin(a) * visual.radius * 0.24 - 1,
+          3,
+          2,
+        );
+      }
+    }
+
     for (const p of s.points) {
       const pressure = controlPointPressure(s, p);
       const relayVisual = controlPointVisual(
@@ -1426,6 +1538,19 @@ export class ArenaScene extends Phaser.Scene {
       const color = e.team === "player" ? MINT : CORAL;
       if (!this.reactedEffects.has(e.id)) {
         this.reactedEffects.add(e.id);
+        if (e.type === "death") {
+          this.battleScars.push({
+            id: e.id,
+            x: e.x,
+            y: e.y,
+            createdAt: this.clock,
+            duration: 7.5,
+            radius: e.radius ?? 18,
+            sourceCardId: e.sourceCardId,
+          });
+          if (this.battleScars.length > 16)
+            this.battleScars.splice(0, this.battleScars.length - 16);
+        }
         if (!this.reducedMotion) {
           if (e.type === "core-hit") {
             const weight = e.radius ?? 18;
