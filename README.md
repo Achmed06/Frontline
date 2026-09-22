@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.23
+## Current v1.24
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -876,4 +876,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - overtime presentation is derived by a pure matchOvertimeVisual helper and does not modify the existing 180-second regulation, 45-second extension, score resolution or Core-destruction behavior
 - regression coverage verifies hidden/entry/pressure/final phases, exact remaining time, phase boundaries and malformed-time clamping
 - release: package 1.23.0 / v1.23 / iOS 1.23 (123)
+
+## v1.24 changes
+
+- the post-match modal now opens with one compact ENTSCHEIDUNG score strip instead of forcing players to infer the deciding tiebreak from scattered stats
+- Core destruction, completed relay objective, time-limit control advantage, Core-HP advantage and territory advantage each receive an explicit final-decision label
+- the strip shows the final DU vs GEGNER values for RELAIS when relevant, CORE and GEBIET, while highlighting only the metric that actually decided the match
+- simultaneous Core destruction, simultaneous control completion and full score ties stay visually neutral instead of implying a false winning metric
+- Core percentages are clamped from the actual final HP state; control time is shown to one decimal and territory uses the exact final owners
+- the decision helper consumes the engine's final winner/reason plus final state rather than re-running a separate scoring approximation in the UI
+- the existing final-front map, progression rewards, mastery, comparison, rematch actions and feedback remain unchanged below the new strip
+- regression coverage verifies immediate Core wins, control-objective wins, all three time-limit tiebreak layers and neutral draw handling
+- release: package 1.24.0 / v1.24 / iOS 1.24 (124)
 

@@ -3795,3 +3795,91 @@ h1 em {
 #backup-status { min-height: 3em; }
 
 #store-retry { width: 100%; margin-top: 10px; }
+
+.result-decision {
+  margin: 17px 0 19px;
+  border: 1px solid #3f533e;
+  border-radius: 7px;
+  overflow: hidden;
+  background:
+    linear-gradient(155deg, #1f3025, #16231c 72%),
+    #16231c;
+}
+.result-decision header {
+  padding: 12px 13px 10px;
+  border-bottom: 1px solid #344735;
+}
+.result-decision header small {
+  display: block;
+  color: #758d71;
+  font: 700 7px/1 monospace;
+  letter-spacing: 1.2px;
+}
+.result-decision header b {
+  display: block;
+  margin-top: 5px;
+  color: #e1ecd3;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: .5px;
+}
+.result-decision header span {
+  display: block;
+  margin-top: 5px;
+  color: #8ea186;
+  font-size: 8px;
+  line-height: 1.4;
+}
+.result-decision-head,
+.result-decision-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) 72px 72px;
+  align-items: center;
+  gap: 7px;
+  padding-inline: 12px;
+}
+.result-decision-head {
+  min-height: 24px;
+  color: #71836e;
+  font: 700 7px/1 monospace;
+  letter-spacing: .8px;
+}
+.result-decision-head b {
+  text-align: right;
+}
+.result-decision-row {
+  position: relative;
+  min-height: 37px;
+  border-top: 1px solid #2d402f;
+  color: #8ea187;
+}
+.result-decision-row > span {
+  font: 700 8px/1 monospace;
+  letter-spacing: .8px;
+}
+.result-decision-row strong {
+  text-align: right;
+  color: #b8c8ad;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 18px;
+  letter-spacing: .4px;
+}
+.result-decision-row.decisive {
+  background: linear-gradient(90deg, #a8d86b12, #a8d86b05);
+  box-shadow: inset 3px 0 0 var(--lime);
+}
+.result-decision-row.decisive > span,
+.result-decision-row.decisive strong {
+  color: var(--lime);
+}
+.result-decision[data-metric="draw"] .result-decision-row.decisive {
+  box-shadow: none;
+  background: transparent;
+}
+@media (max-width: 380px) {
+  .result-decision-head,
+  .result-decision-row {
+    grid-template-columns: minmax(64px, 1fr) 62px 62px;
+  }
+}

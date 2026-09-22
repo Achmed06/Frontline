@@ -90,6 +90,7 @@ import {
 } from "./storage";
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
+import { resultDecision } from "./result-debrief";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
 
@@ -554,6 +555,9 @@ function finish() {
   const missionResult = mission
     ? `<div class="mission-result"><b>${"★".repeat(earnedStars)}${"☆".repeat(3 - earnedStars)}</b><p>${won ? (nextMission ? "Nächster Einsatz freigeschaltet." : "Kampagne abgeschlossen. Verbessere deine Sterne in früheren Einsätzen.") : "Gewinne diesen Einsatz, um weiter vorzurücken."}</p>${!progressSaved ? "<small>Fortschritt nur für diese Sitzung gespeichert.</small>" : ""}</div>`
     : "";
+  const decision = resultDecision(match.state, match.controlObjective);
+  const decisionResult =
+    `<section class="result-decision" data-metric="${decision.metric}" aria-label="Matchentscheidung"><header><small>ENTSCHEIDUNG</small><b>${decision.title}</b><span>${decision.detail}</span></header><div class="result-decision-head"><span></span><b>DU</b><b>GEGNER</b></div>${decision.rows.map((row) => `<div class="result-decision-row ${row.decisive ? "decisive" : ""}"><span>${row.label}</span><strong>${row.player}</strong><strong>${row.enemy}</strong></div>`).join("")}</section>`;
   const report = createMatchRecord(match, mission?.id);
   const oldMastery = mastery;
   mastery = advanceMastery(mastery, match.state, report.id);
@@ -575,7 +579,7 @@ function finish() {
   history.length = Math.min(history.length, HISTORY_LIMIT);
   const recorded = saveHistory(history);
   showModal(
-    `<div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p>${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${resultComparison(report)}${finalFrontMap()}<div class="result-stats"><div><strong>${st.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${st.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${st.kills}</strong><span>ABSCHÜSSE</span></div></div>${nextMission ? `<button id="next-mission" class="primary">NÄCHSTER EINSATZ ↗</button>` : ""}<button id="rematch" class="${nextMission ? "secondary" : "primary"}">${wasDraft ? "NEUES DECK DRAFTEN" : wasSeries ? (seriesEnded(seriesRun!) ? "SERIENÜBERSICHT" : "SERIE FORTSETZEN") : wasDaily ? "TAGESFRONT WIEDERHOLEN" : mission ? "EINSATZ WIEDERHOLEN" : "NOCH EIN GEFECHT"} <span>↗</span></button><button id="back" class="secondary">Zur Basis</button><div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div>`,
+    `<div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p>${decisionResult}${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${resultComparison(report)}${finalFrontMap()}<div class="result-stats"><div><strong>${st.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${st.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${st.kills}</strong><span>ABSCHÜSSE</span></div></div>${nextMission ? `<button id="next-mission" class="primary">NÄCHSTER EINSATZ ↗</button>` : ""}<button id="rematch" class="${nextMission ? "secondary" : "primary"}">${wasDraft ? "NEUES DECK DRAFTEN" : wasSeries ? (seriesEnded(seriesRun!) ? "SERIENÜBERSICHT" : "SERIE FORTSETZEN") : wasDaily ? "TAGESFRONT WIEDERHOLEN" : mission ? "EINSATZ WIEDERHOLEN" : "NOCH EIN GEFECHT"} <span>↗</span></button><button id="back" class="secondary">Zur Basis</button><div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div>`,
   );
   el("rematch").onclick = () => {
     if (wasDraft) {
