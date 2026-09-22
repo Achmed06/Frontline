@@ -18,6 +18,7 @@ import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
 import { shieldImpactVisual } from "./shield-impact-visual";
+import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
@@ -340,34 +341,9 @@ export class ArenaScene extends Phaser.Scene {
     ]);
   }
 
-  private combatValueLabel(
-    effect: Effect,
-  ): { text: string; color: string } | null {
-    const value = effect.value ?? 0;
-    if (!Number.isFinite(value)) return null;
-    if (effect.type === "frontline" && value !== 0)
-      return {
-        text:
-          value > 0
-            ? `VORRÜCKEN +${Math.abs(value)} SEKTOR${Math.abs(value) === 1 ? "" : "EN"}`
-            : `RÜCKZUG −${Math.abs(value)} SEKTOR${Math.abs(value) === 1 ? "" : "EN"}`,
-        color: effect.team === "player" ? "#83ffcf" : "#ffc0a2",
-      };
-    if (value <= 0) return null;
-    if (effect.type === "impact" && value >= 35)
-      return { text: `−${Math.round(value)}`, color: "#ffd0a0" };
-    if (effect.type === "core-hit" && value >= 35)
-      return { text: `−${Math.round(value)} CORE`, color: "#ffe39a" };
-    if (effect.type === "heal" && value >= 30)
-      return { text: `+${Math.round(value)}`, color: "#9dffd0" };
-    if (effect.type === "shield" && value >= 20)
-      return { text: `+${Math.round(value)} SCH`, color: "#a9dfff" };
-    return null;
-  }
-
   private syncCombatText(effects: readonly Effect[]): void {
     const visible = effects
-      .filter((effect) => this.combatValueLabel(effect))
+      .filter((effect) => combatValuePresentation(effect))
       .sort((a, b) => b.id - a.id)
       .slice(0, 5);
     const visibleIds = new Set(visible.map((effect) => effect.id));
@@ -379,7 +355,7 @@ export class ArenaScene extends Phaser.Scene {
       }
 
     for (const effect of visible) {
-      const info = this.combatValueLabel(effect)!;
+      const info = combatValuePresentation(effect)!;
       const progress = 1 - effect.life / effect.maxLife;
       const alpha = Math.max(0, effect.life / effect.maxLife);
       const useTarget =
@@ -391,14 +367,19 @@ export class ArenaScene extends Phaser.Scene {
       let label = this.combatText.get(effect.id);
       if (!label) {
         label = this.add
-          .text(x, baseY - 18, info.text, {
+          .text(
+            x + info.xOffset,
+            baseY - 18 + info.yOffset,
+            info.text,
+            {
             fontFamily: "monospace",
             fontSize: "9px",
             fontStyle: "bold",
             color: info.color,
             stroke: "#071416",
             strokeThickness: 3,
-          })
+            },
+          )
           .setOrigin(0.5)
           .setDepth(8);
         this.combatText.set(effect.id, label);
@@ -407,8 +388,11 @@ export class ArenaScene extends Phaser.Scene {
         .setText(info.text)
         .setColor(info.color)
         .setPosition(
-          x,
-          baseY - 18 - (this.reducedMotion ? 0 : progress * 18),
+          x + info.xOffset,
+          baseY -
+            18 +
+            info.yOffset -
+            (this.reducedMotion ? 0 : progress * 18),
         )
         .setAlpha(Math.min(1, alpha * 1.35))
         .setScale(

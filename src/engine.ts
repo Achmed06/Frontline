@@ -1519,7 +1519,7 @@ export class Match {
         0.24,
         undefined,
         clamp(6 + applied * 0.15, 7, 18),
-        applied,
+        hpDamage,
         sourceCardId,
         sourcePosition,
       );

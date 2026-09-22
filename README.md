@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.39
+## Current v1.40
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1107,3 +1107,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure shieldImpactVisual helper centralizes lifetime, radius, direction, crack reach and fragment reach
 - regression coverage verifies absorption vs break styling, real Atlas/Pulse shield-break event emission and malformed-value fallback
 - release: package 1.39.0 / v1.39 / iOS 1.39 (139)
+
+
+## v1.40 changes
+
+- floating combat values now distinguish shield damage from HP damage instead of presenting one ambiguous combined hit value
+- shield absorption uses a dedicated team-aware label such as −26 SCH and sits slightly above/left of the body-damage lane
+- meaningful HP damage uses a separate −N HP label slightly below/right, so shield overflow can be read as two parts of the same attack without overlapping text
+- damageUnit still derives hit radius and impact weight from the full applied damage, but the impact event's numeric value now carries HP damage only while shield-hit carries shield damage
+- shield-break itself intentionally emits no second number, avoiding duplicate damage text during the collapse animation
+- low chip damage remains suppressed: HP labels start at 20 and shield labels at 15, preserving arena readability during Swarm/low-damage exchanges
+- high-signal healing, shield gain, Core damage and frontline labels remain supported and now use explicit HP/SCH suffixes where relevant
+- combat-value formatting and label offsets moved into a pure combatValuePresentation helper for regression coverage
+- real Atlas + Pulse overflow coverage verifies the engine exposes 70 shield damage and 15 HP overflow separately
+- damage, mitigation, shield values, hit radius, camera shake and all balance rules are unchanged
+- release: package 1.40.0 / v1.40 / iOS 1.40 (140)
