@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.18
+## Current v1.19
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -814,4 +814,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - all impact profiles are pure presentation data and do not alter damage, attack interval, targeting, projectile timing, shields or HP
 - regression coverage verifies weapon-profile mapping plus exact source propagation through impact, death, Core-hit and Core-turret damage events
 - release: package 1.18.0 / v1.18 / iOS 1.18 (118)
+
+## v1.19 changes
+
+- units now preserve a stable horizontal facing and visibly turn toward meaningful movement or the exact target of their current attack
+- active attacks override travel facing, so a unit that is still drifting one way can immediately present its weapon toward the actual target
+- near-vertical movement keeps the last facing instead of rapidly flipping on tiny horizontal jitter
+- moving units gain restrained ground dust/trail marks based on their real movement vector, while a short settle ellipse marks an abrupt stop
+- attack stance now adds a subtle width/height compression on top of the existing recoil instead of relying on translation alone
+- horizontal travel adds a very small directional body lean while the existing walk bob remains intact
+- reduced-motion mode keeps target-facing information but removes walk bob, directional lean, dust and stop-settle animation
+- movement sampling and trail geometry are isolated in a pure helper with regression coverage for travel facing, target override, vertical preservation, stop detection and trail direction
+- all changes are presentation-only: speed, pathfinding, targeting, attack timing, collision and combat balance remain unchanged
+- release: package 1.19.0 / v1.19 / iOS 1.19 (119)
 

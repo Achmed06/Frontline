@@ -13,6 +13,11 @@ import {
 } from "./engine";
 import { unitSvg } from "./art";
 import { impactProfile } from "./combat-feedback";
+import {
+  sampleUnitMotion,
+  unitTrailPoint,
+  type UnitFacing,
+} from "./unit-motion";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
@@ -30,7 +35,17 @@ export class ArenaScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
   private fx!: Phaser.GameObjects.Graphics;
   private sprites = new Map<number, Phaser.GameObjects.Image>();
-  private unitMotion = new Map<number, { x: number; y: number; phase: number }>();
+  private unitMotion = new Map<
+    number,
+    {
+      x: number;
+      y: number;
+      phase: number;
+      facing: UnitFacing;
+      moving: boolean;
+      settleUntil: number;
+    }
+  >();
   private labels: Phaser.GameObjects.Text[] = [];
   private deploymentLaneLabels: Phaser.GameObjects.Text[] = [];
   private combatText = new Map<number, Phaser.GameObjects.Text>();
@@ -937,13 +952,6 @@ export class ArenaScene extends Phaser.Scene {
         ? 1 - spawnEffect.life / spawnEffect.maxLife
         : 1;
       const spawnScale = 0.72 + Math.min(1, spawnProgress * 1.5) * 0.28;
-      const previous = this.unitMotion.get(u.id);
-      const moved = previous ? Math.hypot(u.x - previous.x, u.y - previous.y) : 0;
-      const moving = moved > 0.015;
-      const phase = (previous?.phase ?? u.id * 0.71) + Math.min(0.9, moved * 0.42);
-      this.unitMotion.set(u.id, { x: u.x, y: u.y, phase });
-      const walkBob = moving ? Math.sin(phase) * 1.6 : 0;
-      const walkScale = moving ? 1 + Math.sin(phase * 2) * 0.018 : 1;
       const firing = s.effects.find(
         (effect) =>
           effect.type === "shot" &&
@@ -952,6 +960,36 @@ export class ArenaScene extends Phaser.Scene {
           effect.targetX !== undefined &&
           effect.targetY !== undefined,
       );
+      const previous = this.unitMotion.get(u.id);
+      const motion = sampleUnitMotion(
+        previous,
+        u.x,
+        u.y,
+        firing?.targetX,
+      );
+      const phase =
+        (previous?.phase ?? u.id * 0.71) +
+        Math.min(0.9, motion.moved * 0.42);
+      const settleUntil = motion.stopped
+        ? this.clock + 0.18
+        : previous?.settleUntil ?? 0;
+      this.unitMotion.set(u.id, {
+        x: u.x,
+        y: u.y,
+        phase,
+        facing: motion.facing,
+        moving: motion.moving,
+        settleUntil,
+      });
+      const settle = this.reducedMotion
+        ? 0
+        : Math.max(0, Math.min(1, (settleUntil - this.clock) / 0.18));
+      const walkBob =
+        !this.reducedMotion && motion.moving ? Math.sin(phase) * 1.6 : 0;
+      const walkScale =
+        !this.reducedMotion && motion.moving
+          ? 1 + Math.sin(phase * 2) * 0.018
+          : 1;
       const hitImpact = s.effects.find(
         (effect) =>
           effect.type === "impact" &&
@@ -973,16 +1011,47 @@ export class ArenaScene extends Phaser.Scene {
         recoilY = -(dy / d) * recoil;
         recoilScale = 1.035;
       }
+      const attackPose = firing
+        ? Math.max(0, Math.min(1, firing.life / firing.maxLife))
+        : 0;
+      const horizontalLean =
+        !this.reducedMotion && motion.moving && motion.moved > 0.001
+          ? Math.max(
+              -2.2,
+              Math.min(2.2, (motion.dx / motion.moved) * 2.2),
+            )
+          : 0;
+      const settleWidth = 1 + settle * 0.035;
+      const settleHeight = 1 - settle * 0.025;
+      const attackWidth = 1 + attackPose * 0.028;
+      const attackHeight = 1 - attackPose * 0.014;
       sprite
         .setPosition(
           u.x + recoilX,
           u.y - 3 - (1 - spawnProgress) * 8 + walkBob + recoilY,
         )
         .setDisplaySize(
-          size * spawnScale * walkScale * recoilScale * hitScale,
-          size * spawnScale * walkScale * recoilScale * hitScale,
+          size *
+            spawnScale *
+            walkScale *
+            recoilScale *
+            hitScale *
+            settleWidth *
+            attackWidth,
+          size *
+            spawnScale *
+            walkScale *
+            recoilScale *
+            hitScale *
+            settleHeight *
+            attackHeight,
         )
-        .setAngle(moving ? Math.sin(phase) * 1.6 : 0)
+        .setFlipX(motion.facing < 0)
+        .setAngle(
+          this.reducedMotion
+            ? 0
+            : horizontalLean + (motion.moving ? Math.sin(phase) * 1.2 : 0),
+        )
         .setAlpha(
           u.hp > 0
             ? spawnEffect
@@ -996,6 +1065,29 @@ export class ArenaScene extends Phaser.Scene {
       g.fillEllipse(u.x, u.y + 6, size * 0.65, size * 0.25);
       g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
       g.strokeEllipse(u.x, u.y + 7, size * 0.75, size * 0.32);
+      if (!this.reducedMotion && motion.moving && motion.moved > 0.04) {
+        const trail = unitTrailPoint(
+          u.x,
+          u.y + 8,
+          motion.dx,
+          motion.dy,
+          7 + Math.min(5, motion.moved * 1.8),
+        );
+        const dustPulse = 0.08 + Math.abs(Math.sin(phase)) * 0.08;
+        g.fillStyle(0xd9d3a8, dustPulse);
+        g.fillEllipse(trail.x - 3, trail.y, 7, 2.6);
+        g.fillStyle(0xb9c3a7, dustPulse * 0.72);
+        g.fillEllipse(trail.x + 3, trail.y + 1.5, 5, 2);
+      }
+      if (settle > 0) {
+        g.lineStyle(1.3, 0xd7d5b0, settle * 0.22);
+        g.strokeEllipse(
+          u.x,
+          u.y + 8,
+          size * (0.48 + (1 - settle) * 0.18),
+          size * (0.16 + (1 - settle) * 0.06),
+        );
+      }
       if (u.shield > 0) {
         const shieldColor = u.team === "player" ? MINT : CORAL;
         fx.lineStyle(
