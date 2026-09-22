@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.32
+## Current v1.33
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1005,3 +1005,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure coreTurretVisual helper centralizes phase thresholds, bracket contraction, sight strength and malformed cooldown clamping
 - regression coverage verifies shared-interval progress, safe clamping and that the exposed cooldown still follows the existing one-second firing cadence
 - release: package 1.32.0 / v1.32 / iOS 1.32 (132)
+
+
+## v1.33 changes
+
+- Medic support transfer now reads as a real battlefield action instead of only a thin line and endpoint dot
+- targeted healing keeps the existing source-to-patient link but layers a compact source emitter, target recovery ring and medical marker over it
+- three staggered nanite packets travel from the Medic to the actual patient during the existing heal effect lifetime, giving support actions the same spatial clarity as weapon fire
+- packet direction and travel are derived from the exact source and target coordinates already emitted by the simulation; no new targeting logic is introduced
+- visual intensity scales conservatively with the applied heal value while the actual healing amount remains completely unchanged
+- reduced-motion replaces travelling packets with static transfer nodes while preserving source, target and connection readability
+- Rally and Commander healing remain visually distinct because only targeted heal events receive the transfer-link treatment
+- a pure healLinkVisual helper centralizes lifetime progress, intensity, packet staging and malformed-value clamping
+- regression coverage verifies staged transfer, non-targeted fallback and safe handling of malformed timing/value data
+- release: package 1.33.0 / v1.33 / iOS 1.33 (133)

@@ -20,6 +20,7 @@ import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
 import { coreTurretVisual } from "./core-turret-visual";
+import { healLinkVisual } from "./heal-link-visual";
 import { COMMANDERS } from "./commanders";
 import {
   sampleUnitVitals,
@@ -1461,11 +1462,105 @@ export class ArenaScene extends Phaser.Scene {
       }
       if (e.targetX !== undefined && e.targetY !== undefined) {
         if (e.type === "heal") {
-          fx.lineStyle(2, color, alpha * 0.55);
-          fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
-          const pulse = 0.7 + 0.3 * Math.sin(progress * Math.PI * 5);
-          fx.fillStyle(0xd8ffe8, alpha * pulse);
-          fx.fillCircle(e.targetX, e.targetY, 3.2);
+          const visual = healLinkVisual(e);
+          if (visual) {
+            const dx = e.targetX - e.x;
+            const dy = e.targetY - e.y;
+            const distance = Math.max(0.01, Math.hypot(dx, dy));
+            const nx = dx / distance;
+            const ny = dy / distance;
+            const px = -ny;
+            const py = nx;
+            const healColor = e.team === "player" ? 0x78ffd0 : 0xffb58d;
+            const pulse = this.reducedMotion
+              ? 0.78
+              : 0.66 + 0.26 * Math.sin(progress * Math.PI * 6);
+
+            fx.lineStyle(
+              3.4,
+              healColor,
+              visual.alpha * (0.08 + visual.intensity * 0.08),
+            );
+            fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
+            fx.lineStyle(1.2, 0xd8fff0, visual.alpha * 0.42);
+            fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
+
+            fx.lineStyle(1.6, healColor, visual.alpha * 0.72);
+            fx.strokeCircle(e.x, e.y, visual.sourceRadius);
+            fx.lineStyle(1, 0xffffff, visual.alpha * 0.36);
+            fx.strokeCircle(e.x, e.y, visual.sourceRadius + 3);
+            fx.fillStyle(healColor, visual.alpha * 0.82);
+            fx.fillCircle(e.x, e.y, 2.1);
+
+            const targetRadius =
+              visual.targetRadius +
+              (this.reducedMotion
+                ? 0
+                : Math.sin(progress * Math.PI) * 3);
+            fx.lineStyle(2.2, healColor, visual.alpha * (0.55 + pulse * 0.3));
+            fx.strokeCircle(e.targetX, e.targetY, targetRadius);
+            fx.lineStyle(1, 0xffffff, visual.alpha * 0.42);
+            fx.strokeCircle(e.targetX, e.targetY, Math.max(4, targetRadius - 4));
+            fx.fillStyle(0xd8ffe8, visual.alpha * pulse);
+            fx.fillCircle(e.targetX, e.targetY, 3.2);
+
+            if (!this.reducedMotion) {
+              for (const packet of visual.packets) {
+                const lateral =
+                  Math.sin(packet.progress * Math.PI) *
+                  packet.offset *
+                  (4 + visual.intensity * 3);
+                const packetX =
+                  e.x +
+                  dx * packet.progress +
+                  px * lateral;
+                const packetY =
+                  e.y +
+                  dy * packet.progress +
+                  py * lateral;
+                const tailX =
+                  packetX - nx * (5 + visual.intensity * 3);
+                const tailY =
+                  packetY - ny * (5 + visual.intensity * 3);
+                fx.lineStyle(
+                  2.3,
+                  healColor,
+                  packet.alpha * 0.7,
+                );
+                fx.lineBetween(tailX, tailY, packetX, packetY);
+                fx.fillStyle(0xffffff, packet.alpha);
+                fx.fillCircle(
+                  packetX,
+                  packetY,
+                  1.7 + visual.intensity,
+                );
+              }
+            } else {
+              for (const fraction of [0.33, 0.66]) {
+                fx.fillStyle(healColor, visual.alpha * 0.65);
+                fx.fillCircle(
+                  e.x + dx * fraction,
+                  e.y + dy * fraction,
+                  2,
+                );
+              }
+            }
+
+            const crossRadius = visual.targetRadius + 5;
+            fx.lineStyle(1.4, healColor, visual.alpha * 0.55);
+            fx.lineBetween(
+              e.targetX - 4,
+              e.targetY - crossRadius,
+              e.targetX + 4,
+              e.targetY - crossRadius,
+            );
+            fx.lineBetween(
+              e.targetX,
+              e.targetY - crossRadius - 4,
+              e.targetX,
+              e.targetY - crossRadius + 4,
+            );
+          }
         } else {
           const source = e.sourceCardId ?? "generic";
           const dx = e.targetX - e.x;
