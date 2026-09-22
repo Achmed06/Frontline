@@ -1133,7 +1133,17 @@ export class Match {
           slowFactor: 1,
         };
         this.state.units.push(unit);
-        this.effect("spawn", unit.x, unit.y, team, 0.65);
+        this.effect(
+          "spawn",
+          unit.x,
+          unit.y,
+          team,
+          0.65,
+          undefined,
+          unit.radius,
+          undefined,
+          card.id,
+        );
       }
       if (team === "player") {
         this.state.stats.deployed += deployment.length;

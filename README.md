@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.41
+## Current v1.42
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1137,3 +1137,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure weaponCycleVisual helper centralizes supported weapon types, exact charge ratio, prominence, radius, thickness and tick count
 - regression coverage verifies exact Lancer/Mortar progress, lower Sentinel/Disruptor prominence, clutter suppression for fast/melee units and malformed cooldown handling
 - release: package 1.41.0 / v1.41 / iOS 1.41 (141)
+
+
+## v1.42 changes
+
+- unit deployment now communicates role and weight instead of using the exact same generic beam/ring for every card
+- Bulwark and Sentinel land with a wider, shorter deployment column, heavier sprite settle, broad ground shock ellipse and short outward ground fractures
+- Lancer and Mortar use a narrower precision column with lock brackets and a clean concentric targeting ring, reinforcing their siege identity before their first shot
+- Swarm uses a smaller, faster arrival footprint with three orbiting deployment nodes rather than a heavy landing shock
+- Medic uses a softer support arrival with a compact recovery cross and restrained ring
+- all other units retain a cleaned-up standard arrival based on the original beam/ring language
+- spawn effects now carry the real card id and unit radius into presentation-only Effect fields, allowing the renderer to choose the matching visual without maintaining duplicate gameplay state
+- sprite scale and vertical settle derive from the same spawn effect lifetime; heavy arrivals have a slight landing compression while siege units descend farther
+- Reduced Motion freezes Swarm orbit rotation while preserving its three-node identity
+- deployment location, initial attack cooldown, energy cost, unit stats, collision, formation placement and spawn duration are unchanged
+- a pure deploymentArrivalVisual helper centralizes arrival kind, progress, beam geometry, ring/shock size, sprite scale and vertical offset
+- regression coverage verifies heavy/siege/swarm/support differentiation, real spawn metadata propagation, standard fallback and malformed timing handling
+- release: package 1.42.0 / v1.42 / iOS 1.42 (142)

@@ -21,6 +21,7 @@ import { shieldImpactVisual } from "./shield-impact-visual";
 import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
 import { weaponCycleVisual } from "./weapon-cycle-visual";
+import { deploymentArrivalVisual } from "./deployment-arrival-visual";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
@@ -1246,10 +1247,10 @@ export class ArenaScene extends Phaser.Scene {
           Math.abs(effect.x - u.x) < 0.5 &&
           Math.abs(effect.y - u.y) < 0.5,
       );
-      const spawnProgress = spawnEffect
-        ? 1 - spawnEffect.life / spawnEffect.maxLife
-        : 1;
-      const spawnScale = 0.72 + Math.min(1, spawnProgress * 1.5) * 0.28;
+      const spawnArrival = deploymentArrivalVisual(spawnEffect);
+      const spawnProgress = spawnArrival?.progress ?? 1;
+      const spawnScale = spawnArrival?.spriteScale ?? 1;
+      const spawnYOffset = spawnArrival?.yOffset ?? 0;
       const firing = s.effects.find(
         (effect) =>
           effect.type === "shot" &&
@@ -1343,8 +1344,8 @@ export class ArenaScene extends Phaser.Scene {
             recoilX +
             (this.reducedMotion ? 0 : hitReaction.offsetX),
           u.y -
-            3 -
-            (1 - spawnProgress) * 8 +
+            3 +
+            spawnYOffset +
             walkBob +
             recoilY +
             (this.reducedMotion ? 0 : hitReaction.offsetY),
@@ -2578,27 +2579,213 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "spawn") {
-          const beamHeight = 54 * (1 - Math.min(1, progress * 1.45));
-          const ring = 7 + 19 * progress;
-          fx.fillStyle(effectColor, alpha * 0.08);
-          fx.fillRect(e.x - 7, e.y - 8 - beamHeight, 14, beamHeight + 8);
-          fx.lineStyle(1.5, 0xffffff, alpha * 0.62);
-          fx.lineBetween(e.x - 4, e.y - 9 - beamHeight, e.x - 4, e.y + 2);
-          fx.lineBetween(e.x + 4, e.y - 9 - beamHeight, e.x + 4, e.y + 2);
-          fx.lineStyle(2.2, effectColor, alpha * 0.9);
-          fx.strokeEllipse(e.x, e.y + 6, ring * 1.5, ring * 0.48);
-          fx.fillStyle(effectColor, alpha * 0.18);
-          fx.fillEllipse(e.x, e.y + 6, ring * 1.25, ring * 0.38);
-          for (let i = 0; i < 4; i++) {
-            const angle = i * Math.PI / 2 + Math.PI / 4;
-            const inner = 13 + 8 * progress;
-            const outer = inner + 7;
-            fx.lineBetween(
-              e.x + Math.cos(angle) * inner,
-              e.y + 6 + Math.sin(angle) * inner * 0.36,
-              e.x + Math.cos(angle) * outer,
-              e.y + 6 + Math.sin(angle) * outer * 0.36,
+          const arrival = deploymentArrivalVisual(e);
+          if (arrival) {
+            const remainingBeam =
+              arrival.beamHeight *
+              (1 - Math.min(1, arrival.progress * 1.45));
+            const beamX = e.x - arrival.beamWidth / 2;
+
+            fx.fillStyle(
+              effectColor,
+              arrival.alpha *
+                (arrival.kind === "heavy" ? 0.11 : 0.08),
             );
+            fx.fillRect(
+              beamX,
+              e.y - 8 - remainingBeam,
+              arrival.beamWidth,
+              remainingBeam + 8,
+            );
+
+            fx.lineStyle(
+              arrival.kind === "siege" ? 1.8 : 1.4,
+              0xffffff,
+              arrival.alpha *
+                (arrival.kind === "siege" ? 0.74 : 0.58),
+            );
+            const beamInset =
+              Math.max(2.5, arrival.beamWidth * 0.26);
+            fx.lineBetween(
+              e.x - beamInset,
+              e.y - 9 - remainingBeam,
+              e.x - beamInset,
+              e.y + 2,
+            );
+            fx.lineBetween(
+              e.x + beamInset,
+              e.y - 9 - remainingBeam,
+              e.x + beamInset,
+              e.y + 2,
+            );
+
+            fx.lineStyle(
+              arrival.kind === "heavy" ? 3 : 2.1,
+              effectColor,
+              arrival.alpha * 0.92,
+            );
+            fx.strokeEllipse(
+              e.x,
+              e.y + 6,
+              arrival.ringRadius * 1.55,
+              arrival.ringRadius * 0.5,
+            );
+            fx.fillStyle(
+              effectColor,
+              arrival.alpha *
+                (arrival.kind === "heavy" ? 0.22 : 0.15),
+            );
+            fx.fillEllipse(
+              e.x,
+              e.y + 6,
+              arrival.ringRadius * 1.28,
+              arrival.ringRadius * 0.39,
+            );
+
+            if (arrival.kind === "heavy") {
+              fx.lineStyle(
+                1.7,
+                0xffe7b0,
+                arrival.alpha * 0.62,
+              );
+              fx.strokeEllipse(
+                e.x,
+                e.y + 7,
+                arrival.shockRadius * 2,
+                arrival.shockRadius * 0.55,
+              );
+              for (let i = 0; i < arrival.rayCount; i++) {
+                const angle =
+                  i * (Math.PI * 2 / arrival.rayCount) +
+                  e.id * 0.17;
+                const sx =
+                  e.x +
+                  Math.cos(angle) *
+                    arrival.ringRadius *
+                    0.7;
+                const sy =
+                  e.y +
+                  7 +
+                  Math.sin(angle) *
+                    arrival.ringRadius *
+                    0.22;
+                fx.lineBetween(
+                  sx,
+                  sy,
+                  sx +
+                    Math.cos(angle) *
+                      (6 + arrival.progress * 7),
+                  sy +
+                    Math.sin(angle) *
+                      (2 + arrival.progress * 3),
+                );
+              }
+            } else if (arrival.kind === "siege") {
+              fx.lineStyle(
+                1.4,
+                0xffffff,
+                arrival.alpha * 0.62,
+              );
+              const r = arrival.shockRadius;
+              const arm = 5;
+              for (const sx of [-1, 1]) {
+                for (const sy of [-1, 1]) {
+                  const cx = e.x + sx * r;
+                  const cy = e.y + sy * r * 0.48;
+                  fx.lineBetween(cx, cy, cx - sx * arm, cy);
+                  fx.lineBetween(cx, cy, cx, cy - sy * arm * 0.6);
+                }
+              }
+              fx.lineStyle(
+                1,
+                effectColor,
+                arrival.alpha * 0.48,
+              );
+              fx.strokeCircle(
+                e.x,
+                e.y,
+                Math.max(
+                  5,
+                  arrival.shockRadius *
+                    (0.48 + arrival.progress * 0.18),
+                ),
+              );
+            } else if (arrival.kind === "swarm") {
+              for (let i = 0; i < 3; i++) {
+                const angle =
+                  i * (Math.PI * 2 / 3) +
+                  (this.reducedMotion
+                    ? 0
+                    : arrival.progress * Math.PI * 1.35);
+                const orbit =
+                  7 + arrival.progress * 9;
+                fx.fillStyle(
+                  i === 0 ? 0xffffff : effectColor,
+                  arrival.alpha * 0.82,
+                );
+                fx.fillCircle(
+                  e.x + Math.cos(angle) * orbit,
+                  e.y +
+                    Math.sin(angle) *
+                      orbit *
+                      0.45,
+                  1.6 + arrival.progress,
+                );
+              }
+            } else if (arrival.kind === "support") {
+              const cross =
+                5 + arrival.progress * 4;
+              fx.fillStyle(
+                0xd8fff0,
+                arrival.alpha * 0.72,
+              );
+              fx.fillRect(
+                e.x - 1.5,
+                e.y - cross,
+                3,
+                cross * 2,
+              );
+              fx.fillRect(
+                e.x - cross,
+                e.y - 1.5,
+                cross * 2,
+                3,
+              );
+              fx.lineStyle(
+                1,
+                effectColor,
+                arrival.alpha * 0.44,
+              );
+              fx.strokeCircle(
+                e.x,
+                e.y,
+                arrival.shockRadius * 0.62,
+              );
+            } else {
+              for (let i = 0; i < arrival.rayCount; i++) {
+                const angle =
+                  i *
+                    (Math.PI * 2 / arrival.rayCount) +
+                  Math.PI / 4;
+                const inner =
+                  arrival.ringRadius * 0.72;
+                const outer = inner + 7;
+                fx.lineBetween(
+                  e.x + Math.cos(angle) * inner,
+                  e.y +
+                    6 +
+                    Math.sin(angle) *
+                      inner *
+                      0.36,
+                  e.x + Math.cos(angle) * outer,
+                  e.y +
+                    6 +
+                    Math.sin(angle) *
+                      outer *
+                      0.36,
+                );
+              }
+            }
           }
         }
         if (e.type === "heal") {
