@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.45
+## Current v1.46
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1201,3 +1201,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure unitDamageStateVisual helper centralizes healthy/damaged/critical thresholds, role-aware smoke/spark counts, rise/spread and ground-mark geometry
 - regression coverage verifies healthy suppression, damaged mechanical wear, critical escalation, compact Swarm feedback and malformed HP fallback
 - release: package 1.45.0 / v1.45 / iOS 1.45 (145)
+
+
+## v1.46 changes
+
+- persistent Slow/Stasis feedback now reflects the real unit slowFactor instead of drawing the same fixed blue ellipse for every slowed unit
+- the slowdown severity directly controls cage density, ring radius, bracket reach, orbit radius and ground compression footprint
+- the current 40 percent slowdown used by Stasis and Disruptor therefore reads as a medium-strength containment field rather than a generic status marker
+- slowTime still drives the existing duration pips; the final 0.8 seconds now also enter a visible release phase where the field expands/fades before disappearing
+- orbit bands and bright nodes rotate only in full-motion mode; Reduced Motion keeps a static containment cage with the same severity/readability
+- the status remains attached to the unit and uses only the existing slowTime and slowFactor simulation values, so refreshed slows automatically display the correct remaining phase
+- no source guessing or duplicate renderer-side status state is introduced, so Stasis and Disruptor remain mechanically identical when their actual slow values are identical
+- movement speed multiplier, slow refresh rules, non-stacking behavior, attack cadence, targeting and all balance values are unchanged
+- a pure slowStatusVisual helper centralizes activation, exact severity, release fade, cage geometry, orbit speed and floor footprint
+- regression coverage verifies exact 40 percent severity, stronger-vs-lighter slow geometry, release fade and malformed/expired fallback
+- release: package 1.46.0 / v1.46 / iOS 1.46 (146)

@@ -52,6 +52,7 @@ import {
 } from "./unit-motion";
 import { movementFootprintVisual } from "./movement-footprint-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
+import { slowStatusVisual } from "./slow-status-visual";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
@@ -1788,9 +1789,160 @@ export class ArenaScene extends Phaser.Scene {
         this.statusPips(fx, u.x, u.y, u.rallyTime, 0xffdf6b, 0.18);
       }
       if (u.slowTime > 0) {
-        fx.lineStyle(2, 0x94caff, 0.85);
-        fx.strokeEllipse(u.x, u.y + 12, 27, 9);
-        this.statusPips(fx, u.x, u.y, u.slowTime, 0x94caff, 1.72);
+        const slowVisual = slowStatusVisual(
+          u.slowTime,
+          u.slowFactor,
+        );
+        if (slowVisual.active) {
+          const slowPulse = this.reducedMotion
+            ? 0.82
+            : 0.72 +
+              Math.sin(
+                this.clock * 4.5 +
+                  u.id * 0.67,
+              ) *
+                0.1;
+          const slowColor = 0x94caff;
+          const brightSlow = 0xdff6ff;
+
+          fx.fillStyle(
+            slowColor,
+            slowVisual.alpha * 0.055,
+          );
+          fx.fillEllipse(
+            u.x,
+            u.y + 12,
+            slowVisual.floorWidth,
+            slowVisual.floorHeight,
+          );
+
+          fx.lineStyle(
+            1.8 + slowVisual.severity * 1.2,
+            slowColor,
+            slowVisual.alpha * slowPulse,
+          );
+          fx.strokeEllipse(
+            u.x,
+            u.y + 12,
+            slowVisual.floorWidth,
+            slowVisual.floorHeight,
+          );
+
+          fx.lineStyle(
+            1.3,
+            brightSlow,
+            slowVisual.alpha * 0.66,
+          );
+          fx.strokeCircle(
+            u.x,
+            u.y,
+            slowVisual.innerRadius,
+          );
+
+          const bandAngleOffset = this.reducedMotion
+            ? 0
+            : this.clock * slowVisual.orbitSpeed;
+          for (
+            let band = 0;
+            band < slowVisual.bandCount;
+            band++
+          ) {
+            const angle =
+              bandAngleOffset +
+              (band * Math.PI * 2) /
+                slowVisual.bandCount;
+            const cx =
+              u.x +
+              Math.cos(angle) *
+                slowVisual.orbitRadius;
+            const cy =
+              u.y +
+              Math.sin(angle) *
+                slowVisual.orbitRadius *
+                0.48;
+            const tangentX = -Math.sin(angle);
+            const tangentY = Math.cos(angle) * 0.48;
+            const reach =
+              slowVisual.bracketReach *
+              (0.78 + (band % 2) * 0.22);
+
+            fx.lineStyle(
+              band % 2 === 0 ? 1.4 : 1,
+              band % 2 === 0 ? brightSlow : slowColor,
+              slowVisual.alpha *
+                (0.52 + slowVisual.severity * 0.28),
+            );
+            fx.lineBetween(
+              cx - tangentX * reach,
+              cy - tangentY * reach,
+              cx + tangentX * reach,
+              cy + tangentY * reach,
+            );
+
+            if (
+              !this.reducedMotion &&
+              band % 2 === 0
+            ) {
+              fx.fillStyle(
+                brightSlow,
+                slowVisual.alpha *
+                  (0.48 + slowVisual.severity * 0.24),
+              );
+              fx.fillCircle(
+                cx,
+                cy,
+                1.2 + slowVisual.severity * 1.4,
+              );
+            }
+          }
+
+          const cageRadius = slowVisual.ringRadius;
+          fx.lineStyle(
+            1,
+            slowColor,
+            slowVisual.alpha *
+              (0.34 + slowVisual.severity * 0.3),
+          );
+          for (let spoke = 0; spoke < 4; spoke++) {
+            const angle =
+              spoke * (Math.PI / 2) + Math.PI / 4;
+            const inner =
+              slowVisual.innerRadius + 2;
+            fx.lineBetween(
+              u.x + Math.cos(angle) * inner,
+              u.y + Math.sin(angle) * inner,
+              u.x + Math.cos(angle) * cageRadius,
+              u.y + Math.sin(angle) * cageRadius,
+            );
+          }
+
+          if (slowVisual.release > 0) {
+            fx.lineStyle(
+              1.2,
+              brightSlow,
+              slowVisual.alpha *
+                slowVisual.release *
+                0.58,
+            );
+            const releaseRadius =
+              cageRadius +
+              slowVisual.release * 7;
+            fx.strokeCircle(
+              u.x,
+              u.y,
+              releaseRadius,
+            );
+          }
+
+          this.statusPips(
+            fx,
+            u.x,
+            u.y,
+            u.slowTime,
+            slowColor,
+            1.72,
+          );
+        }
       }
       const healthWidth = u.cardId === "bulwark" ? 27 : 21;
       const vitals = sampleUnitVitals(
