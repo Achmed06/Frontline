@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.43
+## Current v1.44
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1170,3 +1170,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure impactDirectionVisual helper centralizes source vector, perpendicular vector, lifetime intensity, directional bias, contact offset and wake length
 - regression coverage verifies real source direction, lifetime decay, radial fallback and malformed-value handling
 - release: package 1.43.0 / v1.43 / iOS 1.43 (143)
+
+
+## v1.44 changes
+
+- moving units now communicate weight and role through distinct ground feedback instead of sharing the same generic pair of dust ellipses
+- Bulwark and Sentinel leave broader paired dust pads plus short transverse tread marks, making heavy movement feel slower and more planted without changing simulation speed
+- Lancer and Mortar use restrained parallel track streaks that reinforce their stabilized siege-platform identity
+- Swarm leaves three compact, slightly offset movement wisps rather than full-size dust puffs, preserving its light/fast silhouette
+- standard units keep the original two-puff language in a cleaned-up direction-aware form
+- stop/settle ground rings now scale by movement class: heavy units produce the broadest footprint, siege units a narrower stable ring and Swarm the smallest
+- all trails are derived from the real per-frame motion vector already produced by sampleUnitMotion; no renderer-side velocity or path state is introduced
+- Reduced Motion continues to suppress moving trail particles while retaining static readability elsewhere
+- movement speed, collision, pathing, unit spacing, Rally speed multiplier, Slow and every balance value are unchanged
+- a pure movementFootprintVisual helper centralizes role classification, trail distance, dust strength, footprint geometry and settle dimensions
+- regression coverage verifies heavy vs standard weight, siege geometry, compact Swarm movement and malformed-motion fallback
+- release: package 1.44.0 / v1.44 / iOS 1.44 (144)

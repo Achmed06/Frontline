@@ -50,6 +50,7 @@ import {
   unitTrailPoint,
   type UnitFacing,
 } from "./unit-motion";
+import { movementFootprintVisual } from "./movement-footprint-visual";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
@@ -1614,27 +1615,148 @@ export class ArenaScene extends Phaser.Scene {
         }
       }
 
+      const footprint = movementFootprintVisual(
+        u.cardId,
+        motion.moved,
+      );
       if (!this.reducedMotion && motion.moving && motion.moved > 0.04) {
         const trail = unitTrailPoint(
           u.x,
           u.y + 8,
           motion.dx,
           motion.dy,
-          7 + Math.min(5, motion.moved * 1.8),
+          footprint.trailDistance,
         );
-        const dustPulse = 0.08 + Math.abs(Math.sin(phase)) * 0.08;
-        g.fillStyle(0xd9d3a8, dustPulse);
-        g.fillEllipse(trail.x - 3, trail.y, 7, 2.6);
-        g.fillStyle(0xb9c3a7, dustPulse * 0.72);
-        g.fillEllipse(trail.x + 3, trail.y + 1.5, 5, 2);
+        const length = Math.max(0.001, Math.hypot(motion.dx, motion.dy));
+        const nx = motion.dx / length;
+        const ny = motion.dy / length;
+        const px = -ny;
+        const py = nx;
+        const pulse =
+          footprint.dustAlpha *
+          (0.78 + Math.abs(Math.sin(phase)) * 0.42);
+
+        if (footprint.kind === "heavy") {
+          for (const side of [-1, 1]) {
+            const cx =
+              trail.x +
+              px * side * footprint.lateralOffset;
+            const cy =
+              trail.y +
+              py * side * footprint.lateralOffset;
+            g.fillStyle(0xd9d3a8, pulse);
+            g.fillEllipse(
+              cx,
+              cy,
+              footprint.primaryWidth,
+              footprint.primaryHeight,
+            );
+            g.fillStyle(0xb9c3a7, pulse * 0.62);
+            g.fillEllipse(
+              cx - nx * 4,
+              cy - ny * 4,
+              footprint.secondaryWidth,
+              footprint.secondaryHeight,
+            );
+          }
+          g.lineStyle(1.2, 0xd7d5b0, pulse * 0.72);
+          for (let step = 0; step < footprint.segmentCount; step++) {
+            const distance = 3 + step * 4.2;
+            const cx = trail.x - nx * distance;
+            const cy = trail.y - ny * distance;
+            g.lineBetween(
+              cx - px * 4.4,
+              cy - py * 4.4,
+              cx + px * 4.4,
+              cy + py * 4.4,
+            );
+          }
+        } else if (footprint.kind === "siege") {
+          g.lineStyle(1.4, 0xcfd5c8, pulse * 0.78);
+          for (const side of [-1, 1]) {
+            const sx =
+              trail.x +
+              px * side * footprint.lateralOffset;
+            const sy =
+              trail.y +
+              py * side * footprint.lateralOffset;
+            g.lineBetween(
+              sx,
+              sy,
+              sx - nx * footprint.primaryWidth,
+              sy - ny * footprint.primaryWidth,
+            );
+            g.lineStyle(1, 0x9fa99d, pulse * 0.5);
+            g.lineBetween(
+              sx - nx * 2,
+              sy - ny * 2,
+              sx - nx * (footprint.primaryWidth + 4),
+              sy - ny * (footprint.primaryWidth + 4),
+            );
+          }
+        } else if (footprint.kind === "swarm") {
+          for (let node = 0; node < footprint.segmentCount; node++) {
+            const side = node - 1;
+            const offset =
+              footprint.lateralOffset * side +
+              Math.sin(phase + node * 1.7) * 1.5;
+            const cx =
+              trail.x +
+              px * offset -
+              nx * node * 2.2;
+            const cy =
+              trail.y +
+              py * offset -
+              ny * node * 2.2;
+            g.fillStyle(
+              node === 1 ? 0xd9f7ff : 0xb9c3a7,
+              pulse * (0.72 + node * 0.08),
+            );
+            g.fillEllipse(
+              cx,
+              cy,
+              footprint.primaryWidth,
+              footprint.primaryHeight,
+            );
+          }
+        } else {
+          g.fillStyle(0xd9d3a8, pulse);
+          g.fillEllipse(
+            trail.x - px * 2.4,
+            trail.y - py * 2.4,
+            footprint.primaryWidth,
+            footprint.primaryHeight,
+          );
+          g.fillStyle(0xb9c3a7, pulse * 0.72);
+          g.fillEllipse(
+            trail.x + px * 2.4 - nx * 2,
+            trail.y + py * 2.4 - ny * 2,
+            footprint.secondaryWidth,
+            footprint.secondaryHeight,
+          );
+        }
       }
       if (settle > 0) {
-        g.lineStyle(1.3, 0xd7d5b0, settle * 0.22);
+        const settleAlpha =
+          footprint.kind === "heavy"
+            ? 0.32
+            : footprint.kind === "siege"
+              ? 0.25
+              : 0.22;
+        g.lineStyle(
+          footprint.kind === "heavy" ? 1.7 : 1.3,
+          0xd7d5b0,
+          settle * settleAlpha,
+        );
         g.strokeEllipse(
           u.x,
           u.y + 8,
-          size * (0.48 + (1 - settle) * 0.18),
-          size * (0.16 + (1 - settle) * 0.06),
+          size *
+            (footprint.settleWidthScale +
+              (1 - settle) * 0.18),
+          size *
+            (footprint.settleHeightScale +
+              (1 - settle) * 0.06),
         );
       }
       if (u.shield > 0) {
