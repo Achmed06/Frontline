@@ -1346,9 +1346,11 @@ test("core hit feedback scales with actual damage without changing balance", () 
     Math.abs(before - lancerMatch.state.cores.enemy.hp - expectedDamage) < 1e-9,
   );
   assert.equal(lancerHit.maxLife, 0.42);
-  assert.equal(
-    lancerHit.radius,
-    Math.min(32, Math.max(12, 10 + expectedDamage * 0.22)),
+  assert.ok(
+    Math.abs(
+      (lancerHit.radius ?? 0) -
+        Math.min(32, Math.max(12, 10 + expectedDamage * 0.22)),
+    ) < 1e-9,
   );
 
   const pulseMatch = quietMatch();
@@ -1359,9 +1361,11 @@ test("core hit feedback scales with actual damage without changing balance", () 
     (effect) => effect.type === "core-hit",
   );
   assert.ok(pulseHit);
-  assert.equal(
-    pulseHit.radius,
-    Math.min(32, Math.max(12, 10 + pulseCard.coreDamage! * 0.22)),
+  assert.ok(
+    Math.abs(
+      (pulseHit.radius ?? 0) -
+        Math.min(32, Math.max(12, 10 + pulseCard.coreDamage! * 0.22)),
+    ) < 1e-9,
   );
   assert.ok((lancerHit.radius ?? 0) > (pulseHit.radius ?? 0));
 
@@ -1373,6 +1377,6 @@ test("core hit feedback scales with actual damage without changing balance", () 
     (effect) => effect.type === "core-hit",
   );
   assert.ok(lethalHit);
-  assert.equal(lethalHit.radius, 12.2);
+  assert.ok(Math.abs((lethalHit.radius ?? 0) - 12.2) < 1e-9);
 });
 
