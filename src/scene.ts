@@ -39,6 +39,7 @@ export class ArenaScene extends Phaser.Scene {
   private clock = 0;
   private reactedEffects = new Set<number>();
   private brokenCores = new Set<"player" | "enemy">();
+  private reducedMotion = false;
   private lastMatch: Match | null = null;
   private wasRunning = false;
   constructor(private bridge: SceneBridge) {
@@ -58,6 +59,8 @@ export class ArenaScene extends Phaser.Scene {
       }
   }
   create() {
+    this.reducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     this.g = this.add.graphics();
     this.fx = this.add.graphics().setDepth(5);
     const maxDeploymentCount = Math.max(
@@ -742,6 +745,15 @@ export class ArenaScene extends Phaser.Scene {
           effect.targetX !== undefined &&
           effect.targetY !== undefined,
       );
+      const hitImpact = s.effects.find(
+        (effect) =>
+          effect.type === "impact" &&
+          Math.hypot(effect.x - u.x, effect.y - u.y) <= u.radius + 8,
+      );
+      const hitStrength = hitImpact
+        ? Math.max(0, hitImpact.life / hitImpact.maxLife)
+        : 0;
+      const hitScale = 1 + hitStrength * 0.055;
       let recoilX = 0;
       let recoilY = 0;
       let recoilScale = 1;
@@ -760,8 +772,8 @@ export class ArenaScene extends Phaser.Scene {
           u.y - 3 - (1 - spawnProgress) * 8 + walkBob + recoilY,
         )
         .setDisplaySize(
-          size * spawnScale * walkScale * recoilScale,
-          size * spawnScale * walkScale * recoilScale,
+          size * spawnScale * walkScale * recoilScale * hitScale,
+          size * spawnScale * walkScale * recoilScale * hitScale,
         )
         .setAngle(moving ? Math.sin(phase) * 1.6 : 0)
         .setAlpha(
@@ -771,6 +783,8 @@ export class ArenaScene extends Phaser.Scene {
               : 1
             : 0,
         );
+      if (hitStrength > 0.42) sprite.setTintFill(0xffffff);
+      else sprite.clearTint();
       g.fillStyle(0x06171b, 0.55);
       g.fillEllipse(u.x, u.y + 6, size * 0.65, size * 0.25);
       g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
@@ -850,8 +864,23 @@ export class ArenaScene extends Phaser.Scene {
       const color = e.team === "player" ? MINT : CORAL;
       if (!this.reactedEffects.has(e.id)) {
         this.reactedEffects.add(e.id);
-        if (e.type === "core-hit")
-          this.cameras.main.shake(90, 0.0024, true);
+        if (!this.reducedMotion) {
+          if (e.type === "core-hit")
+            this.cameras.main.shake(90, 0.0024, true);
+          else if (e.type === "death") {
+            const size = e.radius ?? 18;
+            this.cameras.main.shake(
+              95 + Math.round(size * 2.2),
+              Math.min(0.0033, 0.00135 + size * 0.000055),
+              true,
+            );
+          } else if (e.type === "impact" && (e.radius ?? 0) >= 14)
+            this.cameras.main.shake(
+              55,
+              Math.min(0.0016, 0.00075 + ((e.radius ?? 14) - 14) * 0.00018),
+              true,
+            );
+        }
       }
       if (e.targetX !== undefined && e.targetY !== undefined) {
         if (e.type === "heal") {
@@ -1169,14 +1198,33 @@ export class ArenaScene extends Phaser.Scene {
           fx.strokeCircle(e.x, e.y, 5 + radius * progress);
         }
         if (e.type === "death") {
-          for (let i = 0; i < 5; i++) {
-            const a = i * 1.256 + e.id;
-            fx.fillStyle(color, alpha);
-            fx.fillRect(
-              e.x + Math.cos(a) * radius * progress,
-              e.y + Math.sin(a) * radius * progress,
-              3,
-              3,
+          const burst = radius * (0.38 + progress * 0.92);
+          const fade = alpha * (1 - progress * 0.2);
+          fx.fillStyle(0xffffff, fade * 0.42);
+          fx.fillCircle(e.x, e.y, 4 + radius * 0.14 * (1 - progress));
+          fx.lineStyle(2.4, color, fade * 0.9);
+          fx.strokeCircle(e.x, e.y, 5 + burst);
+          fx.lineStyle(1.2, 0xffe5ba, fade * 0.58);
+          fx.strokeEllipse(
+            e.x,
+            e.y + 7,
+            14 + burst * 1.55,
+            5 + burst * 0.5,
+          );
+          for (let i = 0; i < 10; i++) {
+            const a = i * (Math.PI * 2 / 10) + e.id * 0.47;
+            const distance = burst * (0.58 + (i % 3) * 0.12);
+            const shard = 2.5 + (i % 2) * 1.8;
+            const sx = e.x + Math.cos(a) * distance;
+            const sy = e.y + Math.sin(a) * distance * 0.78 - progress * (i % 4) * 3;
+            fx.fillStyle(i % 3 === 0 ? 0xffe5ba : color, fade);
+            fx.fillRect(sx - shard / 2, sy - shard / 2, shard, shard);
+            fx.lineStyle(1, color, fade * 0.55);
+            fx.lineBetween(
+              e.x + Math.cos(a) * burst * 0.24,
+              e.y + Math.sin(a) * burst * 0.18,
+              sx,
+              sy,
             );
           }
         }

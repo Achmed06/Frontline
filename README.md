@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.09
+## Current v1.10
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -705,4 +705,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - logistics activity is renderer-only and has no effect on construction, progression or combat
 - regression coverage verifies exact convoy routes, command-center termination, invalid-route rejection and adjacency of every movement segment
 - release: package 1.9.0 / v1.09 / iOS 1.09 (109)
+
+## v1.10 changes
+
+- combat hits now produce immediate unit hit-flash and a small impact squash instead of relying only on projectile lines and health bars
+- heavy impacts trigger a restrained camera impulse while ordinary chip damage stays steady, keeping repeated fire readable
+- unit K.O. effects now scale from the defeated unit's actual collision radius, so Bulwark-sized units break apart with visibly more weight than light infantry
+- K.O. bursts gain an expanding shock ring, ground ellipse and ten deterministic debris shards while retaining team-color readability
+- Core impacts keep their existing stronger camera response and remain visually distinct from ordinary unit damage
+- players using reduced-motion preferences receive no new camera shake from impacts or K.O.s
+- all combat balance, damage, health, attack timing and targeting rules remain unchanged
+- regression coverage verifies size-aware lethal effect radius and duration for standard and heavy units
+- release: package 1.10.0 / v1.10 / iOS 1.10 (110)
 

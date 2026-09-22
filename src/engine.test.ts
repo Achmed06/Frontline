@@ -660,7 +660,7 @@ test("Mortar hits its primary once, splashes only nearby enemies and respects sh
   assert.equal(friend.hp, 125);
   assert.equal(m.state.effects.find((e) => e.type === "blast")?.radius, 42);
 });
-test("combat damage emits scaled hit impacts and lethal hits keep the death burst", () => {
+test("combat damage emits scaled hit impacts and lethal hits keep size-aware death bursts", () => {
   const m = new Match({ playerDeck: controlDeck, botEnabled: false });
   const mortar = staticUnit(m, "player", 210, 350, "mortar");
   Object.assign(mortar, { damage: 80, range: 115, attackCooldown: 0 });
@@ -668,11 +668,24 @@ test("combat damage emits scaled hit impacts and lethal hits keep the death burs
   target.hp = 50;
   m.update(1 / 30);
   const impact = m.state.effects.find((effect) => effect.type === "impact");
+  const death = m.state.effects.find((effect) => effect.type === "death");
   assert.ok(impact);
   assert.ok((impact.radius ?? 0) >= 12);
   assert.equal(target.hp, 0);
-  assert.ok(m.state.effects.some((effect) => effect.type === "death"));
+  assert.ok(death);
+  assert.equal(death.radius, 22);
+  assert.equal(death.maxLife, 0.62);
   assert.equal(m.state.stats.kills, 1);
+
+  const heavy = new Match({ playerDeck: controlDeck, botEnabled: false });
+  const pulseTarget = staticUnit(heavy, "enemy", 210, 220, "bulwark");
+  pulseTarget.hp = 20;
+  heavy.state.energy.player = 10;
+  assert.equal(heavy.play("player", "pulse", 210, 220).ok, true);
+  const heavyDeath = heavy.state.effects.find((effect) => effect.type === "death");
+  assert.ok(heavyDeath);
+  assert.ok((heavyDeath.radius ?? 0) > (death.radius ?? 0));
+  assert.equal(heavyDeath.radius, 30.800000000000004);
 });
 
 test("Disruptor refreshes a non-stacking slow that expires and combines with Rally movement", () => {

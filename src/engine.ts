@@ -1237,7 +1237,15 @@ export class Match {
         clamp(6 + applied * 0.15, 7, 18),
       );
     if (unit.hp <= 0) {
-      this.effect("death", unit.x, unit.y, unit.team, 0.55);
+      this.effect(
+        "death",
+        unit.x,
+        unit.y,
+        unit.team,
+        0.62,
+        undefined,
+        clamp(unit.radius * 2.2, 18, 34),
+      );
       if (source === "player") this.state.stats.kills++;
     }
   }
