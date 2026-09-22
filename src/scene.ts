@@ -17,6 +17,7 @@ import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
+import { shieldImpactVisual } from "./shield-impact-visual";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
@@ -2068,9 +2069,13 @@ export class ArenaScene extends Phaser.Scene {
                   ? 15
                   : 23);
         const effectColor =
-          e.type === "stasis"
-            ? 0x88d5ff
-            : e.type === "repulsor"
+          e.type === "shield-hit" || e.type === "shield-break"
+            ? e.team === "player"
+              ? 0x9bdcff
+              : 0xffb9a5
+            : e.type === "stasis"
+              ? 0x88d5ff
+              : e.type === "repulsor"
               ? 0xc29aff
               : e.type === "breaker"
                 ? 0xffcf67
@@ -2087,6 +2092,139 @@ export class ArenaScene extends Phaser.Scene {
           fx.lineStyle(2, 0xfff2bf, alpha);
           fx.strokeCircle(e.x, e.y, 3 + radius * progress * 0.65);
         }
+        if (e.type === "shield-hit" || e.type === "shield-break") {
+          const visual = shieldImpactVisual(e);
+          if (visual) {
+            const shieldColor =
+              e.team === "player" ? 0x9bdcff : 0xffb9a5;
+            const whiteAlpha =
+              visual.alpha *
+              (visual.mode === "break" ? 0.92 : 0.66);
+            const shellRadius =
+              visual.radius *
+              (visual.mode === "break"
+                ? 0.88 + visual.progress * 0.24
+                : 0.86 + visual.progress * 0.12);
+            const impactX =
+              e.x +
+              (visual.directional ? visual.nx * shellRadius * 0.78 : 0);
+            const impactY =
+              e.y +
+              (visual.directional ? visual.ny * shellRadius * 0.78 : 0);
+
+            fx.fillStyle(
+              shieldColor,
+              visual.alpha *
+                (visual.mode === "break" ? 0.12 : 0.08),
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, shellRadius),
+              shieldColor,
+              visual.alpha *
+                (visual.mode === "break" ? 0.12 : 0.08),
+              shieldColor,
+            );
+
+            fx.lineStyle(
+              visual.mode === "break" ? 2.8 : 2,
+              shieldColor,
+              visual.alpha * 0.94,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, shellRadius),
+              0x000000,
+              0,
+              shieldColor,
+            );
+
+            if (visual.directional) {
+              const tangentX = -visual.ny;
+              const tangentY = visual.nx;
+              fx.fillStyle(0xffffff, whiteAlpha);
+              fx.fillCircle(
+                impactX,
+                impactY,
+                visual.mode === "break" ? 3.6 : 2.7,
+              );
+              fx.lineStyle(
+                visual.mode === "break" ? 2 : 1.3,
+                0xffffff,
+                whiteAlpha * 0.82,
+              );
+              for (const spread of [-1, -0.34, 0.34, 1]) {
+                const lateral =
+                  spread *
+                  (visual.mode === "break" ? 7 : 4.5);
+                const sx = impactX + tangentX * lateral;
+                const sy = impactY + tangentY * lateral;
+                const inward =
+                  visual.crackReach *
+                  (0.72 + (1 - Math.abs(spread)) * 0.28);
+                fx.lineBetween(
+                  sx,
+                  sy,
+                  sx - visual.nx * inward + tangentX * spread * 2.2,
+                  sy - visual.ny * inward + tangentY * spread * 2.2,
+                );
+              }
+            } else {
+              fx.lineStyle(1.4, 0xffffff, whiteAlpha * 0.72);
+              for (let i = 0; i < 6; i++) {
+                const a = i * Math.PI / 3 + e.id * 0.19;
+                fx.lineBetween(
+                  e.x + Math.cos(a) * shellRadius * 0.72,
+                  e.y + Math.sin(a) * shellRadius * 0.72,
+                  e.x + Math.cos(a) * shellRadius * 0.28,
+                  e.y + Math.sin(a) * shellRadius * 0.28,
+                );
+              }
+            }
+
+            if (visual.mode === "break") {
+              fx.lineStyle(1.3, 0xffffff, visual.alpha * 0.74);
+              for (let i = 0; i < 8; i++) {
+                const base =
+                  (i * Math.PI * 2) / 8 +
+                  e.id * 0.21;
+                const directionalBias = visual.directional
+                  ? Math.atan2(-visual.ny, -visual.nx)
+                  : base;
+                const a =
+                  visual.directional
+                    ? directionalBias +
+                      (i - 3.5) * 0.23 +
+                      Math.sin(base) * 0.1
+                    : base;
+                const inner = shellRadius * 0.76;
+                const outer =
+                  shellRadius +
+                  visual.fragmentReach *
+                    (0.46 + (i % 3) * 0.18);
+                const sx = e.x + Math.cos(a) * inner;
+                const sy = e.y + Math.sin(a) * inner;
+                const ex = e.x + Math.cos(a) * outer;
+                const ey = e.y + Math.sin(a) * outer;
+                fx.lineBetween(sx, sy, ex, ey);
+                fx.fillStyle(
+                  i % 2 ? shieldColor : 0xffffff,
+                  visual.alpha * 0.78,
+                );
+                fx.fillRect(ex - 1.5, ey - 1.5, 3, 3);
+              }
+
+              fx.lineStyle(1.6, shieldColor, visual.alpha * 0.52);
+              fx.strokeCircle(
+                e.x,
+                e.y,
+                shellRadius +
+                  visual.progress * visual.fragmentReach * 0.55,
+              );
+            }
+          }
+        }
+
         if (e.type === "impact") {
           const profile = impactProfile(e.sourceCardId);
           const heavy = (e.radius ?? 0) >= 12;
@@ -2556,6 +2694,8 @@ export class ArenaScene extends Phaser.Scene {
           e.type !== "breaker" &&
           e.type !== "pioneer" &&
           e.type !== "shield" &&
+          e.type !== "shield-hit" &&
+          e.type !== "shield-break" &&
           e.type !== "commander"
         ) {
           fx.lineStyle(2, effectColor, alpha);

@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.38
+## Current v1.39
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1092,3 +1092,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure deathBurstDirection helper centralizes source vector, lifetime decay, directional bias, stretch and visual offset
 - regression coverage verifies source-to-target direction, lifetime decay, radial fallback and malformed timing handling
 - release: package 1.38.0 / v1.38 / iOS 1.38 (138)
+
+
+## v1.39 changes
+
+- shielded units now emit dedicated shield-hit feedback whenever incoming damage is absorbed by active shield points
+- the shield flash uses the protected unit's team color rather than the attacker's color, making ownership immediately readable
+- when the attack source is known, the struck side of the shield gets a white-hot contact point and inward crack lines aligned to the real incoming vector
+- when the last shield point is removed by normal damage, a separate shield-break event expands the hex shell, throws fragments and leaves a short collapse ring
+- shield absorption and break strength derive from the actual shield damage already calculated by damageUnit; no damage or mitigation values were changed
+- attacks that overflow the shield into HP still keep their existing body-impact feedback, so a shield break plus health hit reads as one layered combat event
+- the existing Breaker-specific anti-shield slash remains intact and can layer with the generic shield feedback when appropriate
+- missing attack source coordinates fall back to a symmetric shield crack rather than producing invalid direction math
+- a pure shieldImpactVisual helper centralizes lifetime, radius, direction, crack reach and fragment reach
+- regression coverage verifies absorption vs break styling, real Atlas/Pulse shield-break event emission and malformed-value fallback
+- release: package 1.39.0 / v1.39 / iOS 1.39 (139)

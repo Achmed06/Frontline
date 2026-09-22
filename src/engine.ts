@@ -558,6 +558,8 @@ export interface Effect {
     | "pulse"
     | "rally"
     | "shield"
+    | "shield-hit"
+    | "shield-break"
     | "core-hit"
     | "blast"
     | "stasis"
@@ -1473,10 +1475,40 @@ export class Match {
     sourcePosition?: { x: number; y: number },
   ): void {
     if (unit.hp <= 0) return;
+    const shieldBefore = unit.shield;
     const shieldDamage = Math.min(unit.shield, amount);
     const hpDamage = Math.min(unit.hp, Math.max(0, amount - shieldDamage));
     unit.shield -= shieldDamage;
     unit.hp = Math.max(0, unit.hp - hpDamage);
+
+    if (shieldDamage > 0) {
+      this.effect(
+        "shield-hit",
+        unit.x,
+        unit.y,
+        unit.team,
+        0.34,
+        undefined,
+        clamp(unit.radius + 9 + shieldDamage * 0.08, 16, 30),
+        shieldDamage,
+        sourceCardId,
+        sourcePosition,
+      );
+      if (shieldBefore > 0 && unit.shield <= 0)
+        this.effect(
+          "shield-break",
+          unit.x,
+          unit.y,
+          unit.team,
+          0.58,
+          undefined,
+          clamp(unit.radius + 15 + shieldDamage * 0.1, 22, 38),
+          shieldDamage,
+          sourceCardId,
+          sourcePosition,
+        );
+    }
+
     const applied = shieldDamage + hpDamage;
     if (applied > 0)
       this.effect(
