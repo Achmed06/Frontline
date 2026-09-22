@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.48
+## Current v1.49
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1248,3 +1248,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure shieldIntegrityVisual helper centralizes exact integrity/time ratios, plate counts, cracks, gaps, shell geometry and release phase
 - regression coverage verifies full integrity, damaged plate loss/cracks, expiry release and malformed/expired fallback
 - release: package 1.48.0 / v1.48 / iOS 1.48 (148)
+
+
+## v1.49 changes
+
+- the Core turret head now physically aims at its real current coreTurretTarget instead of staying visually neutral while only the sight line points at the enemy
+- a new oriented twin-prong barrel follows the exact core-to-target vector and rotates with target changes without introducing separate renderer-side targeting state
+- the turret head shifts slightly forward along the aim vector while tracking, making the emitter feel mechanically connected to the existing lock-on line
+- barrel length, width, prong spread and muzzle-node size derive from the same real coreTurretVisual reload charge already used by sight/brackets
+- reload keeps the barrel compact, track extends it, and lock produces the strongest/longest geometry plus a visible cross-lock at the muzzle
+- the central Core turret diamond is now oriented along the target vector as part of the same head assembly, rather than remaining vertically fixed
+- the existing v1.37 firing recoil still overrides the forward tracking offset during an actual shot, so recoil remains clean and mechanically readable
+- Reduced Motion keeps the static target orientation and lock geometry because they communicate state rather than decorative motion
+- target selection, nearest-target tie breaking, turret range, reload cadence, damage, shot effect timing and all balance values are unchanged
+- a pure coreTurretAimVisual helper centralizes target vector, phase, charge, head offset, barrel geometry and muzzle size
+- regression coverage verifies real target direction, reload→track→lock extension, shared charge progression and malformed/coincident target fallback
+- release: package 1.49.0 / v1.49 / iOS 1.49 (149)

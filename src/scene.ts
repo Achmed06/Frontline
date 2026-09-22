@@ -28,6 +28,7 @@ import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
 import { coreTurretVisual } from "./core-turret-visual";
+import { coreTurretAimVisual } from "./core-turret-aim-visual";
 import {
   coreTurretFireFeedback,
   type CoreTurretFireFeedback,
@@ -4807,13 +4808,118 @@ export class ArenaScene extends Phaser.Scene {
       g.fillStyle(color, 0.7);
       g.fillRect(x + dx - 2, y - 7, 4, 11);
     }
+    const aimVisual = coreTurretAimVisual(
+      x,
+      y - 3,
+      turretTarget?.x,
+      turretTarget?.y,
+      turretCooldown,
+    );
     const turretRecoil =
       fireFeedback.active && !this.reducedMotion ? fireFeedback.recoil : 0;
-    const turretX = x - fireFeedback.nx * turretRecoil;
-    const turretY = y - 3 - fireFeedback.ny * turretRecoil;
+    const aimOffset =
+      aimVisual.active && !fireFeedback.active
+        ? aimVisual.headOffset
+        : 0;
+    const turretX =
+      x +
+      (aimVisual.active ? aimVisual.nx * aimOffset : 0) -
+      fireFeedback.nx * turretRecoil;
+    const turretY =
+      y -
+      3 +
+      (aimVisual.active ? aimVisual.ny * aimOffset : 0) -
+      fireFeedback.ny * turretRecoil;
 
     this.polygon(g, this.hex(x, y - 2, 22), 0x47635a, 1, color);
     this.polygon(g, this.hex(turretX, turretY, 15), 0x132627, 1, color);
+
+    if (aimVisual.active && !destroyed) {
+      const barrelStartX =
+        turretX + aimVisual.nx * 4;
+      const barrelStartY =
+        turretY + aimVisual.ny * 4;
+      const barrelTipX =
+        turretX + aimVisual.nx * aimVisual.barrelLength;
+      const barrelTipY =
+        turretY + aimVisual.ny * aimVisual.barrelLength;
+      const prong = aimVisual.prongSpread;
+      const phaseAlpha =
+        aimVisual.phase === "lock"
+          ? 0.9
+          : aimVisual.phase === "track"
+            ? 0.66
+            : 0.42;
+
+      g.lineStyle(
+        aimVisual.barrelWidth + 2.1,
+        0x071517,
+        0.78,
+      );
+      g.lineBetween(
+        barrelStartX - aimVisual.px * prong,
+        barrelStartY - aimVisual.py * prong,
+        barrelTipX - aimVisual.px * prong * 0.68,
+        barrelTipY - aimVisual.py * prong * 0.68,
+      );
+      g.lineBetween(
+        barrelStartX + aimVisual.px * prong,
+        barrelStartY + aimVisual.py * prong,
+        barrelTipX + aimVisual.px * prong * 0.68,
+        barrelTipY + aimVisual.py * prong * 0.68,
+      );
+
+      g.lineStyle(
+        aimVisual.barrelWidth,
+        color,
+        phaseAlpha,
+      );
+      g.lineBetween(
+        barrelStartX - aimVisual.px * prong,
+        barrelStartY - aimVisual.py * prong,
+        barrelTipX - aimVisual.px * prong * 0.68,
+        barrelTipY - aimVisual.py * prong * 0.68,
+      );
+      g.lineBetween(
+        barrelStartX + aimVisual.px * prong,
+        barrelStartY + aimVisual.py * prong,
+        barrelTipX + aimVisual.px * prong * 0.68,
+        barrelTipY + aimVisual.py * prong * 0.68,
+      );
+
+      g.lineStyle(
+        1,
+        0xffffff,
+        0.22 + aimVisual.charge * 0.48,
+      );
+      g.lineBetween(
+        turretX + aimVisual.nx * 6,
+        turretY + aimVisual.ny * 6,
+        barrelTipX,
+        barrelTipY,
+      );
+
+      g.fillStyle(
+        aimVisual.phase === "lock" ? 0xffffff : color,
+        0.36 + aimVisual.charge * 0.48,
+      );
+      g.fillCircle(
+        barrelTipX,
+        barrelTipY,
+        aimVisual.muzzleRadius,
+      );
+
+      if (aimVisual.phase === "lock") {
+        g.lineStyle(1.2, color, 0.72);
+        const lockBar = 4 + aimVisual.charge * 2;
+        g.lineBetween(
+          barrelTipX - aimVisual.px * lockBar,
+          barrelTipY - aimVisual.py * lockBar,
+          barrelTipX + aimVisual.px * lockBar,
+          barrelTipY + aimVisual.py * lockBar,
+        );
+      }
+    }
 
     if (fireFeedback.active) {
       const tangentX = -fireFeedback.ny;
@@ -4880,18 +4986,48 @@ export class ArenaScene extends Phaser.Scene {
         g.lineBetween(x - 9, y + 1, x - 3, y + 8);
       }
     }
+    const headForwardX =
+      aimVisual.active
+        ? aimVisual.nx
+        : 0;
+    const headForwardY =
+      aimVisual.active
+        ? aimVisual.ny
+        : -1;
+    const headSideX =
+      aimVisual.active
+        ? aimVisual.px
+        : 1;
+    const headSideY =
+      aimVisual.active
+        ? aimVisual.py
+        : 0;
     this.polygon(
       g,
       [
-        [turretX, turretY - 10],
-        [turretX + 8, turretY],
-        [turretX, turretY + 10],
-        [turretX - 8, turretY],
+        [
+          turretX + headForwardX * 10,
+          turretY + headForwardY * 10,
+        ],
+        [
+          turretX + headSideX * 8,
+          turretY + headSideY * 8,
+        ],
+        [
+          turretX - headForwardX * 10,
+          turretY - headForwardY * 10,
+        ],
+        [
+          turretX - headSideX * 8,
+          turretY - headSideY * 8,
+        ],
       ],
       color,
       fireFeedback.active
         ? 0.78 + fireFeedback.strength * 0.2
-        : 0.65 + 0.25 * Math.sin(this.clock * 2),
+        : aimVisual.active
+          ? 0.66 + aimVisual.charge * 0.25
+          : 0.65 + 0.25 * Math.sin(this.clock * 2),
     );
     g.fillStyle(0x061315);
     g.fillRect(x - 27, y + 26, 54, 3);
