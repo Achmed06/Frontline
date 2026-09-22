@@ -252,6 +252,64 @@ h1 em {
   font-size: 23px;
   line-height: 1.2;
 }
+.core-info {
+  position: relative;
+}
+.core-info::after {
+  content: attr(data-core-status);
+  position: absolute;
+  left: 0;
+  bottom: -9px;
+  min-height: 8px;
+  font: 700 6px/1 "Barlow Condensed", sans-serif;
+  letter-spacing: 1px;
+  color: #d8c58d;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity .18s ease, transform .18s ease;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.core-info.enemy::after {
+  left: auto;
+  right: 0;
+}
+.core-info[data-core-state="damaged"]::after,
+.core-info[data-core-state="critical"]::after,
+.core-info[data-core-state="destroyed"]::after {
+  opacity: .92;
+  transform: translateY(0);
+}
+.core-info[data-core-state="damaged"] .health-track {
+  box-shadow: 0 0 8px #e0ba6a38;
+}
+#player-core-info[data-core-state="critical"] strong,
+#player-core-info[data-core-state="critical"]::after {
+  color: #ff9a85;
+}
+#enemy-core-info[data-core-state="critical"] strong,
+#enemy-core-info[data-core-state="critical"]::after {
+  color: var(--lime);
+}
+.core-info[data-core-state="critical"] .health-track {
+  box-shadow: 0 0 11px #ffb56a66;
+  animation: core-pressure-pulse .72s ease-in-out infinite alternate;
+}
+#enemy-core-info[data-core-state="critical"] .health-track {
+  box-shadow: 0 0 11px #b9eda866;
+}
+.core-info[data-core-state="destroyed"] strong,
+.core-info[data-core-state="destroyed"]::after {
+  color: #8f6f69;
+}
+.core-info[data-core-state="destroyed"] .health-track {
+  opacity: .45;
+}
+@keyframes core-pressure-pulse {
+  from { filter: brightness(.88); opacity: .76; }
+  to { filter: brightness(1.22); opacity: 1; }
+}
+
 .core-info.enemy > span {
   justify-content: flex-end;
 }
@@ -362,7 +420,10 @@ h1 em {
   to { transform: scale(1.055); opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .clock .overtime { animation: none; }
+  .clock .overtime,
+  .core-info[data-core-state="critical"] .health-track {
+    animation: none;
+  }
 }
 .arena-wrap {
   position: relative;

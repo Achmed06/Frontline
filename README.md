@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.25
+## Current v1.26
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -903,3 +903,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure controlPointVisual helper centralizes objective presentation with regression coverage for hidden, capture, critical, contested, reverse, decay and held states
 - all changes are presentation-only: capture radius, capture rates, group bonuses, supply, ownership and win conditions are unchanged
 - release: package 1.25.0 / v1.25 / iOS 1.25 (125)
+
+## v1.26 changes
+
+- Core danger is now derived from one shared pressure helper instead of using 30% in the arena and 25% in the HUD
+- both Cores receive persistent HUD pressure states: damaged, critical and destroyed, rather than relying only on one-time announcements
+- the local Core enters CORE KRITISCH at the same 30% threshold used by the arena model; the enemy Core exposes a DURCHBRUCHFENSTER at the same point
+- the enemy critical transition now receives its own one-time battle callout, while the local critical transition retains the defensive danger treatment
+- percentage display, accessibility labels, persistent status text and arena damage visuals consume the same normalized Core state
+- malformed HP/max-HP values are clamped safely in the pure helper so presentation can never emit impossible percentages
+- critical health tracks pulse only in normal-motion mode; reduced-motion keeps the same wording and static emphasis without animation
+- no Core HP, damage, turret, scoring or match-ending rules changed
+- regression coverage verifies exact 60% damaged and 30% critical thresholds, 0% destruction, clamping and player/enemy labels
+- release: package 1.26.0 / v1.26 / iOS 1.26 (126)
+

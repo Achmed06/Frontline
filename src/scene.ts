@@ -16,6 +16,7 @@ import { matchEndVisual } from "./match-end-visual";
 import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
 import { impactProfile } from "./combat-feedback";
+import { corePressure } from "./core-pressure";
 import { COMMANDERS } from "./commanders";
 import {
   sampleUnitVitals,
@@ -2693,7 +2694,8 @@ export class ArenaScene extends Phaser.Scene {
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
-    const destroyed = fraction <= 0;
+    const pressure = corePressure(fraction, 1);
+    const destroyed = pressure.state === "destroyed";
     if (turretTarget && !destroyed) {
       const defensePulse = 0.5 + 0.5 * Math.sin(this.clock * 4);
       g.fillStyle(color, 0.012 + defensePulse * 0.012);
@@ -2748,12 +2750,12 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.polygon(g, this.hex(x, y - 2, 22), 0x47635a, 1, color);
     this.polygon(g, this.hex(x, y - 3, 15), 0x132627, 1, color);
-    if (fraction <= 0.6) {
-      g.lineStyle(1.5, 0xffd18f, fraction <= 0.3 ? 0.82 : 0.52);
+    if (pressure.state !== "stable") {
+      g.lineStyle(1.5, 0xffd18f, (pressure.state === "critical" || pressure.state === "destroyed") ? 0.82 : 0.52);
       g.lineBetween(x - 12, y - 13, x - 4, y - 6);
       g.lineBetween(x - 4, y - 6, x - 9, y + 1);
       g.lineBetween(x + 10, y - 10, x + 3, y - 2);
-      if (fraction <= 0.3) {
+      if ((pressure.state === "critical" || pressure.state === "destroyed")) {
         g.lineBetween(x + 3, y - 2, x + 10, y + 7);
         g.lineBetween(x - 9, y + 1, x - 3, y + 8);
       }
@@ -2773,7 +2775,7 @@ export class ArenaScene extends Phaser.Scene {
     g.fillRect(x - 27, y + 26, 54, 3);
     g.fillStyle(color);
     g.fillRect(x - 27, y + 26, 54 * Math.max(0, fraction), 3);
-    if (fraction <= 0.3) {
+    if ((pressure.state === "critical" || pressure.state === "destroyed")) {
       const pulse = 0.45 + 0.35 * Math.sin(this.clock * 6);
       g.fillStyle(0xff8b68, pulse);
       g.fillCircle(x - 31, y - 15, 2.5);

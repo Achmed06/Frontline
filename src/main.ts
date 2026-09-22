@@ -2,6 +2,7 @@ import { renderBaseBuilder } from "./base-builder";
 import { baseMapSvg } from "./base-map";
 import { renderBackupMenu } from "./save-backup-menu";
 import { selectedCardHint } from "./card-hints";
+import { corePressure, corePressureLabel } from "./core-pressure";
 import { initializeStore, renderStore, supporterOwned } from "./store";
 import { watchAppState } from "./mobile";
 import { ARENA_THEMES, isArenaTheme, type ArenaThemeId } from "./arena-themes";
@@ -103,7 +104,7 @@ app.innerHTML = `
   </aside>
   <main class="device" aria-label="Project Frontline Spiel">
     <header class="game-top"><div class="mini-brand">F<span>∕</span></div><div><b>FRONTLINE</b><small id="mode-label">EINSATZBASIS</small></div><div class="top-actions"><button id="sound" class="icon-btn" aria-label="Ton einschalten" title="Ton umschalten">♪</button><button id="help" class="icon-btn" aria-label="Spielanleitung">?</button><button id="pause" class="icon-btn" aria-label="Spiel pausieren" disabled>Ⅱ</button></div></header>
-    <section class="match-hud" aria-label="Matchstatus"><div class="core-info"><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span></div><div class="core-info enemy"><span><span class="enemy-command"><b id="enemy-commander-label">BOT</b><small id="enemy-commander-status">BEREIT</small><i id="enemy-commander-cooldown-progress" aria-hidden="true"></i></span><i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
+    <section class="match-hud" aria-label="Matchstatus"><div id="player-core-info" class="core-info" data-core-state="stable" data-core-status=""><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span></div><div id="enemy-core-info" class="core-info enemy" data-core-state="stable" data-core-status=""><span><span class="enemy-command"><b id="enemy-commander-label">BOT</b><small id="enemy-commander-status">BEREIT</small><i id="enemy-commander-cooldown-progress" aria-hidden="true"></i></span><i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
     <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div>
     <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
@@ -711,31 +712,46 @@ function updateHud(force = false) {
   if (s.time >= bannerUntil || ended || !active)
     el("battle-banner").hidden = true;
   if (live && s.phase !== "ended") {
-    const critical = s.cores.player.hp <= s.cores.player.maxHp * 0.25;
+    const playerCorePressure = corePressure(
+      s.cores.player.hp,
+      s.cores.player.maxHp,
+    );
+    const enemyCorePressure = corePressure(
+      s.cores.enemy.hp,
+      s.cores.enemy.maxHp,
+    );
     const overtime = s.phase === "overtime";
     const lastPush = s.time >= MATCH_DURATION - 30;
     const notice =
-      critical && !battleNotices.has("critical")
-        ? "critical"
-        : overtime && !battleNotices.has("overtime")
-          ? "overtime"
-          : lastPush && !battleNotices.has("lastPush")
-            ? "lastPush"
-            : null;
+      playerCorePressure.state === "critical" &&
+      !battleNotices.has("playerCritical")
+        ? "playerCritical"
+        : enemyCorePressure.state === "critical" &&
+            !battleNotices.has("enemyCritical")
+          ? "enemyCritical"
+          : overtime && !battleNotices.has("overtime")
+            ? "overtime"
+            : lastPush && !battleNotices.has("lastPush")
+              ? "lastPush"
+              : null;
     if (notice) {
       battleNotices.add(notice);
       announceBattle(
-        notice === "critical"
+        notice === "playerCritical"
           ? "DEIN CORE BRAUCHT SCHUTZ"
-          : notice === "overtime"
-            ? "VERLÄNGERUNG"
-            : "NOCH 30 SEKUNDEN",
-        notice === "critical"
-          ? "BASIS IN GEFAHR"
-          : notice === "overtime"
-            ? "45 SEKUNDEN · CORE ODER SCHLUSSWERTUNG"
-            : "JETZT ENTSCHEIDET’S",
-        notice === "critical",
+          : notice === "enemyCritical"
+            ? "GEGNER-CORE KRITISCH"
+            : notice === "overtime"
+              ? "VERLÄNGERUNG"
+              : "NOCH 30 SEKUNDEN",
+        notice === "playerCritical"
+          ? "CORE KRITISCH"
+          : notice === "enemyCritical"
+            ? "DURCHBRUCHSFENSTER"
+            : notice === "overtime"
+              ? "45 SEKUNDEN · CORE ODER SCHLUSSWERTUNG"
+              : "JETZT ENTSCHEIDET’S",
+        notice === "playerCritical",
       );
     }
   }
@@ -778,11 +794,20 @@ function updateHud(force = false) {
   el("timer").classList.toggle("urgent", remaining <= 30);
   el("timer").classList.toggle("overtime", s.phase === "overtime");
   for (const team of ["player", "enemy"] as const) {
-    const percent = Math.ceil(
-      Math.max(0, s.cores[team].hp / s.cores[team].maxHp) * 100,
+    const pressure = corePressure(
+      s.cores[team].hp,
+      s.cores[team].maxHp,
     );
-    el(`${team}-hp`).textContent = `${percent}%`;
-    el(`${team}-health`).style.width = `${percent}%`;
+    const status = corePressureLabel(pressure.state, team);
+    el(`${team}-hp`).textContent = `${pressure.percent}%`;
+    el(`${team}-health`).style.width = `${pressure.percent}%`;
+    const info = el<HTMLElement>(`${team}-core-info`);
+    info.dataset.coreState = pressure.state;
+    info.dataset.coreStatus = status;
+    info.setAttribute(
+      "aria-label",
+      `${team === "player" ? "Dein" : "Gegnerischer"} Core: ${pressure.percent}%${status ? `, ${status}` : ""}`,
+    );
   }
   el("energy").textContent = String(Math.floor(s.energy.player));
   el("energy-fill").style.width = `${(s.energy.player / ENERGY_CAP) * 100}%`;
