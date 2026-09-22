@@ -783,8 +783,7 @@ export class ArenaScene extends Phaser.Scene {
       const visual = battlefieldScarVisual(scar, this.clock);
       if (!visual) continue;
       const angle = scar.id * 0.73;
-      const accent =
-        scar.kind === undefined ? 0x738078 : 0x738078;
+      const accent = 0x738078;
       const teamNeutral = 0x0a1012;
 
       g.fillStyle(teamNeutral, visual.alpha * 0.72);
