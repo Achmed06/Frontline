@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.60
+## Current v1.61
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1441,4 +1441,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure rallyCastVisual helper centralizes cast timing, exact radius, healing intensity, ring expansion, command-node geometry and tempo multiplier presentation
 - regression coverage verifies real Match metadata, exact 96/65 values, canonical tempo multipliers, outward expansion, release fade and malformed/non-Rally suppression
 - release: package 1.60.0 / v1.60 / iOS 1.60 (160)
+
+## v1.61 changes
+
+- Stasis now opens with a dedicated suppression-lattice cast instead of the older generic expanding hex effect
+- the Stasis cast event now carries the card's real 78-unit radius, exact 0.6 movement factor and source card identity as presentation metadata
+- a faint circular boundary stays fixed at the real cast radius while the active hex lattice expands through it, keeping effect staging tied to targeting geometry
+- six radial lattice spokes, six counter-rotating control nodes, severity-scaled suppression shards and a central lock seal make the area denial state readable before per-target lock effects land
+- shard density and bracket reach are driven by the actual 40-percent slow severity derived from the 0.6 movement factor rather than a renderer-only duplicate
+- Reduced Motion preserves the exact boundary, lattice, nodes, shards and lock seal while freezing orbital rotation and shard travel
+- the existing per-target stasis-hit cage, tether packet and persistent slow status remain layered on top, preserving target-specific feedback after the cast
+- Repulsor presentation metadata and behavior are unchanged even though Stasis and Repulsor share the same ability-resolution branch
+- Stasis cost, 78 radius, four-second duration, 0.6 movement factor, non-stacking rules, targeting and all balance values are unchanged
+- a pure stasisCastVisual helper centralizes cast progress, exact radius, slow severity, lattice expansion, node geometry, shard count and release fade
+- regression coverage verifies real Match metadata, exact 78/0.6 values, the real four-second slow outcome, outward expansion, release fade and malformed/non-Stasis suppression
+- release: package 1.61.0 / v1.61 / iOS 1.61 (161)
 
