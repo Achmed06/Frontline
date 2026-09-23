@@ -1409,7 +1409,17 @@ export class Match {
       formation.push({ x: unit.x, y: unit.y });
       if (commanderId === "nova") {
         unit.rallyTime = COMMANDERS.nova.duration;
-        this.effect("rally", unit.x, unit.y, team, 0.7, undefined, 30);
+        this.effect(
+          "rally",
+          unit.x,
+          unit.y,
+          team,
+          0.7,
+          undefined,
+          unit.radius,
+          COMMANDERS.nova.duration,
+          "nova",
+        );
       } else if (commanderId === "atlas") {
         unit.shield = Math.max(unit.shield, COMMANDERS.atlas.shield);
         unit.shieldTime = COMMANDERS.atlas.duration;
