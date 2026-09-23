@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.65
+## Current v1.66
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1517,4 +1517,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure novaTempoActivationVisual helper centralizes canonical duration, tempo multipliers, unit geometry, tick density, chevrons and release fade
 - regression coverage verifies canonical NOVA values, real Match metadata, exact per-unit radius/duration, outward expansion, release fade and Rally/non-NOVA suppression
 - release: package 1.65.0 / v1.65 / iOS 1.65 (165)
+
+## v1.66 changes
+
+- LYRA now applies a dedicated per-unit repair-and-cleanse pulse instead of falling back to the old generic floating heal cross
+- every LYRA effect now carries the affected unit's real collision radius, exact healing amount, explicit LYRA source identity and whether that unit was actually cleansed
+- the visual model reads LYRA's canonical 80 HP healing cap directly from COMMANDERS so repair intensity remains tied to the simulation
+- mint repair shells, repair nodes and a central medical cross scale from the actual HP restored to that unit
+- slow removal is now visually distinct through blue cleanse sweeps and a release ring rather than being hidden inside the healing animation
+- cleanse-only targets remain visible with zero healing value, so removing Stasis/slow never falsely communicates HP restoration
+- Reduced Motion preserves repair strength, cleanse state, unit geometry and all core readability while freezing orbital and shard travel
+- the formation-level LYRA commander cue remains unchanged and layers with the new per-unit repair pulses
+- Medic heal links and other non-LYRA healing keep their existing renderer/fallback behavior
+- LYRA cooldown, 80 HP cap, cleanse rules, target eligibility and all gameplay/balance values are unchanged
+- Effect metadata now includes an optional cleanse flag used only when the simulation actually removes a slow
+- a pure lyraRepairVisual helper centralizes canonical healing, exact per-unit repair strength, cleanse state, shell geometry and release fade
+- regression coverage verifies the 80 HP cap, cleanse-only behavior, real Match healing/cleanse metadata, exact unit radius, expansion/fade and non-LYRA suppression
+- release: package 1.66.0 / v1.66 / iOS 1.66 (166)
 
