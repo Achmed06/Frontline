@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.72
+## Current v1.73
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1637,4 +1637,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - command-center priority and malformed-count behavior are regression-tested
 - campaign unlocks, daily generation, HQ requirements, rewards, store behavior and all combat balance remain unchanged
 - release: package 1.72.0 / v1.72 / iOS 1.72 (172)
+
+## v1.73 changes
+
+- headquarters construction now exposes the exact placement rules visually instead of showing most plots with the same generic editing treatment
+- every one of the 25 base plots receives a deterministic presentation state derived from the same canConstructOnPlot / canMoveBaseBuilding rules used by the actual save operation
+- valid new-build or move destinations are marked green, blocked plots are muted/red, the fixed command plot stays unavailable, occupied plots are clearly differentiated and the building's current location remains visible while moving
+- Tier-2 expansions now mark their predecessor plot in gold as the single required upgrade location rather than implying that another free tile could be chosen
+- selecting a valid plot produces a brighter lock frame and construction hologram; invalid taps now stay visible as rejected targets instead of silently leaving the previous valid choice highlighted
+- the builder header and map caption report the real count of currently valid destinations and whether the chosen field can actually be confirmed
+- placement ghosts receive a restrained hologram pulse in normal motion mode while Reduced Motion preserves the same exact valid/blocked/required information without animation
+- completed construction keeps the existing saved-building confirmation pulse and now receives a stronger final plot outline
+- accessibility labels on interactive plots include placement meaning such as valid, occupied, current location or unavailable
+- inspect mode remains clean: placement overlays are only sent to the map while actively building or moving
+- a pure basePlacementVisual helper centralizes valid-count, source, required-upgrade, blocked and chosen-valid/chosen-invalid states
+- regression coverage verifies new construction, occupied land, fixed upgrades, movement destinations, locked projects and malformed target choices against the real construction helpers
+- base progression requirements, project costs, unlock thresholds, saved layouts, roads, facing, cosmetic-only rules and combat balance are unchanged
+- release: package 1.73.0 / v1.73 / iOS 1.73 (173)
 
