@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Match, TRAINING_CONTROL } from "./engine";
-import { resultDecision } from "./result-debrief";
+import { resultDecision, resultSnapshot } from "./result-debrief";
 
 test("result decision identifies immediate Core destruction", () => {
   const match = new Match({ botEnabled: false });
@@ -122,4 +122,46 @@ test("result decision identifies full score draw", () => {
   assert.equal(decision.metric, "draw");
   assert.equal(decision.title, "GLEICHSTAND");
   assert.match(decision.detail, /Schlusswertung/);
+});
+
+
+test("result snapshot exposes exact final Core, territory and player performance", () => {
+  const match = new Match({ botEnabled: false });
+  match.state.winner = "player";
+  match.state.cores.player.hp = match.state.cores.player.maxHp * 0.76;
+  match.state.cores.enemy.hp = match.state.cores.enemy.maxHp * 0.21;
+  match.state.points[3].owner = "player";
+  match.state.points[4].owner = "player";
+  match.state.stats.captured = 4;
+  match.state.stats.deployed = 11;
+  match.state.stats.kills = 8;
+  match.state.stats.abilities = 3;
+
+  const snapshot = resultSnapshot(match.state);
+  assert.equal(snapshot.outcome, "win");
+  assert.equal(snapshot.playerCorePercent, 76);
+  assert.equal(snapshot.enemyCorePercent, 21);
+  assert.equal(snapshot.playerPoints, 5);
+  assert.equal(snapshot.enemyPoints, 3);
+  assert.equal(snapshot.captured, 4);
+  assert.equal(snapshot.deployed, 11);
+  assert.equal(snapshot.kills, 8);
+  assert.equal(snapshot.abilities, 3);
+});
+
+test("result snapshot distinguishes loss and draw and clamps malformed Core values", () => {
+  const loss = new Match({ botEnabled: false });
+  loss.state.winner = "enemy";
+  loss.state.cores.player.hp = -500;
+  assert.equal(resultSnapshot(loss.state).outcome, "loss");
+  assert.equal(resultSnapshot(loss.state).playerCorePercent, 0);
+
+  const draw = new Match({ botEnabled: false });
+  draw.state.winner = "draw";
+  draw.state.cores.player.hp = Number.NaN;
+  draw.state.cores.enemy.maxHp = 0;
+  const snapshot = resultSnapshot(draw.state);
+  assert.equal(snapshot.outcome, "draw");
+  assert.equal(snapshot.playerCorePercent, 0);
+  assert.equal(snapshot.enemyCorePercent, 0);
 });

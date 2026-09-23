@@ -94,7 +94,7 @@ import {
 } from "./storage";
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
-import { resultDecision } from "./result-debrief";
+import { resultDecision, resultSnapshot } from "./result-debrief";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
@@ -564,7 +564,6 @@ function finish() {
   updateRecord();
   sound.play(won ? "win" : draw ? "draw" : "lose");
   haptics.play(won ? "success" : draw ? "warning" : "error");
-  const st = match.state.stats;
   const wasSeries = activeSeries;
   const wasDraft = activeDraftDeck !== null;
   const daily = activeDaily;
@@ -605,6 +604,7 @@ function finish() {
     ? `<div class="mission-result"><b>${"★".repeat(earnedStars)}${"☆".repeat(3 - earnedStars)}</b><p>${won ? (nextMission ? "Nächster Einsatz freigeschaltet." : "Kampagne abgeschlossen. Verbessere deine Sterne in früheren Einsätzen.") : "Gewinne diesen Einsatz, um weiter vorzurücken."}</p>${!progressSaved ? "<small>Fortschritt nur für diese Sitzung gespeichert.</small>" : ""}</div>`
     : "";
   const decision = resultDecision(match.state, match.controlObjective);
+  const snapshot = resultSnapshot(match.state);
   const decisionResult =
     `<section class="result-decision" data-metric="${decision.metric}" aria-label="Matchentscheidung"><header><small>ENTSCHEIDUNG</small><b>${decision.title}</b><span>${decision.detail}</span></header><div class="result-decision-head"><span></span><b>DU</b><b>GEGNER</b></div>${decision.rows.map((row) => `<div class="result-decision-row ${row.decisive ? "decisive" : ""}"><span>${row.label}</span><strong>${row.player}</strong><strong>${row.enemy}</strong></div>`).join("")}</section>`;
   const report = createMatchRecord(match, mission?.id);
@@ -628,7 +628,7 @@ function finish() {
   history.length = Math.min(history.length, HISTORY_LIMIT);
   const recorded = saveHistory(history);
   showModal(
-    `<div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p>${decisionResult}${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${resultComparison(report)}${finalFrontMap()}<div class="result-stats"><div><strong>${st.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${st.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${st.kills}</strong><span>ABSCHÜSSE</span></div></div>${nextMission ? `<button id="next-mission" class="primary">NÄCHSTER EINSATZ ↗</button>` : ""}<button id="rematch" class="${nextMission ? "secondary" : "primary"}">${wasDraft ? "NEUES DECK DRAFTEN" : wasSeries ? (seriesEnded(seriesRun!) ? "SERIENÜBERSICHT" : "SERIE FORTSETZEN") : wasDaily ? "TAGESFRONT WIEDERHOLEN" : mission ? "EINSATZ WIEDERHOLEN" : "NOCH EIN GEFECHT"} <span>↗</span></button><button id="back" class="secondary">Zur Basis</button><div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div>`,
+    `<section class="result-hero outcome-${snapshot.outcome}"><div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="result-hero-copy"><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p></div><div class="result-snapshot" aria-label="Endstand"><div class="player"><small>DEIN CORE</small><strong>${snapshot.playerCorePercent}%</strong><span>${snapshot.playerPoints}/9 GEBIETE</span></div><i aria-hidden="true">VS</i><div class="enemy"><small>GEGNER CORE</small><strong>${snapshot.enemyCorePercent}%</strong><span>${snapshot.enemyPoints}/9 GEBIETE</span></div></div></section>${decisionResult}${finalFrontMap()}<section class="result-performance" aria-label="Gefechtsleistung"><header><small>GEFECHTSLEISTUNG</small><span>DEINE AKTIONEN</span></header><div class="result-stats"><div><strong>${snapshot.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${snapshot.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${snapshot.kills}</strong><span>ABSCHÜSSE</span></div><div><strong>${snapshot.abilities}</strong><span>FÄHIGKEITEN</span></div></div></section>${resultComparison(report)}<section class="result-progress-stack" aria-label="Fortschritt und Belohnungen">${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}</section><section class="result-actions" aria-label="Nächste Aktion">${nextMission ? `<button id="next-mission" class="primary">NÄCHSTER EINSATZ ↗</button>` : ""}<button id="rematch" class="${nextMission ? "secondary" : "primary"}">${wasDraft ? "NEUES DECK DRAFTEN" : wasSeries ? (seriesEnded(seriesRun!) ? "SERIENÜBERSICHT" : "SERIE FORTSETZEN") : wasDaily ? "TAGESFRONT WIEDERHOLEN" : mission ? "EINSATZ WIEDERHOLEN" : "NOCH EIN GEFECHT"} <span>↗</span></button><button id="back" class="secondary">Zur Basis</button></section><div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div>`,
   );
   el("rematch").onclick = () => {
     if (wasDraft) {

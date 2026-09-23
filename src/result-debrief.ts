@@ -2,6 +2,48 @@ import type { ControlObjective, MatchState } from "./engine";
 
 export type ResultDecisionMetric = "control" | "core" | "territory" | "draw";
 
+export type ResultSnapshot = {
+  outcome: "win" | "loss" | "draw";
+  playerCorePercent: number;
+  enemyCorePercent: number;
+  playerPoints: number;
+  enemyPoints: number;
+  captured: number;
+  deployed: number;
+  kills: number;
+  abilities: number;
+};
+
+function numericPercent(value: number, max: number): number {
+  if (!Number.isFinite(value) || !Number.isFinite(max) || max <= 0) return 0;
+  return Math.round(Math.max(0, Math.min(1, value / max)) * 100);
+}
+
+export function resultSnapshot(state: MatchState): ResultSnapshot {
+  return {
+    outcome:
+      state.winner === "player"
+        ? "win"
+        : state.winner === "enemy"
+          ? "loss"
+          : "draw",
+    playerCorePercent: numericPercent(
+      state.cores.player.hp,
+      state.cores.player.maxHp,
+    ),
+    enemyCorePercent: numericPercent(
+      state.cores.enemy.hp,
+      state.cores.enemy.maxHp,
+    ),
+    playerPoints: state.points.filter((point) => point.owner === "player").length,
+    enemyPoints: state.points.filter((point) => point.owner === "enemy").length,
+    captured: Math.max(0, Math.floor(state.stats.captured)),
+    deployed: Math.max(0, Math.floor(state.stats.deployed)),
+    kills: Math.max(0, Math.floor(state.stats.kills)),
+    abilities: Math.max(0, Math.floor(state.stats.abilities)),
+  };
+}
+
 export type ResultDecisionRow = {
   key: "control" | "core" | "territory";
   label: string;
