@@ -564,7 +564,6 @@ function finish() {
   updateRecord();
   sound.play(won ? "win" : draw ? "draw" : "lose");
   haptics.play(won ? "success" : draw ? "warning" : "error");
-  const st = match.state.stats;
   const wasSeries = activeSeries;
   const wasDraft = activeDraftDeck !== null;
   const daily = activeDaily;
