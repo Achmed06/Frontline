@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.63
+## Current v1.64
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1486,4 +1486,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure mortarBlastVisual helper centralizes exact splash radius, damage intensity, shock expansion, debris geometry, impact direction and release fade
 - regression coverage verifies exact 42/28 metadata from a real Mortar attack, real firing direction, outward expansion, release fade and malformed/non-Mortar suppression
 - release: package 1.63.0 / v1.63 / iOS 1.63 (163)
+
+## v1.64 changes
+
+- ATLAS now applies a dedicated per-unit shield-lock presentation instead of the legacy generic expanding shield hex
+- every ATLAS shield effect now carries the affected unit's real collision radius and explicit ATLAS source identity while preserving the existing per-unit shield-gain value
+- the visual model reads the canonical 70 shield cap and six-second duration directly from COMMANDERS, so presentation does not duplicate balance constants
+- six locking armor plates, nested shield shells, perimeter charge sparks and the ATLAS diamond mark make shield application distinct from later shield-hit and shield-break feedback
+- fresh shield gain scales charge density from the real gain amount while a zero-gain duration refresh uses a restrained relock signature instead of pretending new shield was added
+- Reduced Motion keeps shell geometry, armor plates, refresh state and gain intensity readable while freezing orbital drift and charge travel
+- the existing formation-level ATLAS commander activation cue, persistent shield integrity visuals, shield-hit direction feedback and shield-break collapse remain unchanged and layer with the new per-unit lock
+- non-ATLAS shield effects retain the previous generic shield fallback
+- ATLAS cooldown, 70 shield, six-second duration, target eligibility and all gameplay/balance values are unchanged
+- a pure atlasShieldVisual helper centralizes canonical shield values, unit geometry, gain intensity, refresh state, plate locking and release fade
+- regression coverage verifies canonical 70/6 values, refresh behavior, real Match metadata, exact shield gain preservation, expansion/fade and malformed/non-ATLAS suppression
+- release: package 1.64.0 / v1.64 / iOS 1.64 (164)
 
