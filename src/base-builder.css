@@ -53,3 +53,180 @@
   .base-beacon, .construction-complete .base-plot.selected { animation: none; }
   .base-traffic { display: none; }
 }
+
+/* v1.73: exact construction placement telegraphs. */
+.editing .base-plot {
+  transition: opacity .15s ease, filter .15s ease;
+}
+.editing .base-plot .plot-ground {
+  transition:
+    stroke .15s ease,
+    stroke-width .15s ease,
+    fill .15s ease,
+    opacity .15s ease;
+}
+
+.editing .base-plot.placement-valid .plot-ground,
+.editing .base-plot.placement-chosen-valid .plot-ground {
+  fill: #4f876c;
+  stroke: #a8ffd0;
+  stroke-opacity: .92;
+  stroke-width: 2;
+}
+.editing .base-plot.placement-valid .plot-plus {
+  stroke: #d9ffe8;
+  opacity: .95;
+}
+.editing .base-plot.placement-valid:hover .plot-ground,
+.editing .base-plot.placement-valid:focus-visible .plot-ground {
+  stroke: #efffd5;
+  stroke-width: 3.2;
+  filter: drop-shadow(0 0 5px #7dffc166);
+}
+
+.editing .base-plot.placement-blocked .plot-ground,
+.editing .base-plot.placement-chosen-invalid .plot-ground {
+  fill: #6b554d;
+  stroke: #e48c78;
+  stroke-opacity: .52;
+  stroke-width: 1.4;
+}
+.editing .base-plot.placement-blocked,
+.editing .base-plot.placement-command {
+  opacity: .58;
+}
+.editing .base-plot.placement-occupied:not(.placement-source) {
+  opacity: .7;
+  filter: saturate(.65);
+}
+.editing .base-plot.placement-occupied .plot-ground {
+  stroke: #ca8477;
+  stroke-opacity: .38;
+}
+
+.editing .base-plot.placement-required .plot-ground {
+  fill: #88784e;
+  stroke: #ffe398;
+  stroke-width: 3;
+  stroke-opacity: 1;
+  filter: drop-shadow(0 0 6px #ffd97660);
+}
+.editing .base-plot.placement-source .plot-ground {
+  stroke: #8fdad0;
+  stroke-width: 2.5;
+  stroke-opacity: .92;
+}
+
+.plot-valid-ring,
+.plot-corners,
+.plot-required-ring,
+.plot-source-ring,
+.plot-source-mark,
+.plot-block-mark,
+.plot-required-node {
+  pointer-events: none;
+}
+.plot-valid-ring,
+.plot-corners {
+  stroke: #d7ffe6;
+  stroke-width: 1.8;
+  opacity: .82;
+}
+.plot-corners {
+  stroke-width: 2.2;
+}
+.plot-required-ring {
+  stroke: #ffe7a1;
+  stroke-width: 2;
+  stroke-dasharray: 5 3;
+  opacity: .95;
+}
+.plot-required-node {
+  fill: #ffe39a;
+  stroke: #fff5c9;
+  stroke-width: 1;
+  filter: drop-shadow(0 0 5px #ffd86b);
+}
+.plot-source-ring,
+.plot-source-mark {
+  stroke: #a6eee2;
+  stroke-width: 1.8;
+  opacity: .82;
+}
+.plot-source-ring {
+  stroke-dasharray: 3 3;
+}
+.plot-block-mark {
+  stroke: #ffb09e;
+  stroke-width: 2;
+  opacity: .62;
+}
+
+.base-plot.placement-chosen-valid .plot-ground {
+  stroke: #f0ffd4;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 8px #84ffc48c);
+}
+.base-plot.placement-chosen-valid .plot-valid-ring,
+.base-plot.placement-chosen-valid .plot-corners {
+  animation: placementLock 1s ease-in-out infinite;
+}
+.base-plot.placement-chosen-invalid .plot-ground {
+  stroke: #ff806e;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 7px #ff71555f);
+}
+.base-plot.placement-chosen-invalid .plot-block-mark {
+  stroke: #ffd0c7;
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.placement-ghost {
+  filter:
+    drop-shadow(0 0 4px var(--base-accent))
+    brightness(1.28);
+  animation: placementGhost 1.15s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: bottom center;
+}
+
+.placement-confirmable .builder-map-caption {
+  color: #c9ffd9;
+  text-shadow: 0 0 7px #72ffac55;
+}
+.placement-rejected .builder-map-caption {
+  color: #ffc2b3;
+}
+.placement-confirmable .builder-map-hint {
+  color: #e3ffd7;
+}
+
+.construction-complete .base-plot.selected .plot-ground {
+  stroke: #fff2af;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 9px #ffe17d8a);
+}
+@keyframes placementLock {
+  50% {
+    opacity: .42;
+    stroke-width: 2.8;
+  }
+}
+@keyframes placementGhost {
+  50% {
+    opacity: .78;
+    filter:
+      drop-shadow(0 0 8px var(--base-accent))
+      brightness(1.52);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .base-plot.placement-chosen-valid .plot-valid-ring,
+  .base-plot.placement-chosen-valid .plot-corners,
+  .placement-ghost {
+    animation: none;
+  }
+}
+
