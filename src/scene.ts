@@ -16,6 +16,7 @@ import { unitSvg } from "./art";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
+import { controlPointSecureVisual } from "./control-point-secure-visual";
 import { captureSpecialistVisual } from "./capture-specialist-visual";
 import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
@@ -3675,10 +3676,212 @@ export class ArenaScene extends Phaser.Scene {
                       ? 0xffc368
                       : color;
         if (e.type === "capture") {
-          fx.fillStyle(effectColor, alpha * 0.22);
-          fx.fillCircle(e.x, e.y, 5 + radius * progress);
-          fx.lineStyle(2, 0xfff2bf, alpha);
-          fx.strokeCircle(e.x, e.y, 3 + radius * progress * 0.65);
+          const secure = controlPointSecureVisual(e);
+          if (secure) {
+            const secureColor =
+              e.team === "player" ? MINT : CORAL;
+            const brightSecure = 0xfff2bf;
+            const direction =
+              e.team === "player" ? -1 : 1;
+            const rotation = this.reducedMotion
+              ? e.id * 0.1
+              : e.id * 0.1 +
+                secure.progress * 0.44;
+            const travel = this.reducedMotion
+              ? 0.58
+              : (secure.progress * 2.15) % 1;
+
+            fx.fillStyle(
+              secureColor,
+              secure.alpha * 0.055,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              secure.secureRadius,
+            );
+
+            fx.lineStyle(
+              1.1,
+              secureColor,
+              secure.alpha * 0.34,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              secure.boundaryRadius,
+            );
+
+            fx.lineStyle(
+              3,
+              brightSecure,
+              secure.alpha * 0.9,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              secure.secureRadius,
+            );
+
+            fx.lineStyle(
+              1.5,
+              secureColor,
+              secure.alpha * 0.72,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              secure.innerRadius,
+            );
+
+            for (
+              let node = 0;
+              node < secure.nodeCount;
+              node++
+            ) {
+              const angle =
+                rotation +
+                (node * Math.PI * 2) /
+                  secure.nodeCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const cx =
+                e.x + tx * secure.nodeRadius;
+              const cy =
+                e.y + ty * secure.nodeRadius;
+              const bracket =
+                secure.lockReach *
+                (0.78 + (node % 2) * 0.16);
+
+              fx.fillStyle(
+                node % 2 === 0
+                  ? brightSecure
+                  : secureColor,
+                secure.alpha *
+                  (node % 2 === 0 ? 0.84 : 0.62),
+              );
+              fx.fillCircle(
+                cx,
+                cy,
+                node % 2 === 0 ? 2.2 : 1.6,
+              );
+
+              fx.lineStyle(
+                1.2,
+                secureColor,
+                secure.alpha * 0.54,
+              );
+              fx.lineBetween(
+                cx - tx * bracket,
+                cy - ty * bracket,
+                cx + px * bracket * 0.65,
+                cy + py * bracket * 0.65,
+              );
+              fx.lineBetween(
+                cx - tx * bracket,
+                cy - ty * bracket,
+                cx - px * bracket * 0.65,
+                cy - py * bracket * 0.65,
+              );
+            }
+
+            const spacing = 12;
+            for (
+              let chevron = 0;
+              chevron < secure.chevronCount;
+              chevron++
+            ) {
+              const offset =
+                (chevron -
+                  (secure.chevronCount - 1) / 2) *
+                spacing;
+              const cx = e.x + offset;
+              const baseY =
+                e.y -
+                direction *
+                  (7 + travel * 19);
+              const tipY =
+                baseY +
+                direction * secure.chevronReach;
+              const half =
+                4 + (chevron === 1 ? 1.5 : 0);
+
+              fx.lineStyle(
+                chevron === 1 ? 2.2 : 1.35,
+                chevron === 1
+                  ? brightSecure
+                  : secureColor,
+                secure.alpha *
+                  (chevron === 1 ? 0.82 : 0.58),
+              );
+              fx.lineBetween(
+                cx - half,
+                baseY - direction * 4,
+                cx,
+                tipY,
+              );
+              fx.lineBetween(
+                cx + half,
+                baseY - direction * 4,
+                cx,
+                tipY,
+              );
+            }
+
+            const gateHalf = 15;
+            const gateY =
+              e.y + direction * 10;
+            fx.lineStyle(
+              1.4,
+              brightSecure,
+              secure.alpha * 0.58,
+            );
+            fx.lineBetween(
+              e.x - gateHalf,
+              gateY,
+              e.x + gateHalf,
+              gateY,
+            );
+            fx.lineBetween(
+              e.x - gateHalf,
+              gateY,
+              e.x - gateHalf,
+              gateY - direction * 8,
+            );
+            fx.lineBetween(
+              e.x + gateHalf,
+              gateY,
+              e.x + gateHalf,
+              gateY - direction * 8,
+            );
+
+            fx.fillStyle(
+              brightSecure,
+              secure.alpha * 0.78,
+            );
+            fx.fillCircle(e.x, e.y, 2.6);
+            fx.lineStyle(
+              1.2,
+              secureColor,
+              secure.alpha * 0.52,
+            );
+            fx.strokeCircle(e.x, e.y, 6.5);
+          } else {
+            fx.fillStyle(effectColor, alpha * 0.22);
+            fx.fillCircle(
+              e.x,
+              e.y,
+              5 + radius * progress,
+            );
+            fx.lineStyle(2, 0xfff2bf, alpha);
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              3 + radius * progress * 0.65,
+            );
+          }
         }
         if (e.type === "blast") {
           const mortarBlast = mortarBlastVisual(e);
