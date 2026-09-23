@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.71
+## Current v1.72
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1619,4 +1619,22 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - resultSnapshot is a pure tested helper with safe Core-percent clamping and explicit win/loss/draw handling
 - no result logic, progression rules, rewards, history recording, stars, mastery, campaign unlocks or match balance changed
 - release: package 1.71.0 / v1.71 / iOS 1.71 (171)
+
+## v1.72 changes
+
+- the Einsatzbasis now opens with a compact three-part command center for Feldzug, Hauptquartier and Tagesfront instead of making the player scan several equally weighted cards
+- command-center values are derived from live campaign stars/completion, HQ project readiness, learning progress, daily attempts/completion and active series state
+- the command center is interactive: each status cell jumps directly to the matching campaign, HQ or Tagesfront flow
+- a pure lobbyCommandStatus model determines the next relevant focus without changing progression: ready HQ projects take priority, then an open Tagesfront, then unfinished campaign progression
+- a fully cleared daily and completed campaign settle into a neutral command-center state rather than manufacturing urgency
+- HQ-ready states receive a distinct construction-ready treatment while completed campaign/daily states use restrained secured styling
+- the main operation hero receives stronger focus only when campaign progression is currently the relevant next action
+- the HQ entry receives stronger structure, clearer progress treatment and a dedicated ready-project emphasis when construction is available
+- Tagesfront receives a stronger but still contained focus state while it remains open
+- the chapter track now reads more like a connected operation route with an explicit active chapter marker
+- base mode, deck, commander, learning, daily and HQ cards receive restrained depth and hover/touch feedback so the lobby matches the newer combat/debrief visual quality
+- compact and narrow-phone layouts keep the command center usable without consuming excessive vertical space
+- command-center priority and malformed-count behavior are regression-tested
+- campaign unlocks, daily generation, HQ requirements, rewards, store behavior and all combat balance remain unchanged
+- release: package 1.72.0 / v1.72 / iOS 1.72 (172)
 

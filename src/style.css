@@ -4777,3 +4777,377 @@ h1 em {
   }
 }
 
+/* v1.72: command-center hierarchy for the Einsatzbasis. */
+.base-lobby .base-scroll {
+  background:
+    linear-gradient(180deg, #0e2027 0, #10252a 185px, #101e24 430px),
+    #101e24;
+}
+
+.base-status {
+  position: relative;
+  z-index: 2;
+  padding: 1px 1px 0;
+}
+.base-status > span {
+  color: #b8cfca;
+  font-weight: 700;
+}
+.base-status > b {
+  box-shadow: inset 0 0 0 1px #fff0a70c;
+}
+
+.command-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.command-status button {
+  position: relative;
+  min-width: 0;
+  min-height: 52px;
+  overflow: hidden;
+  padding: 8px 8px 7px;
+  border: 1px solid #354f52;
+  border-radius: 7px;
+  background:
+    linear-gradient(155deg, #1a3238, #14272e);
+  color: #d4e3dc;
+  text-align: left;
+  box-shadow: inset 0 0 0 1px #d9f2e008;
+  transition:
+    border-color .15s ease,
+    background .15s ease,
+    transform .15s ease,
+    box-shadow .15s ease;
+}
+.command-status button::after {
+  content: "";
+  position: absolute;
+  right: -16px;
+  bottom: -21px;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #71908b20;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.command-status button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.command-status small {
+  display: block;
+  color: #789695;
+  font: 800 6.5px/1 monospace;
+  letter-spacing: 1px;
+}
+.command-status b {
+  display: block;
+  margin: 5px 0 3px;
+  overflow: hidden;
+  color: #dce9df;
+  font: 700 14px/1 "Barlow Condensed", Impact, sans-serif;
+  letter-spacing: .45px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.command-status span {
+  display: block;
+  overflow: hidden;
+  color: #829d9b;
+  font-size: 6.5px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.command-status button.focus {
+  border-color: #bce39a;
+  background:
+    radial-gradient(circle at 88% 12%, #b9eb951b, transparent 36%),
+    linear-gradient(155deg, #274437, #172e2b);
+  box-shadow:
+    inset 0 0 0 1px #d9f5bb18,
+    0 5px 16px #050f102e;
+}
+.command-status button.focus small,
+.command-status button.focus b {
+  color: #d5f4bb;
+}
+.command-status button.focus::before {
+  content: "JETZT";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  color: #bfe99e;
+  font: 800 5px/1 monospace;
+  letter-spacing: .7px;
+}
+.command-status button.ready {
+  border-color: #e0c16e;
+  background:
+    radial-gradient(circle at 88% 12%, #f0cb7020, transparent 38%),
+    linear-gradient(155deg, #3a392c, #23302b);
+}
+.command-status button.ready small,
+.command-status button.ready b {
+  color: #f1dda0;
+}
+.command-status button.complete {
+  border-color: #4f7969;
+  background:
+    linear-gradient(155deg, #1c3a35, #162c2b);
+}
+.command-status button.complete b {
+  color: #9fe7ca;
+}
+
+.operation-hero,
+.hq-launch,
+.daily-launch,
+.learning-launch,
+.base-mode,
+.base-deck,
+.commander-launch {
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease,
+    filter .18s ease,
+    transform .18s ease;
+}
+
+.base-lobby[data-command-focus="campaign"] .operation-hero {
+  border-color: #9acb8c;
+  box-shadow:
+    0 16px 34px #020d1545,
+    inset 0 0 0 1px #c9ecaf22;
+}
+.base-lobby[data-command-focus="campaign"] .operation-hero .primary {
+  box-shadow: 0 7px 20px #9bcf7130;
+}
+
+.base-lobby[data-command-focus="headquarters"] .hq-launch {
+  border-color: #e0c46d;
+  background:
+    radial-gradient(circle at 87% 16%, #f1ce7419, transparent 38%),
+    linear-gradient(110deg, #33483d, #233132);
+  box-shadow:
+    0 8px 22px #050f1138,
+    inset 0 0 0 1px #f0dc9d18;
+}
+.base-lobby[data-command-focus="headquarters"] .hq-launch .hq-open {
+  color: #f3dda0;
+}
+.base-lobby[data-command-focus="headquarters"] .hq-progress-track {
+  box-shadow: 0 0 8px #e5c66e2d;
+}
+
+.base-lobby[data-command-focus="daily"] .daily-launch:not(.complete) {
+  border-color: #f0c66c;
+  box-shadow:
+    0 9px 24px #07101744,
+    inset 0 0 0 1px #ffe7a126,
+    0 0 18px #e7bd5b14;
+}
+
+.operation-hero {
+  box-shadow:
+    0 14px 30px #020d153f,
+    inset 0 0 0 1px #d9eee00b;
+}
+.operation-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 44%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent, #0615184a);
+}
+
+.hero-kicker {
+  font-weight: 700;
+}
+.hero-mode {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid #accfb24a;
+  border-radius: 20px;
+  background: #102a2fa8;
+  color: #d3e8c5;
+}
+.hero-bottom {
+  background:
+    linear-gradient(180deg, #132a2a20, #102327cc);
+  border-top-color: #a6bfac38;
+}
+.hero-bottom > p {
+  color: #adc0b5;
+}
+
+.hq-launch {
+  min-height: 78px;
+  box-shadow: 0 7px 20px #050e1130;
+}
+.hq-launch > span:first-child {
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 7px 0 0 7px;
+  background:
+    radial-gradient(circle, #53887824, transparent 68%);
+}
+.hq-progress-track {
+  height: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.hq-progress-track i {
+  box-shadow: 0 0 8px #a8e3ba3b;
+}
+.hq-open {
+  padding: 6px 7px;
+  border: 1px solid #65847b45;
+  border-radius: 4px;
+  background: #12292b70;
+}
+
+.learning-launch,
+.daily-launch {
+  box-shadow: 0 6px 18px #050e1230;
+}
+.learning-launch:hover:not(:disabled),
+.daily-launch:hover:not(:disabled),
+.hq-launch:hover:not(:disabled),
+.base-mode:hover:not(:disabled),
+.base-deck:hover:not(:disabled),
+.commander-launch:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.chapter-track {
+  position: relative;
+}
+.chapter-track::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 9%;
+  right: 9%;
+  top: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, #435a55, #77926f, #435a55);
+  opacity: .42;
+}
+.chapter-stop {
+  z-index: 1;
+  box-shadow: 0 5px 15px #06101424;
+}
+.chapter-stop.current {
+  border-color: #9cca91;
+  box-shadow:
+    0 6px 18px #06101430,
+    inset 0 0 0 1px #c9eca91a;
+}
+.chapter-stop.current::after {
+  content: "AKTIV";
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  color: #bde69e;
+  font: 800 5px/1 monospace;
+  letter-spacing: .6px;
+}
+
+.base-modes {
+  gap: 7px;
+}
+.base-mode {
+  box-shadow: 0 5px 15px #050e122b;
+}
+.base-mode > span:last-child {
+  opacity: .72;
+  transform: translateX(0);
+  transition: transform .15s ease, opacity .15s ease;
+}
+.base-mode:hover:not(:disabled) > span:last-child {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.base-deck {
+  box-shadow: 0 5px 15px #050e1226;
+}
+.deck-portrait {
+  box-shadow: inset 0 0 0 1px #fff8;
+}
+
+.quick-battle {
+  opacity: .9;
+}
+.quick-battle[open] {
+  opacity: 1;
+  border-color: #47636a;
+  background: #192d35;
+}
+
+@media (max-width: 380px) {
+  .command-status {
+    gap: 4px;
+  }
+  .command-status button {
+    min-height: 47px;
+    padding: 7px 6px 6px;
+  }
+  .command-status small {
+    font-size: 5.5px;
+  }
+  .command-status b {
+    margin-top: 4px;
+    font-size: 12px;
+  }
+  .command-status span {
+    font-size: 5.7px;
+  }
+  .command-status button.focus::before {
+    display: none;
+  }
+  .hq-launch {
+    min-height: 70px;
+  }
+  .hq-launch > span:first-child {
+    width: 82px;
+  }
+  .hq-open {
+    font-size: 6.5px;
+    padding-inline: 5px;
+  }
+}
+
+@media (max-width: 740px) and (max-height: 760px) {
+  .base-lobby .base-scroll {
+    gap: 9px;
+  }
+  .command-status button {
+    min-height: 44px;
+    padding-block: 6px;
+  }
+  .command-status b {
+    font-size: 12px;
+    margin-block: 3px 2px;
+  }
+  .operation-hero {
+    min-height: 238px;
+  }
+  .hq-launch {
+    min-height: 66px;
+  }
+  .learning-launch,
+  .daily-launch {
+    padding-block: 9px;
+  }
+}
+
