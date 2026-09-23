@@ -65,6 +65,7 @@ import { slowStatusVisual } from "./slow-status-visual";
 import { stasisHitVisual } from "./stasis-hit-visual";
 import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
+import { rallyCastVisual } from "./rally-cast-visual";
 import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 
@@ -4646,25 +4647,197 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "rally") {
-          const wave = 12 + radius * progress;
-          fx.fillStyle(effectColor, alpha * 0.045);
-          fx.fillCircle(e.x, e.y, wave);
-          fx.lineStyle(2, effectColor, alpha * 0.92);
-          for (let i = 0; i < 6; i++) {
-            const angle = (i * Math.PI) / 3 - Math.PI / 2;
-            const cx = e.x + Math.cos(angle) * wave * 0.62;
-            const cy = e.y + Math.sin(angle) * wave * 0.62;
-            const tx = Math.cos(angle);
-            const ty = Math.sin(angle);
-            const px = -ty;
-            const py = tx;
-            const tipX = cx + tx * 8;
-            const tipY = cy + ty * 8;
-            fx.lineBetween(cx - tx * 5 + px * 4, cy - ty * 5 + py * 4, tipX, tipY);
-            fx.lineBetween(cx - tx * 5 - px * 4, cy - ty * 5 - py * 4, tipX, tipY);
+          const rallyVisual = rallyCastVisual(e);
+          if (rallyVisual) {
+            const brightRally = 0xe8fff4;
+            const softRally = 0xbfffe0;
+            const direction = e.team === "player" ? -1 : 1;
+            const rotation = this.reducedMotion
+              ? e.id * 0.09
+              : e.id * 0.09 + rallyVisual.progress * 0.52;
+            const travel = this.reducedMotion
+              ? 0.56
+              : (rallyVisual.progress * 2.35) % 1;
+            const tempoBoost = Math.max(
+              rallyVisual.moveMultiplier - 1,
+              rallyVisual.attackMultiplier - 1,
+            );
+
+            fx.fillStyle(
+              effectColor,
+              rallyVisual.alpha * 0.05,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              rallyVisual.outerRadius,
+            );
+
+            fx.lineStyle(
+              1.15,
+              effectColor,
+              rallyVisual.alpha * 0.34,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              rallyVisual.radius,
+            );
+            fx.lineStyle(
+              2.6,
+              effectColor,
+              rallyVisual.alpha * 0.9,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              rallyVisual.outerRadius,
+            );
+            fx.lineStyle(
+              1.4,
+              softRally,
+              rallyVisual.alpha * 0.68,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              rallyVisual.surgeRadius,
+            );
+            fx.lineStyle(
+              1.1,
+              brightRally,
+              rallyVisual.alpha * 0.54,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              rallyVisual.innerRadius,
+            );
+
+            for (
+              let node = 0;
+              node < rallyVisual.nodeCount;
+              node++
+            ) {
+              const angle =
+                rotation +
+                (node * Math.PI * 2) /
+                  rallyVisual.nodeCount;
+              const nx = Math.cos(angle);
+              const ny = Math.sin(angle);
+              const cx =
+                e.x + nx * rallyVisual.nodeRadius;
+              const cy =
+                e.y + ny * rallyVisual.nodeRadius;
+              const tangentX = -ny;
+              const tangentY = nx;
+              const nodeSize =
+                node % 2 === 0 ? 2.2 : 1.45;
+
+              fx.fillStyle(
+                node % 2 === 0
+                  ? brightRally
+                  : effectColor,
+                rallyVisual.alpha *
+                  (node % 2 === 0 ? 0.82 : 0.58),
+              );
+              fx.fillCircle(cx, cy, nodeSize);
+              fx.lineStyle(
+                1,
+                softRally,
+                rallyVisual.alpha * 0.4,
+              );
+              fx.lineBetween(
+                cx - tangentX * (3.5 + tempoBoost * 4),
+                cy - tangentY * (3.5 + tempoBoost * 4),
+                cx + tangentX * (3.5 + tempoBoost * 4),
+                cy + tangentY * (3.5 + tempoBoost * 4),
+              );
+            }
+
+            const laneSpacing =
+              rallyVisual.chevronSpread;
+            for (let lane = 0; lane < 4; lane++) {
+              const laneOffset =
+                (lane - 1.5) * laneSpacing;
+              const baseY =
+                e.y -
+                direction *
+                  (8 + travel * 27);
+              const tipY =
+                baseY +
+                direction *
+                  (9 + tempoBoost * 10);
+              const halfWidth =
+                4.5 + rallyVisual.intensity * 2.5;
+
+              fx.lineStyle(
+                lane === 1 || lane === 2 ? 2 : 1.3,
+                lane % 2 === 0
+                  ? brightRally
+                  : softRally,
+                rallyVisual.alpha *
+                  (lane === 1 || lane === 2
+                    ? 0.78
+                    : 0.5),
+              );
+              fx.lineBetween(
+                e.x + laneOffset - halfWidth,
+                baseY - direction * 4,
+                e.x + laneOffset,
+                tipY,
+              );
+              fx.lineBetween(
+                e.x + laneOffset + halfWidth,
+                baseY - direction * 4,
+                e.x + laneOffset,
+                tipY,
+              );
+            }
+
+            const cross = rallyVisual.crossSize;
+            fx.fillStyle(
+              brightRally,
+              rallyVisual.alpha * 0.84,
+            );
+            fx.fillRect(
+              e.x - 2.2,
+              e.y - cross,
+              4.4,
+              cross * 2,
+            );
+            fx.fillRect(
+              e.x - cross,
+              e.y - 2.2,
+              cross * 2,
+              4.4,
+            );
+
+            const commandReach =
+              14 + tempoBoost * 24;
+            fx.lineStyle(
+              1.35,
+              effectColor,
+              rallyVisual.alpha * 0.58,
+            );
+            fx.lineBetween(
+              e.x - commandReach,
+              e.y + direction * 14,
+              e.x + commandReach,
+              e.y + direction * 14,
+            );
+            fx.lineStyle(
+              1,
+              brightRally,
+              rallyVisual.alpha * 0.42,
+            );
+            fx.lineBetween(
+              e.x - commandReach * 0.68,
+              e.y - direction * 14,
+              e.x + commandReach * 0.68,
+              e.y - direction * 14,
+            );
           }
-          fx.lineStyle(1.5, 0xd8ffe8, alpha * 0.6);
-          fx.strokeCircle(e.x, e.y, wave * 0.82);
         }
         if (e.type === "stasis") {
           const wave = 10 + radius * progress;
