@@ -51,9 +51,9 @@ test("real Rally play publishes exact radius and healing as presentation metadat
   const match = new Match({ botEnabled: false });
   match.state.energy.player = 10;
 
-  const deploy = match.play("player", "vanguard", 210, 500);
+  const deploy = match.play("player", "vanguard", 210, 480);
   assert.equal(deploy.ok, true);
-  const rally = match.play("player", "rally", 210, 500);
+  const rally = match.play("player", "rally", 210, 480);
   assert.equal(rally.ok, true);
 
   const effect = match.state.effects.find(
