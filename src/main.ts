@@ -95,6 +95,7 @@ import {
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { resultDecision, resultSnapshot } from "./result-debrief";
+import { lobbyCommandStatus } from "./lobby-command-status";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
@@ -113,6 +114,7 @@ app.innerHTML = `
     <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
       <div class="base-status"><span><i></i> DEINE EINSATZBASIS</span><b id="base-stars">0 ★</b></div>
+      <nav class="command-status" aria-label="Einsatzstatus"><button id="status-campaign" data-status="campaign"><small>FELDZUG</small><b id="status-campaign-value">0/0</b><span id="status-campaign-detail">0 ★</span></button><button id="status-headquarters" data-status="headquarters"><small>HQ</small><b id="status-headquarters-value">BASIS</b><span id="status-headquarters-detail">0/0 Ausbildung</span></button><button id="status-daily" data-status="daily"><small>HEUTE</small><b id="status-daily-value">OFFEN</b><span id="status-daily-detail">Tagesfront</span></button></nav>
       <section class="operation-hero">
         <div class="hero-grid" aria-hidden="true"></div><div id="hero-portrait" class="hero-portrait" aria-hidden="true">${commanderSvg()}</div>
         <div class="hero-copy"><span id="next-chapter" class="hero-kicker"></span><h2>DEINE FRONT.<br><em>DEIN VORSTOSS.</em></h2><p id="next-mission-name"></p><span id="next-mission-type" class="hero-mode"></span></div>
@@ -1240,6 +1242,10 @@ function updateCampaignProgress() {
         ? "Gemeistert · Neue Route?"
         : "Ein Deck. Drei Siege.";
 }
+el("status-campaign").onclick = () => el<HTMLButtonElement>("campaign").click();
+el("status-headquarters").onclick = () => el<HTMLButtonElement>("headquarters").click();
+el("status-daily").onclick = () => el<HTMLButtonElement>("daily").click();
+
 el("continue-campaign").onclick = () => {
   if (!active) start(false, nextCampaignMission);
 };
@@ -1298,6 +1304,7 @@ function updateDaily() {
       ? `${record.attempts} Versuch${record.attempts === 1 ? "" : "e"} · Noch offen`
       : `${challenge.difficulty === "veteran" ? "Veteran" : "Taktiker"} · ${dailyObjective(challenge)}`;
   el("daily").classList.toggle("complete", !!record?.completed);
+  updateLobbyCommandCenter();
 }
 function openDaily() {
   if (active) return;
@@ -1313,6 +1320,77 @@ function openDaily() {
   };
 }
 el("daily").onclick = openDaily;
+
+function readyBaseProjectCount(): number {
+  const metrics = headquartersMetrics();
+  return BASE_PROJECTS.filter(
+    (project) =>
+      !baseProjectBuilt(learningProgress, project.id) &&
+      baseProjectProgress(project.id, metrics).ready &&
+      (project.requires === null ||
+        baseProjectBuilt(
+          learningProgress,
+          project.requires as BaseProjectId,
+        )),
+  ).length;
+}
+
+function updateLobbyCommandCenter(): void {
+  const completed = Object.keys(campaignProgress).length;
+  const stars = Object.values(campaignProgress).reduce(
+    (sum, best) => sum + best.stars,
+    0,
+  );
+  const daily = dailyChallenge();
+  const dailyProgress = dailyRecord(dailyHistory, daily.key);
+  const stage = baseStage(completed);
+  const status = lobbyCommandStatus({
+    completedMissions: completed,
+    totalMissions: MISSIONS.length,
+    stars,
+    maxStars: MISSIONS.length * 3,
+    headquartersName: BASE_STAGES[stage].name,
+    readyProjects: readyBaseProjectCount(),
+    learningDone: completedLessons(learningProgress),
+    learningTotal: LESSONS.length,
+    dailyCompleted: Boolean(dailyProgress?.completed),
+    dailyAttempts: dailyProgress?.attempts ?? 0,
+    seriesActive: Boolean(seriesRun && !seriesEnded(seriesRun)),
+    seriesWins: seriesRun?.wins ?? 0,
+    seriesLosses: seriesRun?.losses ?? 0,
+  });
+
+  const lobby = el<HTMLElement>("lobby");
+  lobby.dataset.commandFocus = status.attention;
+  for (const key of ["campaign", "headquarters", "daily"] as const) {
+    const item = status[key];
+    const button = el<HTMLButtonElement>(`status-${key}`);
+    el(`status-${key}-value`).textContent = item.value;
+    el(`status-${key}-detail`).textContent = item.detail;
+    button.classList.toggle("focus", status.attention === key);
+    button.classList.toggle(
+      "complete",
+      "complete" in item && Boolean(item.complete),
+    );
+    button.classList.toggle(
+      "ready",
+      "ready" in item && Boolean(item.ready),
+    );
+  }
+
+  el("status-campaign").setAttribute(
+    "aria-label",
+    `Feldzug: ${status.campaign.value}, ${status.campaign.detail}`,
+  );
+  el("status-headquarters").setAttribute(
+    "aria-label",
+    `Hauptquartier: ${status.headquarters.value}, ${status.headquarters.detail}`,
+  );
+  el("status-daily").setAttribute(
+    "aria-label",
+    `Tagesfront: ${status.daily.value}, ${status.daily.detail}`,
+  );
+}
 
 function headquartersMetrics(): BaseProjectMetrics {
   return {
@@ -1359,16 +1437,7 @@ function updateHeadquarters() {
   el("hq-mini-art").innerHTML = baseMapSvg(learningProgress, style.color, { interactive: false, stage });
   el("hq-name").textContent = BASE_STAGES[stage].name;
   el("hq-progress-fill").style.width = `${next ? Math.min(100, ((wins - BASE_STAGES[stage].wins) / (next.wins - BASE_STAGES[stage].wins)) * 100) : 100}%`;
-  const readyProjects = BASE_PROJECTS.filter(
-    (project) =>
-      !baseProjectBuilt(learningProgress, project.id) &&
-      baseProjectProgress(project.id, headquartersMetrics()).ready &&
-      (project.requires === null ||
-        baseProjectBuilt(
-          learningProgress,
-          project.requires as BaseProjectId,
-        )),
-  ).length;
+  const readyProjects = readyBaseProjectCount();
   el("hq-next").textContent = readyProjects
     ? `${readyProjects} Bauprojekt${readyProjects === 1 ? "" : "e"} bereit · Basis öffnen`
     : next
@@ -1380,6 +1449,7 @@ function updateHeadquarters() {
   el("learning-next").textContent =
     LESSONS.find((l) => learningProgress.counts[l.id] < l.goal)?.name ??
     "Aurora freigeschaltet · Jetzt ausrüsten";
+  updateLobbyCommandCenter();
 }
 function openHeadquarters(initial?: BaseProjectId) {
   if (active) return;
