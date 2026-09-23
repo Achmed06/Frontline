@@ -40,6 +40,42 @@ test("Breaker removes only shield bonus before normal damage, equally for both t
     assert.equal(bare.attacker.hp, bare.attacker.maxHp);
   }
 });
+
+test("Breaker special shield removal carries exact presentation data and emits a real break", () => {
+  const full = strike(70);
+  const fullSpecial = full.m.state.effects.find(
+    (effect) => effect.type === "breaker",
+  );
+  assert.ok(fullSpecial);
+  assert.equal(fullSpecial?.value, 45);
+  assert.equal(fullSpecial?.sourceCardId, "breaker");
+  assert.equal(fullSpecial?.sourceX, full.attacker.x);
+  assert.equal(fullSpecial?.sourceY, full.attacker.y);
+  assert.equal(
+    full.m.state.effects.some(
+      (effect) =>
+        effect.type === "shield-break" &&
+        effect.value === 45,
+    ),
+    false,
+  );
+
+  const partial = strike(10);
+  const special = partial.m.state.effects.find(
+    (effect) => effect.type === "breaker",
+  );
+  const shieldBreak = partial.m.state.effects.find(
+    (effect) =>
+      effect.type === "shield-break" &&
+      effect.sourceCardId === "breaker",
+  );
+  assert.equal(special?.value, 10);
+  assert.ok(shieldBreak);
+  assert.equal(shieldBreak?.value, 10);
+  assert.equal(shieldBreak?.team, "enemy");
+  assert.equal(shieldBreak?.sourceX, partial.attacker.x);
+  assert.equal(shieldBreak?.sourceY, partial.attacker.y);
+});
 test("Breaker deals ordinary core damage and remains a valid saved-deck unit", () => {
   const m = new Match({ playerDeck: deck, botEnabled: false });
   assert.equal(m.play("player", "breaker", 210, 480).ok, true);

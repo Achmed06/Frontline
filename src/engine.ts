@@ -1698,7 +1698,8 @@ export class Match {
         if (card.shieldBreak && target.hp > 0 && target.shield > 0) {
           const shieldBefore = target.shield;
           target.shield = Math.max(0, target.shield - card.shieldBreak);
-          if (target.shield < shieldBefore)
+          const removedShield = shieldBefore - target.shield;
+          if (removedShield > 0) {
             this.effect(
               "breaker",
               target.x,
@@ -1707,7 +1708,28 @@ export class Match {
               0.42,
               undefined,
               target.radius + 18,
+              removedShield,
+              card.id,
+              attack.unit,
             );
+            if (target.shield <= 0)
+              this.effect(
+                "shield-break",
+                target.x,
+                target.y,
+                target.team,
+                0.58,
+                undefined,
+                clamp(
+                  target.radius + 15 + removedShield * 0.1,
+                  22,
+                  38,
+                ),
+                removedShield,
+                card.id,
+                attack.unit,
+              );
+          }
         }
         this.damageUnit(
           target,

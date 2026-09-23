@@ -19,6 +19,7 @@ import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
 import { impactDirectionVisual } from "./impact-direction-visual";
 import { shieldImpactVisual } from "./shield-impact-visual";
+import { breakerShieldVisual } from "./breaker-shield-visual";
 import { shieldIntegrityVisual } from "./shield-integrity-visual";
 import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
@@ -4110,37 +4111,174 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "breaker") {
-          const wave = 7 + radius * progress;
-          fx.fillStyle(effectColor, alpha * 0.07);
-          this.polygon(
-            fx,
-            this.hex(e.x, e.y, wave),
-            effectColor,
-            alpha * 0.07,
-            effectColor,
-          );
-          fx.lineStyle(2.4, effectColor, alpha * 0.95);
-          this.polygon(
-            fx,
-            this.hex(e.x, e.y, wave),
-            0x000000,
-            0,
-            effectColor,
-          );
-          fx.lineStyle(1.8, 0xffffff, alpha * 0.72);
-          const slash = wave * 0.72;
-          fx.lineBetween(
-            e.x - slash,
-            e.y - slash * 0.25,
-            e.x + slash,
-            e.y + slash * 0.25,
-          );
-          fx.lineBetween(
-            e.x - slash * 0.25,
-            e.y + slash,
-            e.x + slash * 0.25,
-            e.y - slash,
-          );
+          const breakerVisual = breakerShieldVisual(e);
+          if (breakerVisual) {
+            const wave =
+              (7 + radius * progress) *
+              breakerVisual.waveScale;
+            fx.fillStyle(
+              effectColor,
+              alpha * (0.055 + breakerVisual.strength * 0.045),
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, wave),
+              effectColor,
+              alpha * (0.055 + breakerVisual.strength * 0.045),
+              effectColor,
+            );
+            fx.lineStyle(
+              2.1 + breakerVisual.strength * 0.8,
+              effectColor,
+              alpha * 0.95,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, wave),
+              0x000000,
+              0,
+              effectColor,
+            );
+
+            if (breakerVisual.directional) {
+              const contactX =
+                e.x -
+                breakerVisual.nx *
+                  wave *
+                  0.48;
+              const contactY =
+                e.y -
+                breakerVisual.ny *
+                  wave *
+                  0.48;
+              const slash =
+                breakerVisual.slashReach *
+                (0.72 + progress * 0.28);
+              const cross =
+                breakerVisual.crossReach *
+                (0.76 + progress * 0.24);
+
+              fx.fillStyle(
+                0xffffff,
+                alpha *
+                  (0.5 + breakerVisual.strength * 0.32),
+              );
+              fx.fillCircle(
+                contactX,
+                contactY,
+                2 +
+                  breakerVisual.strength * 1.8,
+              );
+
+              fx.lineStyle(
+                2 +
+                  breakerVisual.strength * 0.9,
+                0xffffff,
+                alpha * 0.8,
+              );
+              fx.lineBetween(
+                contactX -
+                  breakerVisual.px * slash -
+                  breakerVisual.nx * 3,
+                contactY -
+                  breakerVisual.py * slash -
+                  breakerVisual.ny * 3,
+                contactX +
+                  breakerVisual.px * slash +
+                  breakerVisual.nx * 5,
+                contactY +
+                  breakerVisual.py * slash +
+                  breakerVisual.ny * 5,
+              );
+
+              fx.lineStyle(
+                1.5 +
+                  breakerVisual.strength * 0.7,
+                effectColor,
+                alpha * 0.82,
+              );
+              fx.lineBetween(
+                contactX -
+                  breakerVisual.nx * cross,
+                contactY -
+                  breakerVisual.ny * cross,
+                contactX +
+                  breakerVisual.nx * cross,
+                contactY +
+                  breakerVisual.ny * cross,
+              );
+
+              fx.lineStyle(
+                1.1,
+                0xfff1bd,
+                alpha *
+                  (0.45 +
+                    breakerVisual.strength * 0.3),
+              );
+              for (
+                let fragment = 0;
+                fragment <
+                breakerVisual.fragmentCount;
+                fragment++
+              ) {
+                const spread =
+                  breakerVisual.fragmentCount <= 1
+                    ? 0
+                    : fragment /
+                        (breakerVisual.fragmentCount - 1) -
+                      0.5;
+                const sx =
+                  e.x +
+                  breakerVisual.px *
+                    spread *
+                    wave *
+                    0.8;
+                const sy =
+                  e.y +
+                  breakerVisual.py *
+                    spread *
+                    wave *
+                    0.8;
+                const reach =
+                  4 +
+                  breakerVisual.strength * 7 +
+                  (fragment % 2) * 2;
+                fx.lineBetween(
+                  sx,
+                  sy,
+                  sx +
+                    breakerVisual.nx * reach +
+                    breakerVisual.px *
+                      spread *
+                      3,
+                  sy +
+                    breakerVisual.ny * reach +
+                    breakerVisual.py *
+                      spread *
+                      3,
+                );
+              }
+            } else {
+              fx.lineStyle(
+                1.8,
+                0xffffff,
+                alpha * 0.72,
+              );
+              const slash = wave * 0.72;
+              fx.lineBetween(
+                e.x - slash,
+                e.y - slash * 0.25,
+                e.x + slash,
+                e.y + slash * 0.25,
+              );
+              fx.lineBetween(
+                e.x - slash * 0.25,
+                e.y + slash,
+                e.x + slash * 0.25,
+                e.y - slash,
+              );
+            }
+          }
         }
         if (e.type === "pioneer") {
           const wave = 10 + radius * progress;

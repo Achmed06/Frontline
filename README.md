@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.51
+## Current v1.52
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1296,3 +1296,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure repulsorDisplacementVisual helper centralizes exact vector, distance, progress, trail geometry and landing response
 - regression coverage verifies direction, distance-scaled feedback, real engine effect emission and malformed/coincident fallback
 - release: package 1.51.0 / v1.51 / iOS 1.51 (151)
+
+
+## v1.52 changes
+
+- Breaker's anti-shield strike now carries the exact amount removed by its special shieldBreak step (up to the existing 45 shield) into presentation metadata
+- the gold Breaker breach effect now scales from that real removed-shield amount instead of using one fixed slash weight for every shield contact
+- Breaker breach slashes align to the real attacker→target vector, with the contact point on the attacker-facing shield edge and fragments shearing away from the incoming hit
+- when the special 45-SCH removal itself drops a shield to zero, the engine now emits the same directional shield-break presentation event used by ordinary shield depletion
+- this closes the previous visual gap where a 10-SCH shield could vanish under Breaker's special removal without the established shield-collapse/fracture animation
+- when shield remains after the special removal, no extra generic shield-hit event is added, avoiding duplicate absorption layers and duplicate floating SCH values
+- the following normal 18-damage attack remains unchanged and still uses the existing damageUnit shield/HP presentation path for any shield it actually removes
+- protected-team coloring, source direction and exact removed amount are preserved on special shield-break events
+- Breaker damage, 45 shieldBreak value, attack interval, HP damage after depletion, core damage and all balance values are unchanged
+- a pure breakerShieldVisual helper centralizes exact removal strength, attacker vector, slash reach, cross reach and fragment count
+- regression coverage verifies exact 45/10 removal metadata, directional geometry, symmetric fallback and the previously missing special-depletion shield-break event
+- release: package 1.52.0 / v1.52 / iOS 1.52 (152)
