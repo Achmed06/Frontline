@@ -1420,8 +1420,9 @@ export class Match {
           team,
           0.7,
           undefined,
-          undefined,
+          unit.radius,
           outcome.shieldGain,
+          "atlas",
         );
       } else {
         unit.hp = Math.min(unit.maxHp, unit.hp + outcome.healing);

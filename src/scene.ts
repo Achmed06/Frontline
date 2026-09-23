@@ -21,6 +21,7 @@ import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
 import { impactDirectionVisual } from "./impact-direction-visual";
 import { shieldImpactVisual } from "./shield-impact-visual";
+import { atlasShieldVisual } from "./atlas-shield-visual";
 import { breakerShieldVisual } from "./breaker-shield-visual";
 import { shieldIntegrityVisual } from "./shield-integrity-visual";
 import { combatValuePresentation } from "./combat-value-label";
@@ -5876,13 +5877,217 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "shield") {
-          const wave = 9 + radius * progress;
-          fx.fillStyle(effectColor, alpha * 0.045);
-          this.polygon(fx, this.hex(e.x, e.y, wave), effectColor, alpha * 0.045, effectColor);
-          fx.lineStyle(2, effectColor, alpha * 0.82);
-          this.polygon(fx, this.hex(e.x, e.y, wave), 0x000000, 0, effectColor);
-          fx.lineStyle(1, 0xffffff, alpha * 0.38);
-          this.polygon(fx, this.hex(e.x, e.y, Math.max(4, wave - 4)), 0x000000, 0, 0xffffff);
+          const atlasShield = atlasShieldVisual(e);
+          if (atlasShield) {
+            const shieldColor =
+              e.team === "player" ? 0x9bdcff : 0xffb9a5;
+            const brightShield = 0xf5fbff;
+            const rotation = this.reducedMotion
+              ? e.id * 0.08
+              : e.id * 0.08 + atlasShield.progress * 0.34;
+
+            fx.fillStyle(
+              shieldColor,
+              atlasShield.alpha * 0.055,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, atlasShield.shellRadius),
+              shieldColor,
+              atlasShield.alpha * 0.055,
+              shieldColor,
+            );
+
+            fx.lineStyle(
+              atlasShield.refresh ? 1.9 : 2.7,
+              shieldColor,
+              atlasShield.alpha * 0.94,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, atlasShield.shellRadius),
+              0x000000,
+              0,
+              shieldColor,
+            );
+
+            fx.lineStyle(
+              1.2,
+              brightShield,
+              atlasShield.alpha * 0.62,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, atlasShield.innerRadius),
+              0x000000,
+              0,
+              brightShield,
+            );
+
+            for (
+              let plate = 0;
+              plate < atlasShield.plateCount;
+              plate++
+            ) {
+              const angle =
+                rotation +
+                (plate * Math.PI * 2) /
+                  atlasShield.plateCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const cx =
+                e.x + tx * atlasShield.plateRadius;
+              const cy =
+                e.y + ty * atlasShield.plateRadius;
+              const tangent =
+                4.5 + atlasShield.gainRatio * 2.5;
+
+              fx.lineStyle(
+                plate % 2 === 0 ? 1.8 : 1.25,
+                plate % 2 === 0
+                  ? brightShield
+                  : shieldColor,
+                atlasShield.alpha *
+                  (plate % 2 === 0 ? 0.78 : 0.58),
+              );
+              fx.lineBetween(
+                cx - px * tangent,
+                cy - py * tangent,
+                cx + px * tangent,
+                cy + py * tangent,
+              );
+              fx.lineBetween(
+                cx - px * tangent,
+                cy - py * tangent,
+                cx - tx * atlasShield.lockReach,
+                cy - ty * atlasShield.lockReach,
+              );
+              fx.lineBetween(
+                cx + px * tangent,
+                cy + py * tangent,
+                cx - tx * atlasShield.lockReach,
+                cy - ty * atlasShield.lockReach,
+              );
+            }
+
+            const sparkRadius =
+              atlasShield.shellRadius + 4;
+            for (
+              let spark = 0;
+              spark < atlasShield.sparkCount;
+              spark++
+            ) {
+              const angle =
+                e.id * 0.17 +
+                (spark * Math.PI * 2) /
+                  atlasShield.sparkCount;
+              const travel = this.reducedMotion
+                ? 0.55
+                : (atlasShield.progress +
+                    (spark % 3) * 0.19) %
+                  1;
+              const radial =
+                sparkRadius +
+                travel *
+                  (3 + atlasShield.gainRatio * 5);
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const length =
+                2.5 + atlasShield.gainRatio * 2.5;
+              const sx = e.x + tx * radial;
+              const sy = e.y + ty * radial;
+
+              fx.lineStyle(
+                1,
+                spark % 2 === 0
+                  ? brightShield
+                  : shieldColor,
+                atlasShield.alpha *
+                  (atlasShield.refresh ? 0.34 : 0.5),
+              );
+              fx.lineBetween(
+                sx - px * length,
+                sy - py * length,
+                sx + px * length,
+                sy + py * length,
+              );
+            }
+
+            const diamond =
+              5 + atlasShield.gainRatio * 2.5;
+            fx.lineStyle(
+              1.35,
+              brightShield,
+              atlasShield.alpha * 0.64,
+            );
+            fx.lineBetween(
+              e.x,
+              e.y - diamond,
+              e.x + diamond,
+              e.y,
+            );
+            fx.lineBetween(
+              e.x + diamond,
+              e.y,
+              e.x,
+              e.y + diamond,
+            );
+            fx.lineBetween(
+              e.x,
+              e.y + diamond,
+              e.x - diamond,
+              e.y,
+            );
+            fx.lineBetween(
+              e.x - diamond,
+              e.y,
+              e.x,
+              e.y - diamond,
+            );
+
+            if (atlasShield.refresh) {
+              fx.lineStyle(
+                1,
+                shieldColor,
+                atlasShield.alpha * 0.42,
+              );
+              fx.strokeCircle(
+                e.x,
+                e.y,
+                atlasShield.shellRadius + 6,
+              );
+            }
+          } else {
+            const wave = 9 + radius * progress;
+            fx.fillStyle(effectColor, alpha * 0.045);
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, wave),
+              effectColor,
+              alpha * 0.045,
+              effectColor,
+            );
+            fx.lineStyle(2, effectColor, alpha * 0.82);
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, wave),
+              0x000000,
+              0,
+              effectColor,
+            );
+            fx.lineStyle(1, 0xffffff, alpha * 0.38);
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, Math.max(4, wave - 4)),
+              0x000000,
+              0,
+              0xffffff,
+            );
+          }
         }
         if (
           e.type !== "pulse" &&
