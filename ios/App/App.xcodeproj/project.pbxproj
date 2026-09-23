@@ -316,6 +316,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.79;
+				FRONTLINE_STORE_MODE = sandbox;
+				FRONTLINE_STORE_PRODUCT_ID = frontline.supporter;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = com.frontlinegame.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -338,6 +340,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.79;
+				FRONTLINE_STORE_MODE = sandbox;
+				FRONTLINE_STORE_PRODUCT_ID = frontline.supporter;
 				PRODUCT_BUNDLE_IDENTIFIER = com.frontlinegame.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
