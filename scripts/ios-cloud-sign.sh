@@ -6,7 +6,14 @@ cd "$(dirname "$0")/.."
   echo 'This signing wrapper only runs on ephemeral GitHub-hosted macOS runners.' >&2; exit 1;
 }
 : "${RUNNER_TEMP:?}" "${IOS_CERTIFICATE_BASE64:?Missing certificate secret}" "${IOS_CERTIFICATE_PASSWORD:?Missing certificate password}" "${IOS_PROFILE_BASE64:?Missing profile secret}"
-: "${TEAM_ID:?}" "${BUNDLE_ID:?}"
+: "${TEAM_ID:?}" "${BUNDLE_ID:?}" "${VITE_PRIVACY_URL:?Missing VITE_PRIVACY_URL}"
+[[ "$BUNDLE_ID" != "com.frontlinegame.app" ]] || { echo 'Refusing to sign the development placeholder bundle identifier.' >&2; exit 1; }
+node - <<'NODE'
+const privacy = process.env.VITE_PRIVACY_URL?.trim();
+const url = new URL(privacy);
+if (url.protocol !== 'https:' || url.username || url.password || url.hash || ['localhost','127.0.0.1','::1'].includes(url.hostname))
+  throw new Error('VITE_PRIVACY_URL must be a public HTTPS privacy-policy URL.');
+NODE
 umask 077
 signing_dir="$(mktemp -d "$RUNNER_TEMP/frontline-signing.XXXXXX")"
 keychain="$signing_dir/signing.keychain-db"
