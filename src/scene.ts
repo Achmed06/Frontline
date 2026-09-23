@@ -75,6 +75,7 @@ import { rallyCastVisual } from "./rally-cast-visual";
 import { novaTempoActivationVisual } from "./nova-tempo-activation-visual";
 import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
+import { effectPresentationBudget } from "./effect-density";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
@@ -3083,9 +3084,16 @@ export class ArenaScene extends Phaser.Scene {
       if (!livingUnitIds.has(id)) this.unitVitals.delete(id);
 
     this.syncCombatText(s.effects);
+    const activeEffectCount = s.effects.length;
     for (const e of s.effects) {
+      const presentation = effectPresentationBudget(
+        e,
+        activeEffectCount,
+      );
       const progress = 1 - e.life / e.maxLife,
-        alpha = Math.max(0, e.life / e.maxLife);
+        alpha =
+          Math.max(0, e.life / e.maxLife) *
+          presentation.alphaScale;
       if (e.type === "frontline" && e.targetY !== undefined) {
         const teamColor = e.team === "player" ? MINT : CORAL;
         const fromY = e.y;
@@ -3130,7 +3138,11 @@ export class ArenaScene extends Phaser.Scene {
             const weight = e.radius ?? 18;
             this.cameras.main.shake(
               80 + Math.round(weight * 2.8),
-              Math.min(0.0042, 0.0016 + weight * 0.000075),
+              Math.min(
+                0.0042,
+                (0.0016 + weight * 0.000075) *
+                  presentation.cameraScale,
+              ),
               true,
             );
           }
@@ -3141,7 +3153,9 @@ export class ArenaScene extends Phaser.Scene {
               90 + Math.round(size * (1.8 + profile.scale * 0.45)),
               Math.min(
                 0.0036,
-                0.00125 + size * 0.00005 * profile.scale,
+                (0.00125 +
+                  size * 0.00005 * profile.scale) *
+                  presentation.cameraScale,
               ),
               true,
             );
@@ -3151,14 +3165,17 @@ export class ArenaScene extends Phaser.Scene {
               50 + Math.round(profile.scale * 10),
               Math.min(
                 0.0019,
-                (0.00068 + ((e.radius ?? 14) - 14) * 0.00016) *
-                  profile.scale,
+                (0.00068 +
+                  ((e.radius ?? 14) - 14) * 0.00016) *
+                  profile.scale *
+                  presentation.cameraScale,
               ),
               true,
             );
           }
         }
       }
+      if (!presentation.visible) continue;
       if (e.targetX !== undefined && e.targetY !== undefined) {
         if (e.type === "repulsor-move") {
           const visual = repulsorDisplacementVisual(e);
