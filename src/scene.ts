@@ -34,6 +34,7 @@ import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
 import { coreTurretVisual } from "./core-turret-visual";
 import { coreTurretAimVisual } from "./core-turret-aim-visual";
+import { coreTargetAcquisitionVisual } from "./core-target-acquisition-visual";
 import {
   coreTurretFireFeedback,
   type CoreTurretFireFeedback,
@@ -112,6 +113,10 @@ export class ArenaScene extends Phaser.Scene {
   private reactedEffects = new Set<number>();
   private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
+  private coreTargetAcquisition = new Map<
+    "player" | "enemy",
+    { targetId: number; startedAt: number }
+  >();
   private reducedMotion = false;
   private lastMatch: Match | null = null;
   private wasRunning = false;
@@ -316,6 +321,7 @@ export class ArenaScene extends Phaser.Scene {
       this.reactedEffects.clear();
       this.battleScars = [];
       this.brokenCores.clear();
+      this.coreTargetAcquisition.clear();
       this.endSequenceStartedAt = null;
       this.endTitle.setVisible(false);
       this.endSubtitle.setVisible(false);
@@ -355,6 +361,133 @@ export class ArenaScene extends Phaser.Scene {
       x + Math.cos((i * Math.PI) / 3 - Math.PI / 6) * r,
       y + Math.sin((i * Math.PI) / 3 - Math.PI / 6) * r,
     ]);
+  }
+
+  private drawCoreTargetAcquisition(
+    team: "player" | "enemy",
+    target?: Unit,
+  ) {
+    if (!target) {
+      this.coreTargetAcquisition.delete(team);
+      return;
+    }
+
+    let state = this.coreTargetAcquisition.get(team);
+    if (!state || state.targetId !== target.id) {
+      state = {
+        targetId: target.id,
+        startedAt: this.clock,
+      };
+      this.coreTargetAcquisition.set(team, state);
+    }
+
+    const visual = coreTargetAcquisitionVisual(
+      this.clock - state.startedAt,
+      target.radius,
+    );
+    if (!visual.active) return;
+
+    const fx = this.fx;
+    const color = team === "player" ? MINT : CORAL;
+    const bright = team === "player" ? 0xd9fff1 : 0xffe4d8;
+    const coreX = 210;
+    const coreY = team === "player" ? 525 : 35;
+    const dx = target.x - coreX;
+    const dy = target.y - coreY;
+    const distance = Math.max(0.001, Math.hypot(dx, dy));
+    const nx = dx / distance;
+    const ny = dy / distance;
+    const px = -ny;
+    const py = nx;
+
+    fx.lineStyle(1.4, color, visual.alpha * 0.62);
+    fx.strokeCircle(
+      target.x,
+      target.y,
+      visual.ringRadius,
+    );
+    fx.lineStyle(1, bright, visual.alpha * 0.48);
+    fx.strokeCircle(
+      target.x,
+      target.y,
+      visual.innerRadius,
+    );
+
+    const rotation = this.reducedMotion
+      ? 0
+      : visual.progress * Math.PI * 0.9;
+    for (let sweep = 0; sweep < visual.sweepCount; sweep++) {
+      const angle =
+        rotation +
+        (sweep * Math.PI * 2) /
+          visual.sweepCount;
+      const sx =
+        target.x +
+        Math.cos(angle) *
+          visual.ringRadius;
+      const sy =
+        target.y +
+        Math.sin(angle) *
+          visual.ringRadius;
+      const tx = -Math.sin(angle);
+      const ty = Math.cos(angle);
+      fx.lineStyle(
+        sweep === 0 ? 1.8 : 1.1,
+        sweep === 0 ? bright : color,
+        visual.alpha * (sweep === 0 ? 0.82 : 0.52),
+      );
+      fx.lineBetween(
+        sx - tx * visual.sweepLength * 0.5,
+        sy - ty * visual.sweepLength * 0.5,
+        sx + tx * visual.sweepLength * 0.5,
+        sy + ty * visual.sweepLength * 0.5,
+      );
+    }
+
+    const bracket = visual.ringRadius * 0.72;
+    const arm = visual.bracketReach;
+    fx.lineStyle(1.25, bright, visual.alpha * 0.72);
+    for (const forward of [-1, 1]) {
+      for (const side of [-1, 1]) {
+        const bx =
+          target.x +
+          nx * forward * bracket +
+          px * side * bracket;
+        const by =
+          target.y +
+          ny * forward * bracket +
+          py * side * bracket;
+        fx.lineBetween(
+          bx,
+          by,
+          bx - nx * forward * arm,
+          by - ny * forward * arm,
+        );
+        fx.lineBetween(
+          bx,
+          by,
+          bx - px * side * arm,
+          by - py * side * arm,
+        );
+      }
+    }
+
+    fx.lineStyle(1, color, visual.alpha * 0.3);
+    fx.lineBetween(coreX, coreY, target.x, target.y);
+
+    if (!this.reducedMotion) {
+      const scanX = coreX + dx * visual.scanT;
+      const scanY = coreY + dy * visual.scanT;
+      fx.fillStyle(bright, visual.alpha * 0.9);
+      fx.fillCircle(scanX, scanY, 2.2);
+      fx.lineStyle(1.2, color, visual.alpha * 0.68);
+      fx.lineBetween(
+        scanX - px * 4 - nx * 3,
+        scanY - py * 4 - ny * 3,
+        scanX + px * 4 + nx * 3,
+        scanY + py * 4 + ny * 3,
+      );
+    }
   }
 
   private syncCombatText(effects: readonly Effect[]): void {
@@ -1356,6 +1489,8 @@ export class ArenaScene extends Phaser.Scene {
       .sort((a, b) => (b.radius ?? 0) - (a.radius ?? 0))[0];
     const enemyCoreTarget = coreTurretTarget(s, "enemy");
     const playerCoreTarget = coreTurretTarget(s, "player");
+    this.drawCoreTargetAcquisition("enemy", enemyCoreTarget);
+    this.drawCoreTargetAcquisition("player", playerCoreTarget);
     this.drawCore(
       210,
       35,

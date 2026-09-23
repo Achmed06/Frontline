@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.55
+## Current v1.56
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1361,3 +1361,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure coreDamageStateVisual helper centralizes damage staging, seam/vent/spark counts, armor gap and conduit/warning intensity
 - regression coverage verifies stable suppression, progressive damaged staging, stronger critical staging and deterministic malformed/destroyed fallback
 - release: package 1.55.0 / v1.55 / iOS 1.55 (155)
+
+
+## v1.56 changes
+
+- Core turrets now visibly acquire each newly selected enemy instead of snapping from one tracked target to the next with no handoff feedback
+- target changes are detected only from the real coreTurretTarget result; no renderer-side target priority or range logic is introduced
+- each new target receives a short contracting acquisition ring, oriented corner brackets and three scanning ticks before the existing reload/lock presentation takes over
+- a compact scan packet travels from the Core to the newly acquired target during the 0.48 second handoff window, making target switches readable even in crowded fights
+- the acquisition layer uses the selected unit's real radius and the owning Core's real battlefield position
+- losing all valid targets clears acquisition state immediately, so reacquiring later correctly reads as a new lock rather than reusing stale renderer state
+- target handoff state resets with each Match instance and freezes naturally while the match is paused
+- Reduced Motion keeps the static acquisition rings/brackets but suppresses the traveling scan packet and rotating scan motion
+- the existing Core turret reload arc, sight line, target brackets, physical barrel aim, muzzle discharge and firing recoil remain intact
+- turret target selection, range, damage, reload cadence, firing timing and all balance values are unchanged
+- a pure coreTargetAcquisitionVisual helper centralizes the 0.48 second timing, ring contraction, bracket reach, scan position and fade
+- regression coverage verifies initial acquisition, mid-handoff contraction, clean expiry and malformed fallback
+- release: package 1.56.0 / v1.56 / iOS 1.56 (156)
