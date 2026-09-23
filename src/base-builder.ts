@@ -16,6 +16,7 @@ import {
   visibleProject,
 } from "./base-construction";
 import { baseMapSvg, buildingArt } from "./base-map";
+import { basePlacementVisual } from "./base-placement-visual";
 import "./base-builder.css";
 
 type BuilderOptions = {
@@ -55,11 +56,18 @@ export function renderBaseBuilder(container: HTMLElement, options: BuilderOption
       (mode === "move"
         ? canMoveBaseBuilding(progress, root, chosen)
         : canConstructOnPlot(progress, selected, chosen, options.metrics));
+    const placement = basePlacementVisual(
+      progress,
+      selected,
+      options.metrics,
+      mode,
+      chosen,
+    );
     const tier = built ? (isExpansion ? 2 : 1) : 0;
     container.innerHTML = `<section class="base-builder" style="--base-accent:${options.accent}">
       <header class="builder-header"><div><span class="builder-eyebrow">FRONTLINE / HAUPTQUARTIER</span><h2>${BASE_STAGES[baseStage(options.metrics.wins)].name}</h2></div><button class="builder-close" data-action="close" aria-label="Zurück zur Lobby">×</button></header>
       <div class="builder-resources"><span><b>${Object.keys(layout).length}<small>/5</small></b>GEBÄUDE</span><span><b>${options.metrics.wins}</b>FELDZUGSIEGE</span><span><b>${options.metrics.stars} ★</b>STERNE</span><button data-action="details">GESTALTUNG<br>& ERFOLGE ↗</button></div>
-      <div class="builder-map-shell ${mode !== 'inspect' ? 'editing' : ''} ${justBuilt ? 'construction-complete' : ''}"><div class="builder-map-hint">${mode === 'move' ? 'NEUEN BAUPLATZ ANTIPPEN' : mode === 'place' ? isExpansion ? 'AUSBAU AM BESTEHENDEN GEBÄUDE' : 'FREIEN BAUPLATZ ANTIPPEN' : chosen !== undefined ? `BAUPLATZ ${chosen + 1} VORGEMERKT · GEBÄUDE WÄHLEN` : 'DEINE BASIS · GEBÄUDE ANTIPPEN'}</div><div class="builder-map-scroll"><div class="builder-map-scale ${zoom ? 'zoomed' : ''}">${baseMapSvg(progress, options.accent, { selected: built ? root : undefined, placing: mode !== 'inspect', chosen, ghost: mode === 'place' ? selected : undefined, stage: baseStage(options.metrics.wins) })}</div></div><button class="builder-zoom" data-action="zoom" aria-label="${zoom ? 'Karte verkleinern' : 'Karte vergrößern'}">${zoom ? '−' : '+'}</button><span class="builder-map-caption">${mode === 'inspect' && chosen !== undefined ? `BAUPLATZ ${chosen + 1} VORGEMERKT` : zoom ? 'ZUM VERSCHIEBEN WISCHEN' : 'SEKTOR 01 / HEIMATFRONT'}</span></div>
+      <div class="builder-map-shell ${mode !== 'inspect' ? 'editing' : ''} ${placement.chosenValid === true ? 'placement-confirmable' : placement.chosenValid === false ? 'placement-rejected' : ''} ${justBuilt ? 'construction-complete' : ''}"><div class="builder-map-hint">${mode === 'move' ? 'NEUEN BAUPLATZ ANTIPPEN' : mode === 'place' ? isExpansion ? 'AUSBAU AM BESTEHENDEN GEBÄUDE' : 'FREIEN BAUPLATZ ANTIPPEN' : chosen !== undefined ? `BAUPLATZ ${chosen + 1} VORGEMERKT · GEBÄUDE WÄHLEN` : 'DEINE BASIS · GEBÄUDE ANTIPPEN'}</div><div class="builder-map-scroll"><div class="builder-map-scale ${zoom ? 'zoomed' : ''}">${baseMapSvg(progress, options.accent, { selected: built ? root : undefined, placing: mode !== 'inspect', chosen, ghost: mode === 'place' ? selected : undefined, stage: baseStage(options.metrics.wins), placementStates: placement.states })}</div></div><button class="builder-zoom" data-action="zoom" aria-label="${zoom ? 'Karte verkleinern' : 'Karte vergrößern'}">${zoom ? '−' : '+'}</button><span class="builder-map-caption">${mode === 'inspect' && chosen !== undefined ? `BAUPLATZ ${chosen + 1} VORGEMERKT` : zoom ? 'ZUM VERSCHIEBEN WISCHEN' : 'SEKTOR 01 / HEIMATFRONT'}</span></div>
       <div class="builder-catalog" aria-label="Gebäude auswählen">${BASE_ROOTS.map(id => {
         const shown = visibleProject(progress, id);
         const owned = progress.projects?.includes(id);
