@@ -207,10 +207,6 @@
   stroke-width: 3.5;
   filter: drop-shadow(0 0 9px #ffe17d8a);
 }
-.construction-complete .base-plot.selected::after {
-  content: "";
-}
-
 @keyframes placementLock {
   50% {
     opacity: .42;
