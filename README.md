@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.64
+## Current v1.65
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1501,4 +1501,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure atlasShieldVisual helper centralizes canonical shield values, unit geometry, gain intensity, refresh state, plate locking and release fade
 - regression coverage verifies canonical 70/6 values, refresh behavior, real Match metadata, exact shield gain preservation, expansion/fade and malformed/non-ATLAS suppression
 - release: package 1.64.0 / v1.64 / iOS 1.64 (164)
+
+## v1.65 changes
+
+- NOVA now shows an explicit per-unit tempo-lock activation instead of emitting Rally effects that the Rally-specific renderer intentionally ignored
+- every NOVA activation effect now carries the affected unit's real collision radius, the canonical six-second tempo duration and explicit NOVA source identity
+- the visual model reads NOVA's canonical 1.25x movement and 1.3x attack-speed multipliers directly from COMMANDERS, keeping presentation tied to simulation values
+- gold tempo shells, attack-cycle ticks, forward surge chevrons and a central lightning mark make NOVA visually distinct from the green healing-and-tempo Rally card
+- movement chevron count/geometry and attack tick density derive from the actual 25-percent movement and 30-percent attack-speed boosts
+- player and enemy chevrons travel in their natural battlefield advance direction
+- Reduced Motion preserves the tempo shell, tick density, boost geometry and direction while freezing orbital and chevron travel
+- the formation-level NOVA commander cue and persistent tempo status around boosted units remain unchanged and layer with the new activation lock
+- Rally-card casting is unchanged and continues to use its dedicated healing/support-command presentation
+- NOVA cooldown, six-second duration, 1.25x movement, 1.3x attack speed, target eligibility, non-stacking behavior and all balance values are unchanged
+- a pure novaTempoActivationVisual helper centralizes canonical duration, tempo multipliers, unit geometry, tick density, chevrons and release fade
+- regression coverage verifies canonical NOVA values, real Match metadata, exact per-unit radius/duration, outward expansion, release fade and Rally/non-NOVA suppression
+- release: package 1.65.0 / v1.65 / iOS 1.65 (165)
 
