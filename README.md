@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.75
+## Current v1.76
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1687,4 +1687,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies ATLAS shield/duration/cooldown, LYRA heal/cleanse/cooldown and NOVA movement/attack/duration/cooldown against canonical definitions
 - commander effects, cooldowns, bot parity, campaign-fixed enemy commanders, series commander locking, saves and all combat balance remain unchanged
 - release: package 1.75.0 / v1.75 / iOS 1.75 (175)
+
+## v1.76 changes
+
+- campaign mission selection is rebuilt into a mission-first briefing instead of hiding the most important combat setup behind a generic details disclosure
+- every selected mission now surfaces its actual mode, difficulty, starting 3x3 territory split and exact objective before the start button
+- Core missions explicitly identify Core attack while control missions expose required relays and control seconds from the canonical control objective
+- all three star targets are visible at a glance and already-earned stars are marked without changing completion logic
+- enemy setup now exposes unit/tactic counts and average energy derived from the canonical enemy deck definitions
+- missions with a fixed enemy commander keep the full commander description while also showing the same enemy deck composition summary
+- the tactical hint is promoted into a dedicated briefing block while the complete enemy deck remains available as optional intelligence
+- prior best time and stars are grouped into a compact best-performance record instead of a loose line of text
+- campaign route nodes receive clearer selected/ready feedback; the ready pulse is removed under Reduced Motion
+- small-phone layouts compact the briefing map and star objectives without hiding mission-critical values
+- a pure missionBriefingSnapshot helper centralizes mode labels, territory counts, objective metadata, enemy deck composition, commander label and star targets
+- regression coverage verifies Core missions, control relay requirements, canonical enemy Commander labels, enemy deck composition and complete 3x3 territory accounting across every mission
+- mission seeds, owners, objectives, star requirements, unlocks, enemy decks, commanders, campaign progress and all combat balance remain unchanged
+- release: package 1.76.0 / v1.76 / iOS 1.76 (176)
 
