@@ -8,6 +8,7 @@ const server = await createFrontlineServer(
   {
     maxRooms: config.maxRooms,
     allowedOrigins: config.allowedOrigins,
+    trustedProxyHops: config.trustedProxyHops,
   },
 );
 
@@ -17,7 +18,7 @@ server.on("error", (error) => {
 });
 server.listen(config.port, config.host, () => {
   console.log(
-    `FRONTLINE läuft auf ${config.host}:${config.port} · /healthz · /readyz · ${config.maxRooms} Räume · native Origins: ${config.allowedOrigins.length}`,
+    `FRONTLINE läuft auf ${config.host}:${config.port} · /healthz · /readyz · ${config.maxRooms} Räume · native Origins: ${config.allowedOrigins.length} · Proxy-Hops: ${config.trustedProxyHops}`,
   );
 });
 
