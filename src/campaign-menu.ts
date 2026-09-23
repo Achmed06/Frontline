@@ -1,11 +1,11 @@
 import { COMMANDERS } from "./commanders";
 import { commanderSvg } from "./art";
 import { CARDS } from "./engine";
+import { missionBriefingSnapshot } from "./mission-briefing";
 import {
   MISSIONS,
   CHAPTERS,
   missionUnlocked,
-  objectiveDescription,
   type CampaignProgress,
   type Mission,
 } from "./campaign";
@@ -25,6 +25,7 @@ export function renderCampaign(
   for (const [index, mission] of MISSIONS.entries()) {
     const unlocked = missionUnlocked(index, progress),
       best = progress[mission.id];
+    const briefing = missionBriefingSnapshot(mission);
     const card = document.createElement("article");
     card.dataset.mission = mission.id;
     card.hidden = true;
@@ -35,7 +36,7 @@ export function renderCampaign(
         : mission.difficulty === "standard"
           ? "TAKTIKER"
           : "VETERAN";
-    card.innerHTML = `<div class="mission-top"><span>EINSATZ ${String(index + 1).padStart(2, "0")} · ${level}</span><b>${"★".repeat(best?.stars ?? 0)}${"☆".repeat(3 - (best?.stars ?? 0))}</b></div><h3>${mission.name}</h3><div class="mission-body"><div class="mission-map" aria-label="Startfront: oben Gegnerbasis, unten deine Basis">${mission.owners.map((owner, id) => `<i class="owner-${owner ?? "neutral"} ${mission.controlObjective?.pointIds.includes(id) ? "relay" : ""}"></i>`).join("")}</div><p>${mission.briefing}</p></div>${mission.enemyCommander ? `<div class="mission-commander"><span aria-hidden="true">${commanderSvg(mission.enemyCommander)}</span><div><small>GEGNERISCHES KOMMANDO</small><b>${COMMANDERS[mission.enemyCommander].name} · ${COMMANDERS[mission.enemyCommander].ability}</b><p>${COMMANDERS[mission.enemyCommander].description}</p></div></div>` : ""}<p class="mission-tip">${mission.tip}</p><details><summary>Ziele & Gegnerdeck</summary><p>${objectiveDescription(mission)}</p><p>★ Gewinne das Gefecht<br>★ Sieg mit mindestens ${Math.round(mission.healthTarget * 100)}% Core-Leben<br>★ Sieg in höchstens ${mission.speedTarget} Sekunden</p><p>Gegner: ${mission.enemyDeck.map((id) => CARDS.find((card) => card.id === id)!.name).join(" · ")}</p></details>${best ? `<small>BESTZEIT ${Math.floor(best.bestTime / 60)}:${String(Math.floor(best.bestTime % 60)).padStart(2, "0")} · ${best.stars}/3 STERNE</small>` : ""}<button class="${unlocked ? "primary" : "secondary"}" ${unlocked ? "" : "disabled"}>${!unlocked ? `Erst Einsatz ${String(index).padStart(2, "0")} gewinnen` : best ? "ERNEUT ANGREIFEN ↗" : "EINSATZ STARTEN ↗"}</button>`;
+    card.innerHTML = `<div class="mission-top"><span>EINSATZ ${String(index + 1).padStart(2, "0")} · ${level}</span><b>${"★".repeat(best?.stars ?? 0)}${"☆".repeat(3 - (best?.stars ?? 0))}</b></div><div class="mission-title-row"><div><small>${briefing.modeLabel}</small><h3>${mission.name}</h3></div><span class="mission-difficulty">${briefing.difficultyLabel}</span></div><section class="mission-briefing-hero"><div class="mission-map" aria-label="Startfront: oben Gegnerbasis, unten deine Basis">${mission.owners.map((owner, id) => `<i class="owner-${owner ?? "neutral"} ${mission.controlObjective?.pointIds.includes(id) ? "relay" : ""}"></i>`).join("")}</div><div class="mission-briefing-copy"><small>AUFTRAG</small><b>${briefing.objectiveMeta}</b><p>${mission.briefing}</p><div class="mission-front-counts"><span><i class="player"></i>${briefing.playerTerritory} DEIN</span><span><i class="neutral"></i>${briefing.neutralTerritory} NEUTRAL</span><span><i class="enemy"></i>${briefing.enemyTerritory} GEGNER</span></div></div></section><section class="mission-star-objectives" aria-label="Sternziele">${briefing.starTargets.map((target, starIndex) => `<div class="${(best?.stars ?? 0) > starIndex ? "earned" : ""}"><span>★</span><b>${target}</b></div>`).join("")}</section>${mission.enemyCommander ? `<div class="mission-commander"><span aria-hidden="true">${commanderSvg(mission.enemyCommander)}</span><div><small>GEGNERISCHES KOMMANDO</small><b>${briefing.enemyCommander}</b><p>${COMMANDERS[mission.enemyCommander].description}</p><span class="mission-enemy-deck-meta">${briefing.enemyUnits} EINHEITEN · ${briefing.enemyAbilities} TAKTIKEN · Ø ${briefing.enemyAverageCost.toFixed(1)} ENERGIE</span></div></div>` : `<div class="mission-enemy-profile"><small>GEGNERPROFIL</small><b>${briefing.enemyCommander}</b><span>${briefing.enemyUnits} EINHEITEN · ${briefing.enemyAbilities} TAKTIKEN · Ø ${briefing.enemyAverageCost.toFixed(1)} ENERGIE</span></div>`}<div class="mission-tactical-tip"><small>TAKTISCHER HINWEIS</small><p>${mission.tip}</p></div><details class="mission-intel"><summary>Gegnerdeck ansehen</summary><p>${briefing.objective}</p><p>${mission.enemyDeck.map((id) => CARDS.find((card) => card.id === id)!.name).join(" · ")}</p></details>${best ? `<div class="mission-record"><span>BESTLEISTUNG</span><b>${Math.floor(best.bestTime / 60)}:${String(Math.floor(best.bestTime % 60)).padStart(2, "0")}</b><small>${best.stars}/3 STERNE</small></div>` : ""}<button class="mission-start ${unlocked ? "primary" : "secondary"}" ${unlocked ? "" : "disabled"}>${!unlocked ? `Erst Einsatz ${String(index).padStart(2, "0")} gewinnen` : best ? "ERNEUT ANGREIFEN ↗" : "EINSATZ STARTEN ↗"}</button>`;
     card.querySelector("button")!.onclick = () => {
       if (unlocked) onStart(mission);
     };
