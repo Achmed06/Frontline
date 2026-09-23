@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.59
+## Current v1.60
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1426,3 +1426,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure pioneerCaptureVisual helper centralizes exact radius, multiplier strength, perimeter expansion, node positions and chevron geometry
 - regression coverage verifies exact 48 radius/1.5x metadata, outward expansion, fade and malformed fallback
 - release: package 1.59.0 / v1.59 / iOS 1.59 (159)
+
+## v1.60 changes
+
+- Rally now lands as a dedicated support-command field instead of the older generic expanding ring with six arrows
+- the Rally cast effect now carries the card's real 96-unit target radius and 65-point healing value as presentation metadata
+- the cast keeps a faint exact-radius perimeter while the active support wave expands through it, so targeting footprint and impact presentation stay aligned
+- eight rotating command nodes, paired directional surge chevrons and a central medical cross combine healing and tempo into one readable tactical signature
+- player and enemy Rally chevrons travel in their natural battlefield advance direction
+- command-node tangents and forward lane reach are driven by the same 1.25x movement and 1.3x attack-speed multipliers used by the simulation
+- Reduced Motion preserves the exact radius, support rings, nodes, lanes and center confirmation while freezing orbital rotation and chevron travel
+- existing per-unit heal feedback and persistent Rally tempo status remain layered on top, so immediate healing and the six-second buff are still readable separately
+- Rally cost, 65 healing, 96 radius, six-second duration, 1.25x movement, 1.3x attack speed, targeting and all balance values are unchanged
+- a pure rallyCastVisual helper centralizes cast timing, exact radius, healing intensity, ring expansion, command-node geometry and tempo multiplier presentation
+- regression coverage verifies real Match metadata, exact 96/65 values, canonical tempo multipliers, outward expansion, release fade and malformed/non-Rally suppression
+- release: package 1.60.0 / v1.60 / iOS 1.60 (160)
+
