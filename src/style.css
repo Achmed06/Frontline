@@ -7178,3 +7178,166 @@ a.privacy-link:focus-visible,
   }
 }
 
+/* v1.83: make existing progression visible inside the main battle loop. */
+.play-progress {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 10px;
+  margin: 12px 0 11px;
+  padding: 9px 10px;
+  border: 1px solid #687b5a;
+  border-radius: 7px;
+  background:
+    linear-gradient(145deg, #1a2c23d9, #12231fdb);
+}
+.play-progress[hidden] {
+  display: none !important;
+}
+.play-progress[data-kind="mastery"] {
+  border-color: #6d627d;
+  background:
+    linear-gradient(145deg, #282438d9, #19242ddb);
+}
+.play-progress > div:first-child {
+  min-width: 0;
+}
+.play-progress small {
+  display: block;
+  color: #9fba81;
+  font: 800 5.8px/1 monospace;
+  letter-spacing: .8px;
+}
+.play-progress[data-kind="mastery"] small {
+  color: #b6a0ca;
+}
+.play-progress b {
+  display: block;
+  margin-top: 4px;
+  color: #e0ead9;
+  font-size: 10px;
+  line-height: 1.1;
+}
+.play-progress span {
+  display: block;
+  margin-top: 4px;
+  color: #91a197;
+  font-size: 7px;
+  line-height: 1.35;
+}
+.play-progress-side {
+  min-width: 68px;
+  text-align: right;
+}
+.play-progress-side strong {
+  display: block;
+  color: #e4ed9e;
+  font: 800 18px/1 "Barlow Condensed", Impact, sans-serif;
+}
+.play-progress[data-kind="mastery"] .play-progress-side strong {
+  color: #d2b7e8;
+}
+.play-progress-side em {
+  display: block;
+  margin-top: 4px;
+  color: #7f9188;
+  font: 700 5.2px/1.2 monospace;
+  font-style: normal;
+  letter-spacing: .3px;
+}
+.play-progress-track {
+  grid-column: 1 / -1;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #314137;
+}
+.play-progress-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7fae6e, #d8ee82);
+  transition: width .18s ease;
+}
+.play-progress[data-kind="mastery"] .play-progress-track i {
+  background: linear-gradient(90deg, #8068a0, #d0aee8);
+}
+
+.result-next-progress {
+  padding: 9px 10px;
+  border: 1px solid #50634d;
+  border-radius: 7px;
+  background: #16281f;
+}
+.result-next-progress[data-kind="mastery"] {
+  border-color: #5d536c;
+  background: #211f2c;
+}
+.result-next-progress > small {
+  display: block;
+  color: #99b886;
+  font: 800 5.8px/1 monospace;
+  letter-spacing: .75px;
+}
+.result-next-progress[data-kind="mastery"] > small {
+  color: #ad98c0;
+}
+.result-next-progress > div:nth-child(2) {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 5px;
+}
+.result-next-progress b {
+  min-width: 0;
+  color: #dce7d9;
+  font-size: 9px;
+}
+.result-next-progress span {
+  flex: 0 0 auto;
+  color: #8fa093;
+  font: 700 5.7px/1 monospace;
+}
+.result-next-progress-track {
+  height: 3px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #304037;
+}
+.result-next-progress-track i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7aa76a, #d5eb7f);
+}
+.result-next-progress[data-kind="mastery"] .result-next-progress-track i {
+  background: linear-gradient(90deg, #7b6598, #cba8e1);
+}
+
+@media (max-width: 380px) {
+  .play-progress {
+    grid-template-columns: 1fr 58px;
+    padding: 8px;
+  }
+  .play-progress span {
+    font-size: 6.5px;
+  }
+  .play-progress-side strong {
+    font-size: 16px;
+  }
+  .result-next-progress > div:nth-child(2) {
+    display: block;
+  }
+  .result-next-progress span {
+    display: block;
+    margin-top: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-progress-track i {
+    transition: none;
+  }
+}
+

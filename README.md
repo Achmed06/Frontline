@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.82
+## Current v1.83
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1849,4 +1849,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies consecutive-win counting, loss reset, draw reset and empty-history fallback
 - campaign progression, series lives, daily records, Draft flow, mastery, learning, match history, feedback storage and all combat rules remain unchanged
 - release: package 1.82.0 / v1.82 / iOS 1.82 (182)
+
+## v1.83 changes
+
+- the main SPIELEN hero now exposes one concrete next-progress target instead of leaving existing Feldausbildung and Unit Mastery hidden behind the Basis menus
+- unfinished Feldausbildung is prioritized first and shows the exact current/goal value, practical battle instruction and Aurora reward context before the player taps Jetzt spielen
+- once all four learning tasks are complete, the same slot automatically switches to the nearest upcoming mastery frame for a unit in the currently selected eight-card deck
+- mastery targeting only considers units actually present in the active saved deck and prefers the frame that needs the fewest remaining mastery points
+- the mastery cue reminds players of the existing three-deploy requirement rather than inventing a new quest or currency
+- after every completed battle the result progression stack now also shows the updated next target and progress bar, so wins, losses and draws can all leave a visible sense of forward movement when real progress occurred
+- fully mastered decks do not receive a fake target; the progress surface cleanly disappears when there is no genuine learning/mastery milestone left
+- changing the saved deck immediately recalculates the visible mastery target
+- narrow iPhone layouts retain the progress count/reward without crowding the primary Jetzt spielen action
+- a pure nextBattleProgress helper centralizes the learning-to-mastery handoff and reward text
+- regression coverage verifies learning priority, nearest mastery selection, active-deck filtering and the fully-mastered fallback
+- no new mode, currency, timer, artificial daily obligation, combat bonus or pay-to-win progression was added
+- learning rules, mastery thresholds, card frames, HQ progression, campaign progression, rewards and combat balance remain unchanged
+- release: package 1.83.0 / v1.83 / iOS 1.83 (183)
 
