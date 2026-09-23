@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.79
+## Current v1.80
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -70,6 +70,22 @@ pnpm run ios:open
 ```
 
 The **iPhone test build** GitHub Actions workflow compiles the Release iPhone target without signing and uploads `Frontline-unsigned.ipa`. A signed export can be enabled separately with the `ios-testing` environment and Apple signing credentials.
+
+### StoreKit release mode
+
+Frontline's cosmetic supporter product remains fail-safe by default:
+
+- normal Xcode, unsigned CI and TestFlight-oriented builds default to `FRONTLINE_STORE_MODE=sandbox`
+- the StoreKit product ID is injected through `FRONTLINE_STORE_PRODUCT_ID` instead of being hard-coded into the Swift purchase flow
+- the signed GitHub workflow reads `IOS_STORE_PRODUCT_ID` and exposes an explicit `sandbox` / `production` choice
+- a production-mode archive is only created when that mode is explicitly requested
+- the archive is rejected if its embedded StoreKit mode or product ID differs from the requested values
+- sandbox UI says TESTKAUF and explicitly explains that no real charge occurs
+- production UI removes all test-purchase wording and uses Apple's localized product price
+- verified StoreKit transactions remain the only source of cosmetic ownership; browser storage never grants purchase entitlement
+- purchase restoration remains available through Apple
+
+The repository intentionally defaults to sandbox mode. The actual App Store Connect product must exist under the configured product ID before production mode is useful.
 
 ## Friend duel server
 
@@ -1781,4 +1797,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - production documentation explicitly records that rooms are in-memory and a single server instance is required until shared room state exists
 - duel simulation, reconnect timing, room codes, rematches, decks, commanders, rewards and combat balance remain unchanged
 - release: package 1.79.0 / v1.79 / iOS 1.79 (179)
+
+## v1.80 changes
+
+- StoreKit purchase behavior is now an explicit build-time release mode instead of permanently being sandbox-only in Swift
+- both Debug and Release Xcode configurations remain fail-safe on sandbox by default, so ordinary builds cannot accidentally open a production-money purchase path
+- FrontlineStorePlugin reads FrontlineStoreMode and FrontlineStoreProductID from the compiled app Info.plist rather than hard-coding the product identifier
+- sandbox mode still requires Apple's Xcode/sandbox transaction environment before purchase becomes available
+- production mode must be explicitly requested and permits the normal verified StoreKit purchase path while retaining all existing transaction verification
+- signed archive tooling accepts FRONTLINE_STORE_MODE=sandbox|production and FRONTLINE_STORE_PRODUCT_ID, passes both to Xcode and verifies the compiled Info.plist after archiving
+- the GitHub signed-IPA workflow now exposes an explicit StoreKit mode choice and requires IOS_STORE_PRODUCT_ID
+- unsigned iPhone CI proves that normal builds still compile with sandbox mode and a non-empty product identifier
+- the store UI is mode-aware: sandbox uses TESTKAUF and no-charge wording, while production uses KAUFEN and removes test-only messaging
+- a pure store-copy helper with regression tests prevents production catalog states from accidentally presenting test-purchase copy
+- native integrity tests protect Info.plist keys, sandbox defaults, Swift build-config reads, signed export propagation and archive verification
+- entitlement checks, restore flow, verified StoreKit transactions, cosmetic-only benefits, gameplay and combat balance are unchanged
+- release: package 1.80.0 / v1.80 / iOS 1.80 (180)
 
