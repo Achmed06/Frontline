@@ -193,6 +193,53 @@ window.visualViewport?.addEventListener(
 );
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
+
+let lobbySection: LobbySection = "play";
+function setLobbySection(section: LobbySection, moveFocus = false): void {
+  lobbySection = section;
+  for (const key of ["play", "event", "base"] as const) {
+    const activeSection = key === section;
+    el(`lobby-panel-${key}`).hidden = !activeSection;
+    const button = el<HTMLButtonElement>(`lobby-tab-${key}`);
+    button.classList.toggle("active", activeSection);
+    button.setAttribute("aria-pressed", String(activeSection));
+  }
+  if (!active) el("mode-label").textContent = lobbySectionLabel(section);
+  if (moveFocus) el<HTMLButtonElement>(`lobby-tab-${section}`).focus();
+}
+
+function updateFeaturedEvent(): void {
+  const event = featuredEvent(new Date());
+  const card = el<HTMLElement>("featured-event");
+  card.dataset.accent = event.accent;
+  el("featured-event-eyebrow").textContent = event.eyebrow;
+  el("featured-event-title").textContent = event.title;
+  el("featured-event-hook").textContent = event.hook;
+  el("featured-event-play").textContent = `${event.cta} ↗`;
+  el("event-nav-label").textContent = event.title;
+
+  if (event.id === "daily") {
+    const challenge = dailyChallenge();
+    const record = dailyRecord(dailyHistory, challenge.key);
+    el("featured-event-title").textContent = challenge.title;
+    el("featured-event-status").textContent = record?.completed
+      ? "HEUTE GESICHERT · BESTWERT VERBESSERN"
+      : record?.attempts
+        ? `${record.attempts} VERSUCH${record.attempts === 1 ? "" : "E"} · NOCH OFFEN`
+        : "NEUE FRONT · HEUTE";
+  } else if (event.id === "series") {
+    el("featured-event-status").textContent =
+      seriesRun && !seriesEnded(seriesRun)
+        ? `${seriesRun.wins}/3 SIEGE · ${Math.max(0, SERIES_LIVES - seriesRun.losses)} LEBEN`
+        : "3 SIEGE · 2 LEBEN";
+  } else {
+    el("featured-event-status").textContent = "8 PICKS · FRISCHES DECK";
+  }
+}
+
+for (const key of ["play", "event", "base"] as const)
+  el<HTMLButtonElement>(`lobby-tab-${key}`).onclick = () =>
+    setLobbySection(key, false);
 const sound = new Sound();
 sound.enabled = setting("sound") === "on";
 const stats = readStats();
@@ -541,7 +588,8 @@ function lobby() {
   el("lobby").hidden = false;
   el<HTMLButtonElement>("pause").disabled = true;
   el<HTMLButtonElement>("commander").disabled = true;
-  el("mode-label").textContent = "EINSATZBASIS";
+  setLobbySection("play");
+  updateFeaturedEvent();
   updateSelection();
   updateHud(true);
   updateRecord();
@@ -553,7 +601,7 @@ function lobby() {
   matchGoUntil = 0;
   pauseBeganAt = 0;
   startBannerShown = false;
-  el("continue-campaign").focus();
+  el("quick-play").focus();
 }
 function help(fromPause = false) {
   const wasPlaying = active && !ended;
@@ -1346,6 +1394,7 @@ function updateDaily() {
       : `${challenge.difficulty === "veteran" ? "Veteran" : "Taktiker"} · ${dailyObjective(challenge)}`;
   el("daily").classList.toggle("complete", !!record?.completed);
   updateLobbyCommandCenter();
+  updateFeaturedEvent();
 }
 function openDaily() {
   if (active) return;
@@ -1653,6 +1702,17 @@ function openDraft() {
 }
 el("draft").onclick = openDraft;
 el("series").onclick = openSeries;
+el("quick-play").onclick = () => {
+  el<HTMLSelectElement>("difficulty").value = "standard";
+  el<HTMLSelectElement>("training-mode").value = "core";
+  start();
+};
+el("featured-event-play").onclick = () => {
+  const event = featuredEvent(new Date());
+  if (event.id === "daily") openDaily();
+  else if (event.id === "draft") openDraft();
+  else openSeries();
+};
 el("start").onclick = () => start();
 el("lobby-help").onclick = () => help();
 el("help").onclick = () => help();
