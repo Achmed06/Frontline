@@ -63,6 +63,7 @@ import { movementFootprintVisual } from "./movement-footprint-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
 import { slowStatusVisual } from "./slow-status-visual";
 import { stasisHitVisual } from "./stasis-hit-visual";
+import { stasisCastVisual } from "./stasis-cast-visual";
 import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
 import { rallyCastVisual } from "./rally-cast-visual";
@@ -4840,28 +4841,212 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "stasis") {
-          const wave = 10 + radius * progress;
-          fx.fillStyle(effectColor, alpha * 0.055);
-          this.polygon(fx, this.hex(e.x, e.y, wave), effectColor, alpha * 0.055, effectColor);
-          fx.lineStyle(2.2, effectColor, alpha * 0.92);
-          this.polygon(fx, this.hex(e.x, e.y, wave), 0x000000, 0, effectColor);
-          fx.lineStyle(1.2, 0xe6f7ff, alpha * 0.62);
-          for (let i = 0; i < 6; i++) {
-            const angle = (i * Math.PI) / 3 - Math.PI / 6;
-            const inner = wave * 0.35;
-            const outer = wave * 0.83;
-            fx.lineBetween(
-              e.x + Math.cos(angle) * inner,
-              e.y + Math.sin(angle) * inner,
-              e.x + Math.cos(angle) * outer,
-              e.y + Math.sin(angle) * outer,
+          const cast = stasisCastVisual(e);
+          if (cast) {
+            const slowColor = 0x88d5ff;
+            const brightSlow = 0xe6f7ff;
+            const deepSlow = 0x6fb9ff;
+            const rotation = this.reducedMotion
+              ? e.id * 0.08
+              : e.id * 0.08 + cast.progress * 0.46;
+            const counterRotation = this.reducedMotion
+              ? -e.id * 0.05
+              : -e.id * 0.05 - cast.progress * 0.3;
+
+            fx.fillStyle(
+              slowColor,
+              cast.alpha * 0.045,
             );
-            const dotAngle = angle + this.clock * 0.7;
-            fx.fillStyle(0xe6f7ff, alpha * 0.72);
             fx.fillCircle(
-              e.x + Math.cos(dotAngle) * wave * 0.72,
-              e.y + Math.sin(dotAngle) * wave * 0.72,
-              1.5,
+              e.x,
+              e.y,
+              cast.latticeRadius,
+            );
+
+            fx.lineStyle(
+              1.1,
+              slowColor,
+              cast.alpha * 0.34,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              cast.boundaryRadius,
+            );
+
+            fx.lineStyle(
+              2.5,
+              slowColor,
+              cast.alpha * 0.92,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, cast.latticeRadius),
+              0x000000,
+              0,
+              slowColor,
+            );
+
+            fx.lineStyle(
+              1.25,
+              brightSlow,
+              cast.alpha * 0.62,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              cast.innerRadius,
+            );
+
+            for (
+              let spoke = 0;
+              spoke < cast.spokeCount;
+              spoke++
+            ) {
+              const angle =
+                rotation +
+                (spoke * Math.PI * 2) /
+                  cast.spokeCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const inner =
+                cast.innerRadius * 0.78;
+              const outer =
+                cast.latticeRadius * 0.86;
+
+              fx.lineStyle(
+                spoke % 2 === 0 ? 1.45 : 1,
+                spoke % 2 === 0
+                  ? brightSlow
+                  : deepSlow,
+                cast.alpha *
+                  (spoke % 2 === 0 ? 0.62 : 0.44),
+              );
+              fx.lineBetween(
+                e.x + tx * inner,
+                e.y + ty * inner,
+                e.x + tx * outer,
+                e.y + ty * outer,
+              );
+            }
+
+            for (
+              let node = 0;
+              node < cast.nodeCount;
+              node++
+            ) {
+              const angle =
+                counterRotation +
+                (node * Math.PI * 2) /
+                  cast.nodeCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const cx =
+                e.x + tx * cast.nodeRadius;
+              const cy =
+                e.y + ty * cast.nodeRadius;
+
+              fx.fillStyle(
+                node % 2 === 0
+                  ? brightSlow
+                  : slowColor,
+                cast.alpha *
+                  (node % 2 === 0 ? 0.82 : 0.58),
+              );
+              fx.fillCircle(
+                cx,
+                cy,
+                node % 2 === 0 ? 2.2 : 1.55,
+              );
+
+              fx.lineStyle(
+                1.15,
+                slowColor,
+                cast.alpha * 0.5,
+              );
+              fx.lineBetween(
+                cx - tx * cast.bracketReach,
+                cy - ty * cast.bracketReach,
+                cx + px * cast.bracketReach * 0.72,
+                cy + py * cast.bracketReach * 0.72,
+              );
+              fx.lineBetween(
+                cx - tx * cast.bracketReach,
+                cy - ty * cast.bracketReach,
+                cx - px * cast.bracketReach * 0.72,
+                cy - py * cast.bracketReach * 0.72,
+              );
+            }
+
+            const shardBase =
+              cast.latticeRadius * 0.55;
+            const shardTravel =
+              cast.latticeRadius * 0.24;
+            for (
+              let shard = 0;
+              shard < cast.shardCount;
+              shard++
+            ) {
+              const angle =
+                (shard * Math.PI * 2) /
+                  cast.shardCount +
+                e.id * 0.13;
+              const stagger =
+                (shard % 3) / 2;
+              const radial =
+                shardBase +
+                shardTravel *
+                  (this.reducedMotion
+                    ? 0.45 + stagger * 0.2
+                    : (cast.progress + stagger * 0.18) % 1);
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const cx = e.x + tx * radial;
+              const cy = e.y + ty * radial;
+              const length =
+                3 + cast.severity * 4;
+
+              fx.lineStyle(
+                shard % 3 === 0 ? 1.35 : 0.9,
+                shard % 2 === 0
+                  ? brightSlow
+                  : deepSlow,
+                cast.alpha *
+                  (0.38 + cast.severity * 0.28),
+              );
+              fx.lineBetween(
+                cx - px * length,
+                cy - py * length,
+                cx + px * length,
+                cy + py * length,
+              );
+            }
+
+            const seal =
+              Math.max(
+                8,
+                cast.innerRadius * 0.58,
+              );
+            fx.lineStyle(
+              1.25,
+              brightSlow,
+              cast.alpha * 0.48,
+            );
+            fx.lineBetween(
+              e.x - seal,
+              e.y,
+              e.x + seal,
+              e.y,
+            );
+            fx.lineBetween(
+              e.x,
+              e.y - seal,
+              e.x,
+              e.y + seal,
             );
           }
         }

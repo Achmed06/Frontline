@@ -1286,7 +1286,19 @@ export class Match {
       if (team === "player") this.state.stats.abilities++;
     }
     if (card.id === "stasis" || card.id === "repulsor") {
-      this.effect(card.id, x, y, team, 0.7, undefined, card.range);
+      if (card.id === "stasis")
+        this.effect(
+          "stasis",
+          x,
+          y,
+          team,
+          0.7,
+          undefined,
+          card.range,
+          card.slowFactor,
+          card.id,
+        );
+      else this.effect("repulsor", x, y, team, 0.7, undefined, card.range);
       for (const unit of this.state.units) {
         if (!targetIds.has(unit.id)) continue;
         if (card.id === "stasis") {
