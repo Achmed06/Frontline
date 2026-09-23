@@ -22,7 +22,7 @@ test("NOVA activation uses canonical duration and tempo multipliers", () => {
     COMMANDERS.nova.attackSpeedMultiplier,
   );
   assert.equal(visual.moveBoost, 0.25);
-  assert.equal(visual.attackBoost, 0.3);
+  assert.ok(Math.abs(visual.attackBoost - 0.3) < 1e-12);
   assert.equal(visual.strength, 1);
 });
 
