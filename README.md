@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.62
+## Current v1.63
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1471,4 +1471,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure repulsorCastVisual helper centralizes exact radius, push strength, wave expansion, impulse geometry and release fade
 - regression coverage verifies exact 72/55 metadata from a real Match play, outward expansion, fade and malformed/non-Repulsor suppression
 - release: package 1.62.0 / v1.62 / iOS 1.62 (162)
+
+## v1.63 changes
+
+- Mortar impacts now finish with a dedicated artillery blast instead of falling back to the generic blast/capture circle after the projectile arc lands
+- the blast event now carries the card's real 42-unit splash radius, exact 28 splash damage, Mortar source identity and real firing position as presentation metadata
+- the explosion keeps a faint fixed 42-unit splash boundary while a brighter pressure front expands through the actual affected area
+- directional debris rays, a white-hot center, secondary heat ring and impact-axis recoil visually connect the landing blast to the incoming Mortar trajectory
+- debris density and strike geometry scale from the real 28 splash damage while directional bias is derived from the actual shooter-to-impact vector
+- Reduced Motion preserves the exact splash boundary, pressure front, debris geometry and impact direction while suppressing rotational drift
+- the existing arcing Mortar projectile, smoke trail, impact cue, per-target damage feedback and death effects remain layered with the new blast
+- unknown future blast sources retain the previous generic fallback instead of disappearing when they do not provide Mortar metadata
+- Mortar cost, 40 primary damage, 28 splash damage, 42 splash radius, attack interval, targeting and all balance values are unchanged
+- a pure mortarBlastVisual helper centralizes exact splash radius, damage intensity, shock expansion, debris geometry, impact direction and release fade
+- regression coverage verifies exact 42/28 metadata from a real Mortar attack, real firing direction, outward expansion, release fade and malformed/non-Mortar suppression
+- release: package 1.63.0 / v1.63 / iOS 1.63 (163)
 
