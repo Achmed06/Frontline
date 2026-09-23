@@ -54,7 +54,19 @@ test("larger real displacement creates stronger trail geometry", () => {
 });
 
 test("real Repulsor play emits an exact per-unit displacement effect", () => {
-  const match = new Match({ botEnabled: false });
+  const match = new Match({
+    botEnabled: false,
+    playerDeck: [
+      "vanguard",
+      "bulwark",
+      "ranger",
+      "swarm",
+      "lancer",
+      "medic",
+      "pulse",
+      "repulsor",
+    ],
+  });
   match.state.energy.enemy = 10;
   assert.equal(match.play("enemy", "vanguard", 210, 150).ok, true);
   const target = match.state.units.find((unit) => unit.team === "enemy")!;
