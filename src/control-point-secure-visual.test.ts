@@ -65,7 +65,8 @@ test("real capture publishes exact objective metadata", () => {
   point.capture = 0;
   point.captureTeam = null;
 
-  for (let i = 0; i < 200; i++) match.update(1 / 30);
+  for (let i = 0; i < 200 && point.owner !== "player"; i++)
+    match.update(1 / 30);
 
   const effect = match.state.effects.find(
     (entry) =>
