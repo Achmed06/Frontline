@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   duelAllowedOrigins,
+  duelClientAddress,
   duelServerRuntimeConfig,
 } from "./duel-server-runtime";
 
@@ -11,6 +12,7 @@ test("development server stays loopback-only by default", () => {
     port: 8080,
     maxRooms: 12,
     allowedOrigins: [],
+    trustedProxyHops: 0,
     production: false,
   });
 });
@@ -29,6 +31,7 @@ test("runtime accepts explicit port, room capacity and exact native origins", ()
     DUEL_MAX_ROOMS: "24",
     DUEL_ALLOWED_ORIGINS:
       "capacitor://localhost, https://game.example,capacitor://localhost",
+    DUEL_TRUST_PROXY_HOPS: "1",
   });
   assert.equal(config.host, "::");
   assert.equal(config.port, 3000);
@@ -37,6 +40,7 @@ test("runtime accepts explicit port, room capacity and exact native origins", ()
     "capacitor://localhost",
     "https://game.example",
   ]);
+  assert.equal(config.trustedProxyHops, 1);
 });
 
 test("origin parser rejects wildcards, paths, credentials and unsafe schemes", () => {
@@ -59,5 +63,28 @@ test("invalid numeric and host deployment settings fail fast", () => {
   assert.throws(
     () => duelServerRuntimeConfig({ HOST: "https://game.example" }),
     /HOST/,
+  );
+});
+
+
+test("forwarded addresses are ignored unless proxy trust is explicit", () => {
+  assert.equal(
+    duelClientAddress("10.0.0.8", "203.0.113.5", 0),
+    "10.0.0.8",
+  );
+  assert.equal(
+    duelClientAddress("10.0.0.8", "203.0.113.5", 1),
+    "203.0.113.5",
+  );
+});
+
+test("trusted proxy hops select from the right side of the forwarding chain", () => {
+  assert.equal(
+    duelClientAddress("10.0.0.9", "203.0.113.5, 10.0.0.8", 2),
+    "203.0.113.5",
+  );
+  assert.equal(
+    duelClientAddress("10.0.0.9", "203.0.113.5, 10.0.0.8", 1),
+    "10.0.0.8",
   );
 });
