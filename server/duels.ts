@@ -41,7 +41,14 @@ type Room = {
 };
 export class DuelService {
   private rooms = new Map<string, Room>();
-  constructor(private now = Date.now) {}
+  constructor(private now = Date.now, private maxRooms = 12) {
+    if (!Number.isInteger(maxRooms) || maxRooms < 2 || maxRooms > 64)
+      throw Error("Ungültige Duellraum-Kapazität.");
+  }
+  status() {
+    this.pruneRooms(this.now());
+    return { rooms: this.rooms.size, capacity: this.maxRooms };
+  }
   handle(input: Record<string, unknown>) {
     const time = this.now();
     this.pruneRooms(time);
@@ -62,7 +69,7 @@ export class DuelService {
       if (input.op === "create") {
         if (input.mode !== undefined && input.mode !== "core" && input.mode !== "control") throw Error("Ungültiger Spielmodus.");
         if (input.theme !== undefined && !isArenaTheme(input.theme)) throw Error("Ungültiger Schauplatz.");
-        if (this.rooms.size >= 12) throw Error("Alle Duellplätze sind belegt.");
+        if (this.rooms.size >= this.maxRooms) throw Error("Alle Duellplätze sind belegt.");
         let code: string;
         do {
           code = randomBytes(3).toString("hex").toUpperCase();
