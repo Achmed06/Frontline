@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.81
+## Current v1.82
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1831,4 +1831,22 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies stable same-day rotation, three-day coverage of all existing event types and the intentionally limited SPIELEN/EVENT/BASIS hierarchy
 - no campaign missions, Tagesfront, Draft, Einsatzserie, Friend Duels, HQ, deck, Commander, progression, StoreKit, rewards or combat rules were removed
 - release: package 1.81.0 / v1.81 / iOS 1.81 (181)
+
+## v1.82 changes
+
+- the post-match screen is reorganized around the next battle instead of making players scroll through the full analytical debrief before they can continue
+- immediately after the result hero, a compact momentum card now summarizes whether the player secured the front, drew or should strike back
+- consecutive local victories are surfaced as a visible win streak only when they are truly consecutive in validated match history
+- two or more consecutive wins display the exact streak count; losses and draws reset the visible streak instead of preserving misleading momentum
+- the primary continuation action now sits directly below the result and momentum card: next campaign mission, series continuation, daily replay, fresh Draft or immediate rematch depending on the mode that just ended
+- ordinary quick-battle losses use a direct Sofort zurückschlagen action while wins keep the simpler Noch ein Gefecht loop
+- returning from the result uses the lighter SPIELEN-MENÜ action and lands on the focused SPIELEN section introduced in v1.81
+- mission, series, daily, learning and mastery progress rewards remain visible near the primary action so meaningful progression is not buried
+- detailed decision scoring, final territory map, combat statistics, historical comparison and playtest feedback move into an optional Gefechtsbericht disclosure
+- no result data is deleted; the default visual hierarchy simply prioritizes outcome, progression and the next match
+- the primary next-battle button receives stronger touch hierarchy and compact small-iPhone handling
+- a pure resultMomentum helper derives win streak and retry copy exclusively from validated local MatchRecord history
+- regression coverage verifies consecutive-win counting, loss reset, draw reset and empty-history fallback
+- campaign progression, series lives, daily records, Draft flow, mastery, learning, match history, feedback storage and all combat rules remain unchanged
+- release: package 1.82.0 / v1.82 / iOS 1.82 (182)
 
