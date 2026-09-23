@@ -582,6 +582,7 @@ export interface Effect {
   sourceY?: number;
   targetX?: number;
   targetY?: number;
+  cleanse?: boolean;
 }
 
 export type ControlObjective = {
@@ -1447,8 +1448,11 @@ export class Match {
           team,
           0.9,
           undefined,
-          30,
+          unit.radius,
           outcome.healing,
+          "lyra",
+          undefined,
+          outcome.cleanse,
         );
       }
     }
@@ -1600,6 +1604,7 @@ export class Match {
     value?: number,
     sourceCardId?: string,
     source?: { x: number; y: number },
+    cleanse?: boolean,
   ): void {
     this.state.effects.push({
       id: this.nextId++,
@@ -1614,6 +1619,7 @@ export class Match {
       sourceCardId,
       ...(source ? { sourceX: source.x, sourceY: source.y } : {}),
       ...(target ? { targetX: target.x, targetY: target.y } : {}),
+      ...(cleanse ? { cleanse: true } : {}),
     });
   }
 

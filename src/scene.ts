@@ -45,6 +45,7 @@ import {
   type CoreHitReaction,
 } from "./core-hit-reaction";
 import { healLinkVisual } from "./heal-link-visual";
+import { lyraRepairVisual } from "./lyra-repair-visual";
 import { medicCycleVisual } from "./medic-cycle-visual";
 import {
   battlefieldScarVisual,
@@ -4787,10 +4788,216 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "heal") {
-          const lift = progress * 18;
-          fx.fillStyle(effectColor, alpha);
-          fx.fillRect(e.x - 2, e.y - 10 - lift, 4, 15);
-          fx.fillRect(e.x - 7, e.y - 5 - lift, 14, 4);
+          const lyraRepair = lyraRepairVisual(e);
+          if (lyraRepair) {
+            const repairColor =
+              e.team === "player" ? 0x78ffd0 : 0xffb58d;
+            const brightRepair = 0xe9fff7;
+            const cleanseColor = 0xa8e8ff;
+            const rotation = this.reducedMotion
+              ? e.id * 0.12
+              : e.id * 0.12 +
+                lyraRepair.progress * 0.62;
+
+            fx.fillStyle(
+              repairColor,
+              lyraRepair.alpha * 0.05,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              lyraRepair.shellRadius,
+            );
+
+            fx.lineStyle(
+              2.4,
+              repairColor,
+              lyraRepair.alpha * 0.9,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              lyraRepair.shellRadius,
+            );
+
+            fx.lineStyle(
+              1.2,
+              brightRepair,
+              lyraRepair.alpha * 0.58,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              lyraRepair.innerRadius,
+            );
+
+            const cross = lyraRepair.crossSize;
+            fx.fillStyle(
+              brightRepair,
+              lyraRepair.alpha *
+                (0.68 + lyraRepair.healRatio * 0.22),
+            );
+            fx.fillRect(
+              e.x - 2.1,
+              e.y - cross,
+              4.2,
+              cross * 2,
+            );
+            fx.fillRect(
+              e.x - cross,
+              e.y - 2.1,
+              cross * 2,
+              4.2,
+            );
+
+            for (
+              let node = 0;
+              node < lyraRepair.nodeCount;
+              node++
+            ) {
+              const angle =
+                rotation +
+                (node * Math.PI * 2) /
+                  lyraRepair.nodeCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const cx =
+                e.x + tx * lyraRepair.nodeRadius;
+              const cy =
+                e.y + ty * lyraRepair.nodeRadius;
+
+              fx.fillStyle(
+                node % 2 === 0
+                  ? brightRepair
+                  : repairColor,
+                lyraRepair.alpha *
+                  (0.48 +
+                    lyraRepair.healRatio * 0.28),
+              );
+              fx.fillCircle(
+                cx,
+                cy,
+                1.5 + lyraRepair.healRatio * 1.1,
+              );
+              fx.lineStyle(
+                1,
+                repairColor,
+                lyraRepair.alpha * 0.38,
+              );
+              fx.lineBetween(
+                cx - tx * 4,
+                cy - ty * 4,
+                cx + tx * 2.5,
+                cy + ty * 2.5,
+              );
+            }
+
+            if (lyraRepair.cleanse) {
+              fx.lineStyle(
+                1.5,
+                cleanseColor,
+                lyraRepair.alpha * 0.72,
+              );
+              for (
+                let arc = 0;
+                arc < lyraRepair.cleanseArcCount;
+                arc++
+              ) {
+                const angle =
+                  rotation * 1.25 +
+                  (arc * Math.PI * 2) /
+                    lyraRepair.cleanseArcCount;
+                const tx = Math.cos(angle);
+                const ty = Math.sin(angle);
+                const px = -ty;
+                const py = tx;
+                const inner =
+                  lyraRepair.innerRadius + 1;
+                const outer =
+                  lyraRepair.shellRadius + 5;
+                const sx = e.x + tx * inner;
+                const sy = e.y + ty * inner;
+                const ex = e.x + tx * outer;
+                const ey = e.y + ty * outer;
+                const sweep =
+                  3.5 + lyraRepair.strength * 3;
+
+                fx.lineBetween(
+                  sx,
+                  sy,
+                  ex + px * sweep,
+                  ey + py * sweep,
+                );
+              }
+
+              fx.lineStyle(
+                1,
+                brightRepair,
+                lyraRepair.alpha * 0.5,
+              );
+              fx.strokeCircle(
+                e.x,
+                e.y,
+                lyraRepair.shellRadius + 7,
+              );
+            }
+
+            for (
+              let shard = 0;
+              shard < lyraRepair.shardCount;
+              shard++
+            ) {
+              const angle =
+                e.id * 0.21 +
+                (shard * Math.PI * 2) /
+                  lyraRepair.shardCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const travel = this.reducedMotion
+                ? 0.52
+                : (lyraRepair.progress +
+                    (shard % 3) * 0.2) %
+                  1;
+              const radial =
+                lyraRepair.shellRadius *
+                  (0.64 + travel * 0.34);
+              const cx = e.x + tx * radial;
+              const cy = e.y + ty * radial;
+              const length =
+                2.5 + lyraRepair.strength * 2.5;
+
+              fx.lineStyle(
+                1,
+                lyraRepair.cleanse && shard % 2 === 0
+                  ? cleanseColor
+                  : repairColor,
+                lyraRepair.alpha *
+                  (0.34 +
+                    lyraRepair.strength * 0.22),
+              );
+              fx.lineBetween(
+                cx - tx * length,
+                cy - ty * length,
+                cx + tx * length,
+                cy + ty * length,
+              );
+            }
+          } else {
+            const lift = progress * 18;
+            fx.fillStyle(effectColor, alpha);
+            fx.fillRect(
+              e.x - 2,
+              e.y - 10 - lift,
+              4,
+              15,
+            );
+            fx.fillRect(
+              e.x - 7,
+              e.y - 5 - lift,
+              14,
+              4,
+            );
+          }
         }
         if (e.type === "core-hit") {
           const weight = e.radius ?? 18;
