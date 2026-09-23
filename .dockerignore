@@ -1,0 +1,13 @@
+node_modules
+dist
+releases
+.git
+.github
+.env
+.env.*
+!.env.example
+ios
+*.ipa
+*.xcarchive
+*.p12
+*.mobileprovision
