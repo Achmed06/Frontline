@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.83
+## Current v1.84
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1866,4 +1866,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - no new mode, currency, timer, artificial daily obligation, combat bonus or pay-to-win progression was added
 - learning rules, mastery thresholds, card frames, HQ progression, campaign progression, rewards and combat balance remain unchanged
 - release: package 1.83.0 / v1.83 / iOS 1.83 (183)
+
+## v1.84 changes
+
+- brand-new players now enter an intentionally stripped-down first-session view instead of seeing the full Play / Event / Base hierarchy before they understand the core battle
+- before the first completed match the main navigation, campaign shortcuts, Friend Duel and advanced battle configuration stay out of the way; the player sees the core 3-minute battle, its next real progress target and one primary action
+- the first Quick Play match uses the existing Rekrut bot difficulty to create a more forgiving first contact; subsequent Quick Play matches automatically return to the standard Taktiker baseline
+- the first battle hero uses direct onboarding copy and a stronger single CTA without adding a separate tutorial mode or blocking the existing in-match contextual coaching
+- after the first completed match the normal SPIELEN / EVENT / BASIS navigation and secondary play choices are revealed immediately
+- the first result includes one compact unlock moment explaining that Events, loadout editing and the Base are now available
+- advanced custom battle controls remain progressively hidden for the first two completed matches, then appear automatically from match three onward
+- existing players with prior local match history skip the progressive reveal entirely and keep the full v1.83 interface immediately
+- all hidden systems remain intact; this is presentation gating only and does not delete or reset campaign, Event, Friend Duel, HQ, deck, Commander, StoreKit or saved progression
+- a pure firstSessionFocus helper centralizes the three presentation phases and first-match unlock condition
+- regression coverage verifies the first-battle, early-learning and full-lobby phases plus malformed local match counts
+- no new mode, currency, energy gate, forced timer, monetization gate or combat advantage was added
+- release: package 1.84.0 / v1.84 / iOS 1.84 (184)
 

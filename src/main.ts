@@ -103,6 +103,7 @@ import { commanderBriefing } from "./commander-briefing";
 import { lobbyCommandStatus } from "./lobby-command-status";
 import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
+import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
@@ -122,7 +123,7 @@ app.innerHTML = `
     <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
       <div class="base-status"><span><i></i> FRONTLINE</span><b id="base-stars">0 ★</b></div>
-      <nav class="main-loop-nav" aria-label="Hauptbereiche">
+      <nav id="main-loop-nav" class="main-loop-nav" aria-label="Hauptbereiche">
         <button id="lobby-tab-play" data-lobby-section="play" class="active" aria-pressed="true"><b>SPIELEN</b><small>3 MIN</small></button>
         <button id="lobby-tab-event" data-lobby-section="event" aria-pressed="false"><b>EVENT</b><small id="event-nav-label">HEUTE</small></button>
         <button id="lobby-tab-base" data-lobby-section="base" aria-pressed="false"><b>BASIS</b><small>LOADOUT</small></button>
@@ -130,10 +131,10 @@ app.innerHTML = `
       <section id="lobby-panel-play" class="lobby-panel play-panel">
         <section class="play-now-hero">
           <div class="play-now-grid" aria-hidden="true"></div>
-          <div class="play-now-kicker">SCHNELLGEFECHT · GEGEN BOT</div>
+          <div id="play-now-kicker" class="play-now-kicker">SCHNELLGEFECHT · GEGEN BOT</div>
           <h2>3 MINUTEN.<br><em>EINE FRONT.</em></h2>
-          <p>Dein Deck. Dein Commander. Sofort ins Gefecht.</p>
-          <div class="play-now-meta"><span>TAKTIKER</span><span>CORE-ANGRIFF</span><span>3:00</span></div>
+          <p id="play-now-copy">Dein Deck. Dein Commander. Sofort ins Gefecht.</p>
+          <div class="play-now-meta"><span id="quick-play-difficulty">TAKTIKER</span><span>CORE-ANGRIFF</span><span>3:00</span></div>
           <section id="play-progress" class="play-progress" aria-label="Nächster Fortschritt">
             <div><small id="play-progress-kicker">NÄCHSTER FORTSCHRITT</small><b id="play-progress-title">Feldausbildung</b><span id="play-progress-detail"></span></div>
             <div class="play-progress-side"><strong id="play-progress-count">0/1</strong><em id="play-progress-reward"></em></div>
@@ -141,14 +142,14 @@ app.innerHTML = `
           </section>
           <button id="quick-play" class="primary play-now-button">JETZT SPIELEN <span>↗</span></button>
         </section>
-        <div class="play-secondary-title"><span>MEHR SPIELEN</span><small>SOLO ODER MIT FREUND</small></div>
-        <section class="operation-hero compact-operation">
+        <div id="play-secondary-title" class="play-secondary-title"><span>MEHR SPIELEN</span><small>SOLO ODER MIT FREUND</small></div>
+        <section id="campaign-quick-card" class="operation-hero compact-operation">
           <div class="hero-grid" aria-hidden="true"></div><div id="hero-portrait" class="hero-portrait" aria-hidden="true">${commanderSvg()}</div>
           <div class="hero-copy"><span id="next-chapter" class="hero-kicker"></span><h2>FELDZUG</h2><p id="next-mission-name"></p><span id="next-mission-type" class="hero-mode"></span></div>
           <div class="hero-bottom"><p id="next-mission-hint"></p><button id="continue-campaign" class="primary">WEITER IM FELDZUG <span>↗</span></button></div>
         </section>
-        <div class="play-secondary-actions"><button id="campaign" class="base-mode"><span class="mode-symbol">◈</span><span><b>ALLE MISSIONEN</b><small id="campaign-progress"></small></span><span>↗</span></button><a class="duel-launch primary" href="./duel.html">FREUNDESDUELL ↗ <small>Privater Raumcode</small></a></div>
-        <details class="quick-battle"><summary><span>GEFECHT ANPASSEN <small>STÄRKE · MODUS · ARENA</small></span><span>＋</span></summary><div class="training-control"><label for="difficulty">Gegnerstärke</label><select id="difficulty"><option value="rookie">Rekrut</option><option value="standard">Taktiker</option><option value="veteran">Veteran</option></select></div><div class="training-control"><label for="training-mode">Spielmodus</label><select id="training-mode"><option value="core">Core-Angriff</option><option value="control">Signalkrieg</option></select></div><div class="training-control"><label for="arena-theme">Schauplatz</label><select id="arena-theme">${Object.entries(ARENA_THEMES).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join("")}</select></div><button id="start" class="primary">ANGEPASSTES GEFECHT STARTEN <span>↗</span></button></details>
+        <div id="play-secondary-actions" class="play-secondary-actions"><button id="campaign" class="base-mode"><span class="mode-symbol">◈</span><span><b>ALLE MISSIONEN</b><small id="campaign-progress"></small></span><span>↗</span></button><a class="duel-launch primary" href="./duel.html">FREUNDESDUELL ↗ <small>Privater Raumcode</small></a></div>
+        <details id="advanced-battle" class="quick-battle"><summary><span>GEFECHT ANPASSEN <small>STÄRKE · MODUS · ARENA</small></span><span>＋</span></summary><div class="training-control"><label for="difficulty">Gegnerstärke</label><select id="difficulty"><option value="rookie">Rekrut</option><option value="standard">Taktiker</option><option value="veteran">Veteran</option></select></div><div class="training-control"><label for="training-mode">Spielmodus</label><select id="training-mode"><option value="core">Core-Angriff</option><option value="control">Signalkrieg</option></select></div><div class="training-control"><label for="arena-theme">Schauplatz</label><select id="arena-theme">${Object.entries(ARENA_THEMES).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join("")}</select></div><button id="start" class="primary">ANGEPASSTES GEFECHT STARTEN <span>↗</span></button></details>
       </section>
       <section id="lobby-panel-event" class="lobby-panel event-panel" hidden>
         <section id="featured-event" class="featured-event" data-accent="mint">
@@ -251,6 +252,22 @@ const sound = new Sound();
 sound.enabled = setting("sound") === "on";
 const stats = readStats();
 const history = readHistory();
+
+function updateFirstSessionFocus(): void {
+  const focus = firstSessionFocus(stats.matches);
+  el("lobby").dataset.sessionPhase = focus.phase;
+  el<HTMLElement>("main-loop-nav").hidden = !focus.showMainNavigation;
+  el<HTMLElement>("play-secondary-title").hidden = !focus.showSecondaryPlay;
+  el<HTMLElement>("campaign-quick-card").hidden = !focus.showSecondaryPlay;
+  el<HTMLElement>("play-secondary-actions").hidden = !focus.showSecondaryPlay;
+  el<HTMLDetailsElement>("advanced-battle").hidden = !focus.showAdvancedBattle;
+  el("play-now-kicker").textContent = focus.kicker;
+  el("play-now-copy").textContent = focus.copy;
+  el("quick-play-difficulty").textContent =
+    focus.phase === "first-battle" ? "REKRUT" : "TAKTIKER";
+  el("quick-play").innerHTML = `${focus.cta} <span>↗</span>`;
+}
+
 let campaignProgress = readCampaign();
 let learningProgress = readLearning();
 let mastery = readMastery();
@@ -619,6 +636,7 @@ function lobby() {
   updateCampaignProgress();
   updateDaily();
   updateBattleProgress();
+  updateFirstSessionFocus();
   el("battle-banner").hidden = true;
   el("deployment-countdown").hidden = true;
   matchReadyAt = 0;
@@ -668,7 +686,9 @@ function finish() {
   el<HTMLButtonElement>("pause").disabled = true;
   const won = match.state.winner === "player",
     draw = match.state.winner === "draw";
+  const previousMatches = stats.matches;
   stats.matches++;
+  const unlockedMainLobby = firstMatchUnlock(previousMatches, stats.matches);
   if (won) stats.wins++;
   saveStats(stats);
   updateRecord();
@@ -740,6 +760,9 @@ function finish() {
   const nextProgressResult = nextProgress
     ? `<section class="result-next-progress" data-kind="${nextProgress.kind}"><small>${nextProgress.kicker}</small><div><b>${nextProgress.title}</b><span>${nextProgress.current}/${nextProgress.goal} · ${nextProgress.reward}</span></div><div class="result-next-progress-track"><i style="width:${Math.round(Math.max(0, Math.min(1, nextProgress.progress)) * 100)}%"></i></div></section>`
     : "";
+  const firstSessionResult = unlockedMainLobby
+    ? `<section class="first-session-unlock"><small>FRONTLINE GEÖFFNET</small><b>EVENT + BASIS SIND JETZT DA</b><p>Du kennst den Kern. Ab jetzt kannst du Events spielen, dein Loadout ändern und deine Basis ausbauen.</p></section>`
+    : "";
   const rewardResult = `<div class="learning-result"><b>${learned > 0 ? `${learned} LERNAUFTRAG${learned > 1 ? "E" : ""} ERFÜLLT` : "DEIN LERNPFAD"}</b><p>${completedLessons(learningProgress)}/${LESSONS.length} abgeschlossen${learned > 0 && completedLessons(learningProgress) === LESSONS.length ? " · Aurora-Gestaltung freigeschaltet! In deiner Basis ausrüsten." : " · Fortschritt bleibt auch bei Niederlagen erhalten."}</p>${newBaseStage > previousBaseStage ? `<p>HAUPTQUARTIER AUSGEBAUT: ${BASE_STAGES[newBaseStage].name}${previousBaseStage < 3 && newBaseStage >= 3 ? " · Glut-Gestaltung freigeschaltet!" : ""}</p>` : ""}${!learningSaved ? "<small>Lernfortschritt nur für diese Sitzung gespeichert.</small>" : ""}</div>`;
   updateHeadquarters();
   history.unshift(report);
@@ -763,7 +786,7 @@ function finish() {
     ? `<button id="next-mission" class="primary result-next-primary">NÄCHSTER EINSATZ <span>↗</span></button><button id="rematch" class="secondary">${rematchLabel} <span>↗</span></button>`
     : `<button id="rematch" class="primary result-next-primary">${rematchLabel} <span>↗</span></button>`;
   showModal(
-    `<section class="result-hero outcome-${snapshot.outcome}"><div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="result-hero-copy"><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p></div><div class="result-snapshot" aria-label="Endstand"><div class="player"><small>DEIN CORE</small><strong>${snapshot.playerCorePercent}%</strong><span>${snapshot.playerPoints}/9 GEBIETE</span></div><i aria-hidden="true">VS</i><div class="enemy"><small>GEGNER CORE</small><strong>${snapshot.enemyCorePercent}%</strong><span>${snapshot.enemyPoints}/9 GEBIETE</span></div></div></section><section class="result-momentum tone-${momentum.tone}"><small>${momentum.label}</small><div><strong>${momentum.streak >= 2 ? momentum.streak : won ? "↗" : draw ? "＝" : "↺"}</strong><span><b>${momentum.title}</b><em>${momentum.detail}</em></span></div></section><section class="result-actions result-actions-fast" aria-label="Nächste Aktion">${nextAction}<button id="back" class="text-btn result-back">SPIELEN-MENÜ</button></section><section class="result-progress-stack" aria-label="Fortschritt und Belohnungen">${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${nextProgressResult}</section><details class="result-report"><summary><span>GEFECHTSBERICHT</span><small>WERTUNG · KARTE · STATISTIKEN</small><b>＋</b></summary><div class="result-report-body">${decisionResult}${finalFrontMap()}<section class="result-performance" aria-label="Gefechtsleistung"><header><small>GEFECHTSLEISTUNG</small><span>DEINE AKTIONEN</span></header><div class="result-stats"><div><strong>${snapshot.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${snapshot.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${snapshot.kills}</strong><span>ABSCHÜSSE</span></div><div><strong>${snapshot.abilities}</strong><span>FÄHIGKEITEN</span></div></div></section>${resultComparison(report)}<div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div></div></details>`,
+    `<section class="result-hero outcome-${snapshot.outcome}"><div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="result-hero-copy"><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p></div><div class="result-snapshot" aria-label="Endstand"><div class="player"><small>DEIN CORE</small><strong>${snapshot.playerCorePercent}%</strong><span>${snapshot.playerPoints}/9 GEBIETE</span></div><i aria-hidden="true">VS</i><div class="enemy"><small>GEGNER CORE</small><strong>${snapshot.enemyCorePercent}%</strong><span>${snapshot.enemyPoints}/9 GEBIETE</span></div></div></section><section class="result-momentum tone-${momentum.tone}"><small>${momentum.label}</small><div><strong>${momentum.streak >= 2 ? momentum.streak : won ? "↗" : draw ? "＝" : "↺"}</strong><span><b>${momentum.title}</b><em>${momentum.detail}</em></span></div></section><section class="result-actions result-actions-fast" aria-label="Nächste Aktion">${nextAction}<button id="back" class="text-btn result-back">SPIELEN-MENÜ</button></section><section class="result-progress-stack" aria-label="Fortschritt und Belohnungen">${firstSessionResult}${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${nextProgressResult}</section><details class="result-report"><summary><span>GEFECHTSBERICHT</span><small>WERTUNG · KARTE · STATISTIKEN</small><b>＋</b></summary><div class="result-report-body">${decisionResult}${finalFrontMap()}<section class="result-performance" aria-label="Gefechtsleistung"><header><small>GEFECHTSLEISTUNG</small><span>DEINE AKTIONEN</span></header><div class="result-stats"><div><strong>${snapshot.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${snapshot.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${snapshot.kills}</strong><span>ABSCHÜSSE</span></div><div><strong>${snapshot.abilities}</strong><span>FÄHIGKEITEN</span></div></div></section>${resultComparison(report)}<div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div></div></details>`,
   );
   el("rematch").onclick = () => {
     if (wasDraft) {
@@ -1758,7 +1781,8 @@ function openDraft() {
 el("draft").onclick = openDraft;
 el("series").onclick = openSeries;
 el("quick-play").onclick = () => {
-  el<HTMLSelectElement>("difficulty").value = "standard";
+  const firstBattle = firstSessionFocus(stats.matches).phase === "first-battle";
+  el<HTMLSelectElement>("difficulty").value = firstBattle ? "rookie" : "standard";
   el<HTMLSelectElement>("training-mode").value = "core";
   start();
 };
