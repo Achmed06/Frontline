@@ -1298,7 +1298,18 @@ export class Match {
           card.slowFactor,
           card.id,
         );
-      else this.effect("repulsor", x, y, team, 0.7, undefined, card.range);
+      else
+        this.effect(
+          "repulsor",
+          x,
+          y,
+          team,
+          0.7,
+          undefined,
+          card.range,
+          card.pushDistance,
+          card.id,
+        );
       for (const unit of this.state.units) {
         if (!targetIds.has(unit.id)) continue;
         if (card.id === "stasis") {
