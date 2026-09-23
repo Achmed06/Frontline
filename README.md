@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.57
+## Current v1.58
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1394,3 +1394,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure pulseStrikeVisual helper centralizes strike progress, exact radius, shock-front expansion, spoke geometry, arc count and damage-derived presentation intensity
 - regression coverage verifies exact 82 radius/85 damage metadata from a real Match play, outward expansion, release fade and malformed/non-Pulse suppression
 - release: package 1.57.0 / v1.57 / iOS 1.57 (157)
+
+
+## v1.58 changes
+
+- Stasis now gives every newly slowed enemy a dedicated impact/lock-on response instead of relying only on the cast-area hex and the already-active persistent slow cage
+- the engine emits a short stasis-hit presentation event only when abilityTargetPreview reports that the target's slow state actually changed
+- each onset event carries the affected unit's real radius, the exact resulting 0.6 movement factor and the real cast-center source position
+- a contracting hex cage, inner lock ring, four capture brackets and severity-scaled shards visibly snap onto each affected unit
+- a compact energy packet travels from the Stasis cast center to each newly affected target, tying the area cast to the individual persistent slow state
+- recasting Stasis on a unit already at the same 4-second/40-percent state does not emit a fake second onset burst; the persistent slow presentation simply continues
+- the existing persistent slow floor band, orbiting brackets, cage spokes, release ring and exact remaining-time pips remain intact after the onset animation
+- Reduced Motion keeps the static per-target cage/brackets/shards and source tether while suppressing packet travel and cage rotation
+- Stasis cost, 78 radius, 4-second duration, 0.6 movement factor, stacking rules, target selection and all balance values are unchanged
+- a pure stasisHitVisual helper centralizes exact slow severity, source direction, cage contraction, tether progress and shard count
+- regression coverage verifies the real 0.6 factor, directional contraction, exact per-target metadata, no duplicate onset on an unchanged recast and malformed suppression
+- release: package 1.58.0 / v1.58 / iOS 1.58 (158)

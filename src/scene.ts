@@ -62,6 +62,7 @@ import {
 import { movementFootprintVisual } from "./movement-footprint-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
 import { slowStatusVisual } from "./slow-status-visual";
+import { stasisHitVisual } from "./stasis-hit-visual";
 import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
@@ -3652,7 +3653,7 @@ export class ArenaScene extends Phaser.Scene {
             ? e.team === "player"
               ? 0x9bdcff
               : 0xffb9a5
-            : e.type === "stasis"
+            : e.type === "stasis" || e.type === "stasis-hit"
               ? 0x88d5ff
               : e.type === "repulsor" || e.type === "repulsor-move"
               ? 0xc29aff
@@ -4710,6 +4711,160 @@ export class ArenaScene extends Phaser.Scene {
             );
           }
         }
+        if (e.type === "stasis-hit") {
+          const hit = stasisHitVisual(e);
+          if (hit) {
+            const slowColor = 0x88d5ff;
+            const brightSlow = 0xe6f7ff;
+            const cageRotation = this.reducedMotion
+              ? e.id * 0.11
+              : e.id * 0.11 + hit.progress * 0.42;
+
+            fx.fillStyle(
+              slowColor,
+              hit.alpha * 0.07,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, hit.shellRadius),
+              slowColor,
+              hit.alpha * 0.07,
+              slowColor,
+            );
+            fx.lineStyle(
+              2.2,
+              slowColor,
+              hit.alpha * 0.9,
+            );
+            this.polygon(
+              fx,
+              this.hex(e.x, e.y, hit.shellRadius),
+              0x000000,
+              0,
+              slowColor,
+            );
+            fx.lineStyle(
+              1.2,
+              brightSlow,
+              hit.alpha * 0.72,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              hit.innerRadius,
+            );
+
+            for (let corner = 0; corner < 4; corner++) {
+              const angle =
+                cageRotation +
+                Math.PI / 4 +
+                corner * (Math.PI / 2);
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const cx =
+                e.x + tx * hit.shellRadius * 0.78;
+              const cy =
+                e.y + ty * hit.shellRadius * 0.78;
+              fx.lineStyle(
+                1.4,
+                corner % 2 === 0 ? brightSlow : slowColor,
+                hit.alpha * 0.72,
+              );
+              fx.lineBetween(
+                cx,
+                cy,
+                cx - tx * hit.bracketReach,
+                cy - ty * hit.bracketReach,
+              );
+              fx.lineBetween(
+                cx,
+                cy,
+                cx - px * hit.bracketReach,
+                cy - py * hit.bracketReach,
+              );
+            }
+
+            if (
+              hit.directional &&
+              Number.isFinite(e.sourceX) &&
+              Number.isFinite(e.sourceY)
+            ) {
+              const sourceX = e.sourceX!;
+              const sourceY = e.sourceY!;
+              const dx = e.x - sourceX;
+              const dy = e.y - sourceY;
+              const packetX =
+                sourceX + dx * hit.tetherProgress;
+              const packetY =
+                sourceY + dy * hit.tetherProgress;
+
+              fx.lineStyle(
+                1,
+                slowColor,
+                hit.alpha * 0.34,
+              );
+              fx.lineBetween(
+                sourceX,
+                sourceY,
+                e.x,
+                e.y,
+              );
+
+              if (!this.reducedMotion) {
+                fx.fillStyle(
+                  brightSlow,
+                  hit.alpha * 0.9,
+                );
+                fx.fillCircle(
+                  packetX,
+                  packetY,
+                  2.1 + hit.severity * 1.4,
+                );
+                fx.lineStyle(
+                  1.2,
+                  slowColor,
+                  hit.alpha * 0.7,
+                );
+                fx.lineBetween(
+                  packetX - hit.px * 4,
+                  packetY - hit.py * 4,
+                  packetX + hit.px * 4,
+                  packetY + hit.py * 4,
+                );
+              }
+            }
+
+            fx.lineStyle(
+              1.1,
+              brightSlow,
+              hit.alpha * 0.62,
+            );
+            for (
+              let shard = 0;
+              shard < hit.shardCount;
+              shard++
+            ) {
+              const angle =
+                cageRotation +
+                (shard * Math.PI * 2) /
+                  hit.shardCount;
+              const inner =
+                hit.innerRadius +
+                (shard % 2) * 2;
+              const outer =
+                hit.shellRadius *
+                (0.7 + (shard % 3) * 0.08);
+              fx.lineBetween(
+                e.x + Math.cos(angle) * inner,
+                e.y + Math.sin(angle) * inner,
+                e.x + Math.cos(angle) * outer,
+                e.y + Math.sin(angle) * outer,
+              );
+            }
+          }
+        }
         if (e.type === "repulsor") {
           const wave = 10 + radius * progress;
           fx.fillStyle(effectColor, alpha * 0.04);
@@ -4931,6 +5086,7 @@ export class ArenaScene extends Phaser.Scene {
           e.type !== "pulse" &&
           e.type !== "rally" &&
           e.type !== "stasis" &&
+          e.type !== "stasis-hit" &&
           e.type !== "repulsor" &&
           e.type !== "repulsor-move" &&
           e.type !== "breaker" &&

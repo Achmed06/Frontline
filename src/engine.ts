@@ -563,6 +563,7 @@ export interface Effect {
     | "core-hit"
     | "blast"
     | "stasis"
+    | "stasis-hit"
     | "repulsor"
     | "repulsor-move"
     | "breaker"
@@ -1281,6 +1282,20 @@ export class Match {
         if (card.id === "stasis") {
           const slow = targetSlows.get(unit.id);
           if (!slow) continue;
+          if (slow.changed) {
+            this.effect(
+              "stasis-hit",
+              unit.x,
+              unit.y,
+              team,
+              0.58,
+              undefined,
+              unit.radius,
+              slow.slowFactor,
+              "stasis",
+              { x, y },
+            );
+          }
           unit.slowTime = slow.slowTime;
           unit.slowFactor = slow.slowFactor;
         } else {
