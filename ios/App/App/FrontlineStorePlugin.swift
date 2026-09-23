@@ -12,7 +12,16 @@ public class FrontlineStorePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "purchase", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "restore", returnType: CAPPluginReturnPromise)
     ]
-    private let productID = "frontline.supporter"
+    private var productID: String {
+        (Bundle.main.object(forInfoDictionaryKey: "FrontlineStoreProductID") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+    private var storeMode: String {
+        ((Bundle.main.object(forInfoDictionaryKey: "FrontlineStoreMode") as? String) ?? "sandbox")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+    private var productionStoreEnabled: Bool { storeMode == "production" }
     private var observer: Task<Void, Never>?
     private var purchasing = false
 
@@ -38,7 +47,6 @@ public class FrontlineStorePlugin: CAPPlugin, CAPBridgedPlugin {
         }
         return false
     }
-    // Fail closed: this first device build must never open a real-money purchase.
     private func testEnvironment() async -> Bool {
         do {
             if case .verified(let app) = try await AppTransaction.shared {
@@ -54,12 +62,16 @@ public class FrontlineStorePlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func catalog(_ call: CAPPluginCall) {
         Task { @MainActor in
             do {
+                guard !productID.isEmpty else {
+                    call.resolve(["available": false, "price": "", "testOnly": true])
+                    return
+                }
                 let product = try await Product.products(for: [productID]).first
-                let canTest = await testEnvironment()
+                let environmentAllowed = productionStoreEnabled || await testEnvironment()
                 call.resolve([
-                    "available": product?.type == .nonConsumable && canTest,
+                    "available": product?.type == .nonConsumable && environmentAllowed,
                     "price": product?.displayPrice ?? "",
-                    "testOnly": true
+                    "testOnly": !productionStoreEnabled
                 ])
             } catch { call.reject("Apple-Shop nicht erreichbar. Bitte später erneut versuchen.", "STORE_UNAVAILABLE", error) }
         }
@@ -70,12 +82,15 @@ public class FrontlineStorePlugin: CAPPlugin, CAPBridgedPlugin {
             purchasing = true
             defer { purchasing = false }
             do {
-                guard await testEnvironment() else {
+                guard !productID.isEmpty else {
+                    call.reject("StoreKit-Produkt ist für diesen Build nicht konfiguriert."); return
+                }
+                guard productionStoreEnabled || await testEnvironment() else {
                     call.reject("Dieser Build erlaubt ausschließlich StoreKit-Testkäufe."); return
                 }
                 if await owned() { call.resolve(["status": "purchased", "owned": true]); return }
                 guard let product = try await Product.products(for: [productID]).first, product.type == .nonConsumable else {
-                    call.reject("Testprodukt noch nicht eingerichtet."); return
+                    call.reject(productionStoreEnabled ? "Apple-Produkt ist noch nicht verfügbar." : "Testprodukt noch nicht eingerichtet."); return
                 }
                 switch try await product.purchase() {
                 case .success(let result):
