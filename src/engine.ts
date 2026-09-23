@@ -2070,7 +2070,17 @@ export class Match {
             pressure.captureMultiplier,
             "pioneer",
           );
-        this.effect("capture", point.x, point.y, capturer, 1.1);
+        this.effect(
+          "capture",
+          point.x,
+          point.y,
+          capturer,
+          1.1,
+          undefined,
+          CAPTURE_RADIUS,
+          CAPTURE_SECONDS,
+          "control-point",
+        );
         if (capturer === "player") this.state.stats.captured++;
       }
     }
