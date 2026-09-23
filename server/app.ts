@@ -4,13 +4,14 @@ import { createReadStream } from 'node:fs';
 import { realpath, stat } from 'node:fs/promises';
 import { resolve, sep, extname } from 'node:path';
 import { DuelService, duelMiddleware } from './duels';
+import { duelClientAddress } from '../src/duel-server-runtime';
 const MIME: Record<string,string> = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon','.woff2':'font/woff2','.woff':'font/woff','.webp':'image/webp'};
 export function startDuelClock(service: DuelService): () => void {
  let previous=performance.now();
  const timer=setInterval(()=>{const now=performance.now();service.tick((now-previous)/1000);previous=now;},1000/30);
  timer.unref();return ()=>clearInterval(timer);
 }
-export async function createFrontlineServer(directory: string, options: { maxRooms?: number; allowedOrigins?: readonly string[] } = {}) {
+export async function createFrontlineServer(directory: string, options: { maxRooms?: number; allowedOrigins?: readonly string[]; trustedProxyHops?: number } = {}) {
  const root=await realpath(directory);
  if(!(await stat(resolve(root,'index.html'))).isFile() || !(await stat(resolve(root,'duel.html'))).isFile()) throw Error('Spielbuild fehlt. Zuerst npm run build ausführen.');
  const service=new DuelService(Date.now, options.maxRooms ?? 12);const api=duelMiddleware(service, options.allowedOrigins ? [...options.allowedOrigins] : undefined);
@@ -25,7 +26,7 @@ export async function createFrontlineServer(directory: string, options: { maxRoo
    if(path==='/healthz') {if(req.method!=='GET'&&req.method!=='HEAD'){send(405,'Method not allowed');return;}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');res.end(req.method==='HEAD'?undefined:JSON.stringify({status:'ok'}));return;}
    if(path==='/readyz') {if(req.method!=='GET'&&req.method!=='HEAD'){send(405,'Method not allowed');return;}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');res.end(req.method==='HEAD'?undefined:JSON.stringify({status:'ready',...service.status()}));return;}
    if(path==='/api/duel') {
-    const now=Date.now(),ip=req.socket.remoteAddress??'unknown';
+    const now=Date.now(),ip=duelClientAddress(req.socket.remoteAddress,req.headers['x-forwarded-for'],options.trustedProxyHops??0);
     let bucket=clients.get(ip);
     if(!bucket || now-bucket.start>=10000){
      if(clients.size>=1000) for(const [key,item] of clients) if(now-item.start>=10000)clients.delete(key);
