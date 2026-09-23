@@ -1856,6 +1856,9 @@ export class Match {
           0.4,
           undefined,
           card.splashRadius,
+          card.splashDamage,
+          card.id,
+          attack.unit,
         );
         for (const nearby of this.state.units) {
           if (
