@@ -37,6 +37,13 @@ on:
           - debugging
           - release-testing
         default: debugging
+      store_mode:
+        description: StoreKit behavior embedded in the signed build
+        type: choice
+        options:
+          - sandbox
+          - production
+        default: sandbox
 permissions:
   contents: read
 concurrency:
@@ -72,6 +79,14 @@ jobs:
           MANIFEST="$(find "$APP" -name PrivacyInfo.xcprivacy -type f -print -quit)"
           test -n "$MANIFEST" || { echo "PrivacyInfo.xcprivacy missing from built app/SDK bundle." >&2; exit 1; }
           echo "Privacy manifest found: $MANIFEST"
+      - name: Verify unsigned StoreKit defaults
+        run: |
+          APP="releases/native-check/Build/Products/Release-iphoneos/App.app"
+          MODE=$(/usr/libexec/PlistBuddy -c 'Print :FrontlineStoreMode' "$APP/Info.plist")
+          PRODUCT=$(/usr/libexec/PlistBuddy -c 'Print :FrontlineStoreProductID' "$APP/Info.plist")
+          test "$MODE" = "sandbox"
+          test -n "$PRODUCT"
+          echo "Unsigned StoreKit configuration: $MODE / $PRODUCT"
       - name: Package unsigned IPA
         run: |
           APP="releases/native-check/Build/Products/Release-iphoneos/App.app"
@@ -108,6 +123,8 @@ jobs:
       EXPORT_METHOD: ${{ inputs.export_method }}
       VITE_DUEL_SERVER_URL: ${{ vars.IOS_DUEL_SERVER_URL }}
       VITE_PRIVACY_URL: ${{ vars.IOS_PRIVACY_URL }}
+      FRONTLINE_STORE_PRODUCT_ID: ${{ vars.IOS_STORE_PRODUCT_ID }}
+      FRONTLINE_STORE_MODE: ${{ inputs.store_mode }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -132,7 +149,13 @@ jobs:
             if (server.protocol !== "https:" || server.username || server.password || server.search || server.hash || server.pathname !== "/")
               throw new Error("IOS_DUEL_SERVER_URL must be an HTTPS origin only.");
           }
-          console.log("Signed release configuration validated.");
+          const product = process.env.FRONTLINE_STORE_PRODUCT_ID?.trim();
+          if (!product || !/^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$/.test(product))
+            throw new Error("Set IOS_STORE_PRODUCT_ID to the App Store Connect product identifier.");
+          const mode = process.env.FRONTLINE_STORE_MODE;
+          if (!["sandbox","production"].includes(mode))
+            throw new Error("Store mode must be sandbox or production.");
+          console.log(`Signed release configuration validated. StoreKit: ${mode} / ${product}`);
           NODE
       - name: Export personal test IPA
         env:

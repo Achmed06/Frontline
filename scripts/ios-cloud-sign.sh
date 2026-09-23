@@ -6,7 +6,10 @@ cd "$(dirname "$0")/.."
   echo 'This signing wrapper only runs on ephemeral GitHub-hosted macOS runners.' >&2; exit 1;
 }
 : "${RUNNER_TEMP:?}" "${IOS_CERTIFICATE_BASE64:?Missing certificate secret}" "${IOS_CERTIFICATE_PASSWORD:?Missing certificate password}" "${IOS_PROFILE_BASE64:?Missing profile secret}"
-: "${TEAM_ID:?}" "${BUNDLE_ID:?}" "${VITE_PRIVACY_URL:?Missing VITE_PRIVACY_URL}"
+: "${TEAM_ID:?}" "${BUNDLE_ID:?}" "${VITE_PRIVACY_URL:?Missing VITE_PRIVACY_URL}" "${FRONTLINE_STORE_PRODUCT_ID:?Missing FRONTLINE_STORE_PRODUCT_ID}"
+: "${FRONTLINE_STORE_MODE:=sandbox}"
+[[ "$FRONTLINE_STORE_MODE" == sandbox || "$FRONTLINE_STORE_MODE" == production ]] || { echo 'FRONTLINE_STORE_MODE must be sandbox or production.' >&2; exit 1; }
+[[ "$FRONTLINE_STORE_PRODUCT_ID" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$ ]] || { echo 'Invalid FRONTLINE_STORE_PRODUCT_ID.' >&2; exit 1; }
 [[ "$BUNDLE_ID" != "com.frontlinegame.app" ]] || { echo 'Refusing to sign the development placeholder bundle identifier.' >&2; exit 1; }
 node - <<'NODE'
 const privacy = process.env.VITE_PRIVACY_URL?.trim();
