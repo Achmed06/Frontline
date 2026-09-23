@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.74
+## Current v1.75
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1671,4 +1671,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies complete decks, partial decks, stable unit/tactic ordering, unknown-value safety and canonical card metadata
 - deck validity, card costs, stats, presets, mastery, saved deck slots, active series decks and all combat balance are unchanged
 - release: package 1.74.0 / v1.74 / iOS 1.74 (174)
+
+## v1.75 changes
+
+- commander selection is rebuilt as an explicit loadout decision instead of three long text cards with hard-to-compare values
+- the currently active commander now appears in a dedicated loadout hero with portrait, ability, role and cooldown before the alternative choices
+- ATLAS, LYRA and NOVA expose compact stat chips derived directly from their canonical combat definitions
+- ATLAS shows shield amount, duration and all-unit scope; LYRA shows healing, slow cleanse and all-unit scope; NOVA derives movement and attack bonuses from the shared tempo multipliers plus duration
+- each commander card receives a distinct but restrained defense, recovery or tempo presentation without implying a strength ranking
+- the active commander is clearly marked and its select button is disabled, preventing redundant save actions
+- alternative commanders retain one-tap selection and the same persistent commander save behavior
+- the lobby commander entry receives stronger touch/focus feedback and visual separation from surrounding meta cards
+- the selection layout becomes more compact on narrow phones while keeping portrait, ability, exact stats and description visible
+- a pure commanderBriefing helper centralizes displayed combat values so the selection UI does not duplicate magic numbers
+- regression coverage verifies ATLAS shield/duration/cooldown, LYRA heal/cleanse/cooldown and NOVA movement/attack/duration/cooldown against canonical definitions
+- commander effects, cooldowns, bot parity, campaign-fixed enemy commanders, series commander locking, saves and all combat balance remain unchanged
+- release: package 1.75.0 / v1.75 / iOS 1.75 (175)
 

@@ -95,6 +95,7 @@ import {
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { resultDecision, resultSnapshot } from "./result-debrief";
+import { commanderBriefing } from "./commander-briefing";
 import { lobbyCommandStatus } from "./lobby-command-status";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
@@ -1566,17 +1567,19 @@ function renderCommander(id: CommanderId) {
 }
 el("choose-commander").onclick = () => {
   if (active) return;
+  const activeBriefing = commanderBriefing(commanderId);
   showModal(
-    `<div class="eyebrow">DEIN KOMMANDO</div><h2>Schutz. Heilung. Angriff.</h2><p>Die Fähigkeit kostet keine Energie. Im freien Gefecht erhält der Bot denselben Kommandanten. Kampagneneinsätze können ein festes Gegnerkommando haben; die Kampfwerte bleiben gleich. Eine laufende Einsatzserie behält ihre bisherige Wahl.</p><div class="commander-roster">${(
+    `<section class="commander-loadout-hero ${activeBriefing.emphasis}"><div class="commander-loadout-art">${commanderSvg(commanderId)}</div><div><span>AKTIVES KOMMANDO</span><h2>${activeBriefing.name}</h2><b>${activeBriefing.ability}</b><small>${activeBriefing.role} · ${activeBriefing.cooldown}</small></div></section><div class="commander-loadout-intro"><div class="eyebrow">KOMMANDO WÄHLEN</div><p>Alle drei Fähigkeiten kosten keine Energie. Die Werte unten kommen direkt aus der tatsächlichen Kampflogik. Im freien Gefecht erhält der Bot denselben Kommandanten; Kampagneneinsätze können ein festes Gegnerkommando haben. Eine laufende Einsatzserie behält ihre bisherige Wahl.</p></div><div class="commander-roster">${(
       Object.keys(COMMANDERS) as CommanderId[]
     )
       .map((id) => {
         const c = COMMANDERS[id];
-        return `<article class="commander-option ${commanderId === id ? "selected" : ""}"><div class="commander-portrait">${commanderSvg(id)}</div><div><small>${c.role}</small><h3>${c.name}</h3><b>${c.ability}</b><p>${c.description}</p><small>${c.cooldown} SEKUNDEN ABKLINGZEIT</small><button data-commander="${id}" class="${commanderId === id ? "secondary" : "primary"}">${commanderId === id ? "AUSGEWÄHLT" : "KOMMANDO ÜBERNEHMEN"}</button></div></article>`;
+        const briefing = commanderBriefing(id);
+        return `<article class="commander-option ${briefing.emphasis} ${commanderId === id ? "selected" : ""}" data-commander-option="${id}"><div class="commander-portrait">${commanderSvg(id)}<span class="commander-current">${commanderId === id ? "AKTIV" : briefing.cooldown}</span></div><div class="commander-option-copy"><small>${c.role}</small><h3>${c.name}</h3><b>${c.ability}</b><div class="commander-stat-row">${briefing.stats.map((stat) => `<span>${stat}</span>`).join("")}</div><p>${c.description}</p><button data-commander="${id}" class="${commanderId === id ? "secondary" : "primary"}" ${commanderId === id ? "disabled" : ""}>${commanderId === id ? "AKTIVES KOMMANDO ✓" : "KOMMANDO ÜBERNEHMEN"}</button></div></article>`;
       })
       .join(
         "",
-      )}</div><button id="commander-close" class="secondary">Zur Basis</button>`,
+      )}</div><button id="commander-close" class="secondary commander-close">Zur Basis</button>`,
   );
   el("modal-content")
     .querySelectorAll<HTMLButtonElement>("[data-commander]")
