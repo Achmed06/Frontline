@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.80
+## Current v1.81
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1813,4 +1813,22 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - native integrity tests protect Info.plist keys, sandbox defaults, Swift build-config reads, signed export propagation and archive verification
 - entitlement checks, restore flow, verified StoreKit transactions, cosmetic-only benefits, gameplay and combat balance are unchanged
 - release: package 1.80.0 / v1.80 / iOS 1.80 (180)
+
+## v1.81 changes
+
+- the Einsatzbasis is deliberately simplified around three top-level choices: SPIELEN, EVENT and BASIS
+- SPIELEN is the default landing section and now leads with one large one-tap Schnellgefecht instead of presenting campaign, daily, series, draft, duel and training with equal weight
+- the one-tap main battle uses the clear baseline setup Taktiker + Core-Angriff while the existing free-battle controls remain available under Gefecht anpassen
+- Feldzug remains fully available under Spielen, including the next-mission hero and complete mission list, but no longer competes with the primary battle action
+- Freundesduell remains available as the second social play option rather than a separate top-level mode
+- EVENT exposes exactly one featured mode per local calendar day and rotates deterministically between Tagesfront, Draft and Einsatzserie
+- the featured Event card carries the real daily/series status where applicable, while all three existing event modes remain accessible under Andere Events
+- BASIS now contains the player's HQ, Commander, eight-card loadout, learning progression, chapter progress, history, backup and legal/help links
+- the old command-center strip remains internally available for progression/state calculation but is no longer part of the visible navigation hierarchy
+- returning from a match always lands back on SPIELEN with the primary one-tap battle focused, reinforcing the short battle → result → battle loop
+- narrow and short iPhone layouts compact the three-way navigation, primary battle hero and featured event without adding horizontal navigation
+- a pure focused-lobby helper defines the three allowed top-level labels and the deterministic daily event rotation
+- regression coverage verifies stable same-day rotation, three-day coverage of all existing event types and the intentionally limited SPIELEN/EVENT/BASIS hierarchy
+- no campaign missions, Tagesfront, Draft, Einsatzserie, Friend Duels, HQ, deck, Commander, progression, StoreKit, rewards or combat rules were removed
+- release: package 1.81.0 / v1.81 / iOS 1.81 (181)
 
