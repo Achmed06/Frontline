@@ -100,6 +100,7 @@ import { missionBriefingSnapshot } from "./mission-briefing";
 import { commanderBriefing } from "./commander-briefing";
 import { lobbyCommandStatus } from "./lobby-command-status";
 import { privacyPolicyUrl } from "./release-links";
+import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
@@ -118,26 +119,56 @@ app.innerHTML = `
     <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div>
     <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
-      <div class="base-status"><span><i></i> DEINE EINSATZBASIS</span><b id="base-stars">0 ★</b></div>
-      <nav class="command-status" aria-label="Einsatzstatus"><button id="status-campaign" data-status="campaign"><small>FELDZUG</small><b id="status-campaign-value">0/0</b><span id="status-campaign-detail">0 ★</span></button><button id="status-headquarters" data-status="headquarters"><small>HQ</small><b id="status-headquarters-value">BASIS</b><span id="status-headquarters-detail">0/0 Ausbildung</span></button><button id="status-daily" data-status="daily"><small>HEUTE</small><b id="status-daily-value">OFFEN</b><span id="status-daily-detail">Tagesfront</span></button></nav>
-      <section class="operation-hero">
-        <div class="hero-grid" aria-hidden="true"></div><div id="hero-portrait" class="hero-portrait" aria-hidden="true">${commanderSvg()}</div>
-        <div class="hero-copy"><span id="next-chapter" class="hero-kicker"></span><h2>DEINE FRONT.<br><em>DEIN VORSTOSS.</em></h2><p id="next-mission-name"></p><span id="next-mission-type" class="hero-mode"></span></div>
-        <div class="hero-bottom"><p id="next-mission-hint"></p><button id="continue-campaign" class="primary">VORRÜCKEN <span>↗</span></button></div>
+      <div class="base-status"><span><i></i> FRONTLINE</span><b id="base-stars">0 ★</b></div>
+      <nav class="main-loop-nav" aria-label="Hauptbereiche">
+        <button id="lobby-tab-play" data-lobby-section="play" class="active" aria-pressed="true"><b>SPIELEN</b><small>3 MIN</small></button>
+        <button id="lobby-tab-event" data-lobby-section="event" aria-pressed="false"><b>EVENT</b><small id="event-nav-label">HEUTE</small></button>
+        <button id="lobby-tab-base" data-lobby-section="base" aria-pressed="false"><b>BASIS</b><small>LOADOUT</small></button>
+      </nav>
+      <section id="lobby-panel-play" class="lobby-panel play-panel">
+        <section class="play-now-hero">
+          <div class="play-now-grid" aria-hidden="true"></div>
+          <div class="play-now-kicker">SCHNELLGEFECHT · GEGEN BOT</div>
+          <h2>3 MINUTEN.<br><em>EINE FRONT.</em></h2>
+          <p>Dein Deck. Dein Commander. Sofort ins Gefecht.</p>
+          <div class="play-now-meta"><span>TAKTIKER</span><span>CORE-ANGRIFF</span><span>3:00</span></div>
+          <button id="quick-play" class="primary play-now-button">JETZT SPIELEN <span>↗</span></button>
+        </section>
+        <div class="play-secondary-title"><span>MEHR SPIELEN</span><small>SOLO ODER MIT FREUND</small></div>
+        <section class="operation-hero compact-operation">
+          <div class="hero-grid" aria-hidden="true"></div><div id="hero-portrait" class="hero-portrait" aria-hidden="true">${commanderSvg()}</div>
+          <div class="hero-copy"><span id="next-chapter" class="hero-kicker"></span><h2>FELDZUG</h2><p id="next-mission-name"></p><span id="next-mission-type" class="hero-mode"></span></div>
+          <div class="hero-bottom"><p id="next-mission-hint"></p><button id="continue-campaign" class="primary">WEITER IM FELDZUG <span>↗</span></button></div>
+        </section>
+        <div class="play-secondary-actions"><button id="campaign" class="base-mode"><span class="mode-symbol">◈</span><span><b>ALLE MISSIONEN</b><small id="campaign-progress"></small></span><span>↗</span></button><a class="duel-launch primary" href="./duel.html">FREUNDESDUELL ↗ <small>Privater Raumcode</small></a></div>
+        <details class="quick-battle"><summary><span>GEFECHT ANPASSEN <small>STÄRKE · MODUS · ARENA</small></span><span>＋</span></summary><div class="training-control"><label for="difficulty">Gegnerstärke</label><select id="difficulty"><option value="rookie">Rekrut</option><option value="standard">Taktiker</option><option value="veteran">Veteran</option></select></div><div class="training-control"><label for="training-mode">Spielmodus</label><select id="training-mode"><option value="core">Core-Angriff</option><option value="control">Signalkrieg</option></select></div><div class="training-control"><label for="arena-theme">Schauplatz</label><select id="arena-theme">${Object.entries(ARENA_THEMES).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join("")}</select></div><button id="start" class="primary">ANGEPASSTES GEFECHT STARTEN <span>↗</span></button></details>
       </section>
-      <button id="headquarters" class="hq-launch"><span id="hq-mini-art" aria-hidden="true"></span><span><small>DEIN HAUPTQUARTIER</small><b id="hq-name"></b><small id="hq-next"></small><span class="hq-progress-track"><i id="hq-progress-fill"></i></span></span><span class="hq-open">BASIS ANSEHEN ↗</span></button>
-      <button id="learning" class="learning-launch"><span><small id="learning-count"></small><b id="learning-next"></b><small>AURORA-GESTALTUNG FREISPIELEN</small></span><span>↗</span></button>
-      <button id="daily" class="daily-launch"><span><small>TAGESFRONT · HEUTE</small><b id="daily-title">WIRD GELADEN</b><small id="daily-status"></small></span><span>ANTRETEN ↗</span></button>
-      <div class="base-section-title"><span>DEIN FELDZUG</span><span id="base-completed"></span></div>
-      <div id="chapter-track" class="chapter-track" aria-label="Kapitel-Fortschritt"></div>
-      <a class="duel-launch primary" href="./duel.html">FREUNDESDUELL ↗ <small>Raum erstellen oder mit Code beitreten</small></a><div class="base-modes">
-        <button id="campaign" class="base-mode"><span class="mode-symbol">◈</span><span><b>KAMPAGNE</b><small id="campaign-progress"></small></span><span>↗</span></button>
-        <button id="series" class="base-mode series-mode"><span class="mode-symbol">⋔</span><span><b>EINSATZSERIE</b><small id="series-preview">Ein Deck. Drei Siege.</small></span><span>↗</span></button>
-      </div>
-      <button id="draft" class="base-mode draft-launch"><span class="mode-symbol">▱</span><span><b>DRAFT-GEFECHT</b><small>8 Entscheidungen. Ein neues Deck.</small></span><span>↗</span></button>
-      <button id="choose-commander" class="commander-launch"><span id="commander-preview-art" aria-hidden="true"></span><span><small>DEIN KOMMANDANT</small><b id="commander-preview-name">ATLAS</b><small id="commander-preview-skill">AEGIS-SCHILD</small></span><span>WECHSELN ↗</span></button><button id="edit-deck" class="base-deck"><span class="base-section-title"><b>DEIN EINSATZDECK</b><span>ANPASSEN ↗</span></span><span id="deck-portraits" class="deck-portraits" aria-hidden="true"></span><small id="deck-preview"></small></button>
-      <details class="quick-battle"><summary><span>FREIES GEFECHT <small>DEIN MODUS · DEIN TEMPO</small></span><span>＋</span></summary><div class="training-control"><label for="difficulty">Gegnerstärke</label><select id="difficulty"><option value="rookie">Rekrut</option><option value="standard">Taktiker</option><option value="veteran">Veteran</option></select></div><div class="training-control"><label for="training-mode">Spielmodus</label><select id="training-mode"><option value="core">Core-Angriff</option><option value="control">Signalkrieg</option></select></div><div class="training-control"><label for="arena-theme">Schauplatz</label><select id="arena-theme">${Object.entries(ARENA_THEMES).map(([id, theme]) => `<option value="${id}">${theme.name}</option>`).join("")}</select></div><button id="start" class="primary">GEGEN BOT SPIELEN <span>↗</span></button></details>
-      <div class="lobby-links"><button id="lobby-help" class="text-btn">Feldhandbuch →</button><button id="history" class="text-btn">Gefechtsverlauf →</button></div><div class="lobby-legal"><button id="save-backup" class="text-btn">Spielstand sichern / übertragen →</button>${privacyUrl ? `<a class="text-btn privacy-link" href="${privacyUrl}" target="_blank" rel="noopener noreferrer">Datenschutz →</a>` : ""}</div><div class="base-footer">LOKAL GEGEN BOT · GLEICHE KAMPFWERTE</div>
+      <section id="lobby-panel-event" class="lobby-panel event-panel" hidden>
+        <section id="featured-event" class="featured-event" data-accent="mint">
+          <small id="featured-event-eyebrow">EVENT DES TAGES</small>
+          <h2 id="featured-event-title">TAGESFRONT</h2>
+          <p id="featured-event-hook">Eine feste Front. Heute zählt dein bester Lauf.</p>
+          <div id="featured-event-status" class="featured-event-status">HEUTE AKTIV</div>
+          <button id="featured-event-play" class="primary">EVENT SPIELEN <span>↗</span></button>
+        </section>
+        <details class="event-library"><summary><span>ANDERE EVENTS <small>BLEIBEN VERFÜGBAR</small></span><span>＋</span></summary>
+          <div class="event-library-grid">
+            <button id="daily" class="daily-launch"><span><small>TAGESFRONT</small><b id="daily-title">WIRD GELADEN</b><small id="daily-status"></small></span><span>↗</span></button>
+            <button id="series" class="base-mode series-mode"><span class="mode-symbol">⋔</span><span><b>EINSATZSERIE</b><small id="series-preview">Ein Deck. Drei Siege.</small></span><span>↗</span></button>
+            <button id="draft" class="base-mode draft-launch"><span class="mode-symbol">▱</span><span><b>DRAFT</b><small>8 Picks. Ein frisches Deck.</small></span><span>↗</span></button>
+          </div>
+        </details>
+      </section>
+      <section id="lobby-panel-base" class="lobby-panel base-panel" hidden>
+        <nav class="command-status" aria-label="Fortschrittsstatus" hidden><button id="status-campaign" data-status="campaign"><small>FELDZUG</small><b id="status-campaign-value">0/0</b><span id="status-campaign-detail">0 ★</span></button><button id="status-headquarters" data-status="headquarters"><small>HQ</small><b id="status-headquarters-value">BASIS</b><span id="status-headquarters-detail">0/0 Ausbildung</span></button><button id="status-daily" data-status="daily"><small>HEUTE</small><b id="status-daily-value">OFFEN</b><span id="status-daily-detail">Tagesfront</span></button></nav>
+        <button id="headquarters" class="hq-launch"><span id="hq-mini-art" aria-hidden="true"></span><span><small>DEIN HAUPTQUARTIER</small><b id="hq-name"></b><small id="hq-next"></small><span class="hq-progress-track"><i id="hq-progress-fill"></i></span></span><span class="hq-open">BASIS ANSEHEN ↗</span></button>
+        <button id="choose-commander" class="commander-launch"><span id="commander-preview-art" aria-hidden="true"></span><span><small>DEIN KOMMANDANT</small><b id="commander-preview-name">ATLAS</b><small id="commander-preview-skill">AEGIS-SCHILD</small></span><span>WECHSELN ↗</span></button>
+        <button id="edit-deck" class="base-deck"><span class="base-section-title"><b>DEIN EINSATZDECK</b><span>ANPASSEN ↗</span></span><span id="deck-portraits" class="deck-portraits" aria-hidden="true"></span><small id="deck-preview"></small></button>
+        <button id="learning" class="learning-launch"><span><small id="learning-count"></small><b id="learning-next"></b><small>AURORA-GESTALTUNG FREISPIELEN</small></span><span>↗</span></button>
+        <div class="base-section-title"><span>FORTSCHRITT</span><span id="base-completed"></span></div>
+        <div id="chapter-track" class="chapter-track" aria-label="Kapitel-Fortschritt"></div>
+        <div class="lobby-links"><button id="lobby-help" class="text-btn">Feldhandbuch →</button><button id="history" class="text-btn">Gefechtsverlauf →</button></div><div class="lobby-legal"><button id="save-backup" class="text-btn">Spielstand sichern / übertragen →</button>${privacyUrl ? `<a class="text-btn privacy-link" href="${privacyUrl}" target="_blank" rel="noopener noreferrer">Datenschutz →</a>` : ""}</div><div class="base-footer">DEIN LOADOUT · DEINE BASIS · DEIN FORTSCHRITT</div>
+      </section>
     </div></div>
     <div id="modal" class="overlay modal" hidden role="dialog" aria-modal="true" aria-label="Spielmenü"><div id="modal-content" class="modal-content"></div></div>
   </main>
@@ -162,6 +193,53 @@ window.visualViewport?.addEventListener(
 );
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
+
+let lobbySection: LobbySection = "play";
+function setLobbySection(section: LobbySection, moveFocus = false): void {
+  lobbySection = section;
+  for (const key of ["play", "event", "base"] as const) {
+    const activeSection = key === section;
+    el(`lobby-panel-${key}`).hidden = !activeSection;
+    const button = el<HTMLButtonElement>(`lobby-tab-${key}`);
+    button.classList.toggle("active", activeSection);
+    button.setAttribute("aria-pressed", String(activeSection));
+  }
+  if (!active) el("mode-label").textContent = lobbySectionLabel(section);
+  if (moveFocus) el<HTMLButtonElement>(`lobby-tab-${section}`).focus();
+}
+
+function updateFeaturedEvent(): void {
+  const event = featuredEvent(new Date());
+  const card = el<HTMLElement>("featured-event");
+  card.dataset.accent = event.accent;
+  el("featured-event-eyebrow").textContent = event.eyebrow;
+  el("featured-event-title").textContent = event.title;
+  el("featured-event-hook").textContent = event.hook;
+  el("featured-event-play").textContent = `${event.cta} ↗`;
+  el("event-nav-label").textContent = event.title;
+
+  if (event.id === "daily") {
+    const challenge = dailyChallenge();
+    const record = dailyRecord(dailyHistory, challenge.key);
+    el("featured-event-title").textContent = challenge.title;
+    el("featured-event-status").textContent = record?.completed
+      ? "HEUTE GESICHERT · BESTWERT VERBESSERN"
+      : record?.attempts
+        ? `${record.attempts} VERSUCH${record.attempts === 1 ? "" : "E"} · NOCH OFFEN`
+        : "NEUE FRONT · HEUTE";
+  } else if (event.id === "series") {
+    el("featured-event-status").textContent =
+      seriesRun && !seriesEnded(seriesRun)
+        ? `${seriesRun.wins}/3 SIEGE · ${Math.max(0, SERIES_LIVES - seriesRun.losses)} LEBEN`
+        : "3 SIEGE · 2 LEBEN";
+  } else {
+    el("featured-event-status").textContent = "8 PICKS · FRISCHES DECK";
+  }
+}
+
+for (const key of ["play", "event", "base"] as const)
+  el<HTMLButtonElement>(`lobby-tab-${key}`).onclick = () =>
+    setLobbySection(key, false);
 const sound = new Sound();
 sound.enabled = setting("sound") === "on";
 const stats = readStats();
@@ -510,7 +588,8 @@ function lobby() {
   el("lobby").hidden = false;
   el<HTMLButtonElement>("pause").disabled = true;
   el<HTMLButtonElement>("commander").disabled = true;
-  el("mode-label").textContent = "EINSATZBASIS";
+  setLobbySection("play");
+  updateFeaturedEvent();
   updateSelection();
   updateHud(true);
   updateRecord();
@@ -522,7 +601,7 @@ function lobby() {
   matchGoUntil = 0;
   pauseBeganAt = 0;
   startBannerShown = false;
-  el("continue-campaign").focus();
+  el("quick-play").focus();
 }
 function help(fromPause = false) {
   const wasPlaying = active && !ended;
@@ -1315,6 +1394,7 @@ function updateDaily() {
       : `${challenge.difficulty === "veteran" ? "Veteran" : "Taktiker"} · ${dailyObjective(challenge)}`;
   el("daily").classList.toggle("complete", !!record?.completed);
   updateLobbyCommandCenter();
+  updateFeaturedEvent();
 }
 function openDaily() {
   if (active) return;
@@ -1622,6 +1702,17 @@ function openDraft() {
 }
 el("draft").onclick = openDraft;
 el("series").onclick = openSeries;
+el("quick-play").onclick = () => {
+  el<HTMLSelectElement>("difficulty").value = "standard";
+  el<HTMLSelectElement>("training-mode").value = "core";
+  start();
+};
+el("featured-event-play").onclick = () => {
+  const event = featuredEvent(new Date());
+  if (event.id === "daily") openDaily();
+  else if (event.id === "draft") openDraft();
+  else openSeries();
+};
 el("start").onclick = () => start();
 el("lobby-help").onclick = () => help();
 el("help").onclick = () => help();
