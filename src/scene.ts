@@ -70,6 +70,7 @@ import { repulsorCastVisual } from "./repulsor-cast-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
 import { mortarBlastVisual } from "./mortar-blast-visual";
 import { rallyCastVisual } from "./rally-cast-visual";
+import { novaTempoActivationVisual } from "./nova-tempo-activation-visual";
 import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 
@@ -5008,6 +5009,174 @@ export class ArenaScene extends Phaser.Scene {
               e.x + commandReach * 0.68,
               e.y - direction * 14,
             );
+          } else {
+            const novaTempo = novaTempoActivationVisual(e);
+            if (novaTempo) {
+              const tempoColor = 0xffdf6b;
+              const brightTempo = 0xfff4b3;
+              const hotTempo = 0xffbd59;
+              const direction =
+                e.team === "player" ? -1 : 1;
+              const rotation = this.reducedMotion
+                ? e.id * 0.09
+                : e.id * 0.09 +
+                  novaTempo.progress * 0.46;
+              const travel = this.reducedMotion
+                ? 0.58
+                : (novaTempo.progress * 2.5) % 1;
+
+              fx.fillStyle(
+                tempoColor,
+                novaTempo.alpha * 0.05,
+              );
+              fx.fillCircle(
+                e.x,
+                e.y,
+                novaTempo.shellRadius,
+              );
+
+              fx.lineStyle(
+                2.5,
+                tempoColor,
+                novaTempo.alpha * 0.92,
+              );
+              fx.strokeCircle(
+                e.x,
+                e.y,
+                novaTempo.shellRadius,
+              );
+
+              fx.lineStyle(
+                1.25,
+                brightTempo,
+                novaTempo.alpha * 0.58,
+              );
+              fx.strokeCircle(
+                e.x,
+                e.y,
+                novaTempo.surgeRadius,
+              );
+
+              for (
+                let tick = 0;
+                tick < novaTempo.tickCount;
+                tick++
+              ) {
+                const angle =
+                  rotation +
+                  (tick * Math.PI * 2) /
+                    novaTempo.tickCount;
+                const tx = Math.cos(angle);
+                const ty = Math.sin(angle);
+                const inner =
+                  novaTempo.shellRadius -
+                  novaTempo.tickLength;
+                const outer =
+                  novaTempo.shellRadius +
+                  (tick % 2 === 0 ? 2.5 : 0);
+
+                fx.lineStyle(
+                  tick % 2 === 0 ? 1.7 : 1,
+                  tick % 2 === 0
+                    ? brightTempo
+                    : hotTempo,
+                  novaTempo.alpha *
+                    (tick % 2 === 0 ? 0.76 : 0.48),
+                );
+                fx.lineBetween(
+                  e.x + tx * inner,
+                  e.y + ty * inner,
+                  e.x + tx * outer,
+                  e.y + ty * outer,
+                );
+              }
+
+              const spacing =
+                novaTempo.unitRadius * 0.85 + 3;
+              for (
+                let chevron = 0;
+                chevron < novaTempo.chevronCount;
+                chevron++
+              ) {
+                const side =
+                  chevron -
+                  (novaTempo.chevronCount - 1) / 2;
+                const cx =
+                  e.x + side * spacing;
+                const baseY =
+                  e.y -
+                  direction *
+                    (4 + travel * 15);
+                const tipY =
+                  baseY +
+                  direction *
+                    novaTempo.chevronReach;
+                const half =
+                  3.4 + novaTempo.moveBoost * 5;
+
+                fx.lineStyle(
+                  Math.abs(side) < 0.6 ? 2.1 : 1.35,
+                  chevron % 2 === 0
+                    ? brightTempo
+                    : tempoColor,
+                  novaTempo.alpha *
+                    (0.54 +
+                      novaTempo.strength * 0.24),
+                );
+                fx.lineBetween(
+                  cx - half,
+                  baseY -
+                    direction *
+                      novaTempo.chevronReach *
+                      0.55,
+                  cx,
+                  tipY,
+                );
+                fx.lineBetween(
+                  cx + half,
+                  baseY -
+                    direction *
+                      novaTempo.chevronReach *
+                      0.55,
+                  cx,
+                  tipY,
+                );
+              }
+
+              const bolt =
+                5 + novaTempo.attackBoost * 10;
+              fx.lineStyle(
+                1.8,
+                brightTempo,
+                novaTempo.alpha * 0.74,
+              );
+              fx.lineBetween(
+                e.x - bolt * 0.2,
+                e.y - direction * bolt,
+                e.x + bolt * 0.38,
+                e.y - direction * 1.5,
+              );
+              fx.lineBetween(
+                e.x + bolt * 0.38,
+                e.y - direction * 1.5,
+                e.x - bolt * 0.12,
+                e.y + direction * bolt,
+              );
+
+              const lane =
+                novaTempo.shellRadius * 0.72;
+              fx.lineStyle(
+                1,
+                tempoColor,
+                novaTempo.alpha * 0.42,
+              );
+              fx.lineBetween(
+                e.x - lane,
+                e.y + direction * 5,
+                e.x + lane,
+                e.y + direction * 5,
+              );
+            }
           }
         }
         if (e.type === "stasis") {
