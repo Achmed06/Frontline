@@ -4,3 +4,293 @@
 .deck-analysis .analysis-counts span { padding: 5px 7px; border-radius: 5px; background: #284d72; font-size: 11px; }
 .deck-analysis p { margin: 7px 0; font-size: 11px; line-height: 1.5; color: #d1e6f9; }
 .deck-analysis > small { font-size: 10px; color: #a8c3e1; }
+
+/* v1.74: active 6+2 loadout rail and deck-builder hierarchy. */
+.deck-loadout {
+  margin: 10px 0 13px;
+  padding: 11px;
+  border: 1px solid #4d685a;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 12% 0%, #7cdca818, transparent 36%),
+    linear-gradient(155deg, #173029, #12251f);
+  box-shadow: 0 8px 22px #04100d2b;
+}
+.deck-loadout-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.deck-loadout-head small {
+  display: block;
+  color: #789387;
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+.deck-loadout-head b {
+  display: block;
+  margin-top: 3px;
+  color: #d7e5d3;
+  font: 700 17px/1 "Barlow Condensed", Impact, sans-serif;
+  letter-spacing: .4px;
+}
+.deck-loadout-head > span {
+  color: #93ad9b;
+  font-size: 8px;
+  letter-spacing: .7px;
+}
+.deck-loadout-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 5px;
+}
+.deck-loadout-slot {
+  position: relative;
+  min-width: 0;
+  min-height: 86px;
+  overflow: hidden;
+  padding: 4px 4px 6px;
+  border: 1px solid #456251;
+  border-radius: 7px;
+  background:
+    linear-gradient(155deg, #23392f, #172a24);
+  color: #d9e8d6;
+  text-align: center;
+}
+button.deck-loadout-slot {
+  cursor: pointer;
+}
+.deck-loadout-slot.ability {
+  border-color: #687796;
+  background:
+    linear-gradient(155deg, #27384d, #1b2b3c);
+}
+.deck-loadout-slot.empty {
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  border-style: dashed;
+  background: #13251f;
+  color: #71877a;
+}
+.deck-loadout-slot.empty.ability {
+  background: #162536;
+  color: #768aa4;
+}
+.deck-loadout-slot.empty > span {
+  font-size: 20px;
+  line-height: 1;
+  opacity: .7;
+}
+.deck-loadout-slot.empty b {
+  font-size: 6px;
+  letter-spacing: .55px;
+}
+.deck-loadout-slot.empty small {
+  font-size: 5px;
+  letter-spacing: .45px;
+}
+.loadout-art {
+  display: block;
+  height: 48px;
+  margin: -1px auto 0;
+  background:
+    radial-gradient(circle, #75c69a27, transparent 67%);
+}
+.deck-loadout-slot.ability .loadout-art {
+  background:
+    radial-gradient(circle, #829dcc24, transparent 67%);
+}
+.loadout-art svg {
+  width: 100%;
+  height: 48px;
+}
+.deck-loadout-slot > i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  min-width: 19px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 9px;
+  background: #162720e8;
+  color: #e7dc82;
+  font: 800 7px/17px monospace;
+  font-style: normal;
+}
+.deck-loadout-slot > b {
+  display: block;
+  overflow: hidden;
+  margin-top: 1px;
+  color: #eef2dc;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deck-loadout-slot > small {
+  display: block;
+  margin-top: 2px;
+  color: #799385;
+  font-size: 5.5px;
+  letter-spacing: .45px;
+}
+.deck-loadout-slot.ability > small {
+  color: #8397b2;
+}
+.deck-loadout-slot > em {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid #7da18b55;
+  border-radius: 50%;
+  background: #0c1917b8;
+  color: #a8c7b2;
+  font: 700 10px/14px sans-serif;
+  font-style: normal;
+  opacity: .72;
+}
+.deck-loadout-slot:hover,
+.deck-loadout-slot:focus-visible {
+  border-color: #cbe99e;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px #03100d3d;
+}
+.deck-loadout-slot:hover > em,
+.deck-loadout-slot:focus-visible > em {
+  color: #ffe8d7;
+  border-color: #e99d8266;
+  background: #482922cf;
+  opacity: 1;
+}
+
+.deck-summary {
+  padding: 7px 9px;
+  border: 1px solid #3c5446;
+  border-radius: 6px;
+  background: #13251e;
+}
+.deck-summary.ready {
+  border-color: #6f956d;
+  background:
+    linear-gradient(90deg, #1c3425, #172a20);
+  box-shadow: inset 0 0 0 1px #c9ef9e0d;
+}
+.deck-summary.ready strong {
+  color: #d4f2a6;
+}
+
+.deck-presets button.active {
+  border-color: #e3d276;
+  background: linear-gradient(145deg, #4a482c, #2d3e2e);
+  color: #fff0a8;
+  box-shadow: inset 0 -2px #e4d276;
+}
+.deck-presets button.active::after {
+  content: " ✓";
+}
+
+.deck-analysis {
+  border-color: #49665b;
+  background:
+    linear-gradient(145deg, #17342f, #172d36);
+  box-shadow: 0 6px 18px #06131b22;
+}
+.deck-analysis > b {
+  color: #e7dc82;
+}
+.deck-analysis .analysis-counts span {
+  border: 1px solid #6c879044;
+  background: #24443f;
+}
+
+.roster-card {
+  transition:
+    border-color .15s ease,
+    transform .15s ease,
+    box-shadow .15s ease,
+    background .15s ease;
+}
+.roster-card:hover,
+.roster-card:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 13px #05101938;
+}
+.roster-card.chosen {
+  border-color: #e9dc7a;
+  background:
+    linear-gradient(120deg, #3a4930, #263a31);
+  box-shadow:
+    inset 0 0 0 1px #f0dc7440,
+    0 5px 14px #07130d35;
+}
+.roster-card.chosen .roster-check {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e2d36c;
+  color: #253324;
+  font-weight: 900;
+}
+
+#deck-save.ready {
+  min-height: 50px;
+  border-color: #e7e0a0;
+  box-shadow:
+    0 5px 0 #735e2d,
+    0 10px 22px #d8c56320;
+}
+#deck-save.ready span {
+  display: inline-block;
+  transform: translateX(2px);
+}
+.modal-content > .deck-message {
+  padding: 8px 10px;
+  border-left: 2px solid #6f8d70;
+  background: #13261f;
+  border-radius: 0 5px 5px 0;
+}
+
+@media (max-width: 520px) {
+  .deck-loadout-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .deck-loadout-slot {
+    min-height: 82px;
+  }
+}
+
+@media (max-width: 380px) {
+  .deck-loadout {
+    margin-block: 8px 11px;
+    padding: 8px;
+  }
+  .deck-loadout-grid {
+    gap: 4px;
+  }
+  .deck-loadout-slot {
+    min-height: 76px;
+    padding-inline: 3px;
+  }
+  .loadout-art,
+  .loadout-art svg {
+    height: 42px;
+  }
+  .deck-loadout-slot > b {
+    font-size: 6.3px;
+  }
+  .deck-loadout-slot > small {
+    font-size: 5px;
+  }
+  .deck-loadout-head b {
+    font-size: 15px;
+  }
+}
+
