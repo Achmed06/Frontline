@@ -96,6 +96,7 @@ import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { resultDecision, resultSnapshot } from "./result-debrief";
 import { resultMomentum } from "./result-loop";
+import { nextBattleProgress } from "./battle-progress";
 import { dailyPreparation, seriesPreparation } from "./mode-preparation";
 import { missionBriefingSnapshot } from "./mission-briefing";
 import { commanderBriefing } from "./commander-briefing";
@@ -133,6 +134,11 @@ app.innerHTML = `
           <h2>3 MINUTEN.<br><em>EINE FRONT.</em></h2>
           <p>Dein Deck. Dein Commander. Sofort ins Gefecht.</p>
           <div class="play-now-meta"><span>TAKTIKER</span><span>CORE-ANGRIFF</span><span>3:00</span></div>
+          <section id="play-progress" class="play-progress" aria-label="Nächster Fortschritt">
+            <div><small id="play-progress-kicker">NÄCHSTER FORTSCHRITT</small><b id="play-progress-title">Feldausbildung</b><span id="play-progress-detail"></span></div>
+            <div class="play-progress-side"><strong id="play-progress-count">0/1</strong><em id="play-progress-reward"></em></div>
+            <div class="play-progress-track"><i id="play-progress-fill"></i></div>
+          </section>
           <button id="quick-play" class="primary play-now-button">JETZT SPIELEN <span>↗</span></button>
         </section>
         <div class="play-secondary-title"><span>MEHR SPIELEN</span><small>SOLO ODER MIT FREUND</small></div>
@@ -248,6 +254,22 @@ const history = readHistory();
 let campaignProgress = readCampaign();
 let learningProgress = readLearning();
 let mastery = readMastery();
+
+function updateBattleProgress(): void {
+  const cue = nextBattleProgress(learningProgress, mastery, deck);
+  const panel = el<HTMLElement>("play-progress");
+  panel.hidden = !cue;
+  if (!cue) return;
+  el("play-progress-kicker").textContent = cue.kicker;
+  el("play-progress-title").textContent = cue.title;
+  el("play-progress-detail").textContent = cue.detail;
+  el("play-progress-count").textContent = `${cue.current}/${cue.goal}`;
+  el("play-progress-reward").textContent = cue.reward;
+  el<HTMLElement>("play-progress-fill").style.width =
+    `${Math.round(Math.max(0, Math.min(1, cue.progress)) * 100)}%`;
+  panel.dataset.kind = cue.kind;
+}
+
 let activeMission: Mission | null = null;
 const savedArena = setting("arena-theme");
 let arenaTheme: ArenaThemeId = isArenaTheme(savedArena) ? savedArena : "coast";
@@ -596,6 +618,7 @@ function lobby() {
   updateRecord();
   updateCampaignProgress();
   updateDaily();
+  updateBattleProgress();
   el("battle-banner").hidden = true;
   el("deployment-countdown").hidden = true;
   matchReadyAt = 0;
@@ -709,6 +732,14 @@ function finish() {
   const learningSaved = saveLearning(learningProgress);
   const learned = completedLessons(learningProgress) - previousLessonCount;
   const newBaseStage = baseStage(Object.keys(campaignProgress).length);
+  const nextProgress = nextBattleProgress(
+    learningProgress,
+    mastery,
+    match.decks.player,
+  );
+  const nextProgressResult = nextProgress
+    ? `<section class="result-next-progress" data-kind="${nextProgress.kind}"><small>${nextProgress.kicker}</small><div><b>${nextProgress.title}</b><span>${nextProgress.current}/${nextProgress.goal} · ${nextProgress.reward}</span></div><div class="result-next-progress-track"><i style="width:${Math.round(Math.max(0, Math.min(1, nextProgress.progress)) * 100)}%"></i></div></section>`
+    : "";
   const rewardResult = `<div class="learning-result"><b>${learned > 0 ? `${learned} LERNAUFTRAG${learned > 1 ? "E" : ""} ERFÜLLT` : "DEIN LERNPFAD"}</b><p>${completedLessons(learningProgress)}/${LESSONS.length} abgeschlossen${learned > 0 && completedLessons(learningProgress) === LESSONS.length ? " · Aurora-Gestaltung freigeschaltet! In deiner Basis ausrüsten." : " · Fortschritt bleibt auch bei Niederlagen erhalten."}</p>${newBaseStage > previousBaseStage ? `<p>HAUPTQUARTIER AUSGEBAUT: ${BASE_STAGES[newBaseStage].name}${previousBaseStage < 3 && newBaseStage >= 3 ? " · Glut-Gestaltung freigeschaltet!" : ""}</p>` : ""}${!learningSaved ? "<small>Lernfortschritt nur für diese Sitzung gespeichert.</small>" : ""}</div>`;
   updateHeadquarters();
   history.unshift(report);
@@ -732,7 +763,7 @@ function finish() {
     ? `<button id="next-mission" class="primary result-next-primary">NÄCHSTER EINSATZ <span>↗</span></button><button id="rematch" class="secondary">${rematchLabel} <span>↗</span></button>`
     : `<button id="rematch" class="primary result-next-primary">${rematchLabel} <span>↗</span></button>`;
   showModal(
-    `<section class="result-hero outcome-${snapshot.outcome}"><div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="result-hero-copy"><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p></div><div class="result-snapshot" aria-label="Endstand"><div class="player"><small>DEIN CORE</small><strong>${snapshot.playerCorePercent}%</strong><span>${snapshot.playerPoints}/9 GEBIETE</span></div><i aria-hidden="true">VS</i><div class="enemy"><small>GEGNER CORE</small><strong>${snapshot.enemyCorePercent}%</strong><span>${snapshot.enemyPoints}/9 GEBIETE</span></div></div></section><section class="result-momentum tone-${momentum.tone}"><small>${momentum.label}</small><div><strong>${momentum.streak >= 2 ? momentum.streak : won ? "↗" : draw ? "＝" : "↺"}</strong><span><b>${momentum.title}</b><em>${momentum.detail}</em></span></div></section><section class="result-actions result-actions-fast" aria-label="Nächste Aktion">${nextAction}<button id="back" class="text-btn result-back">SPIELEN-MENÜ</button></section><section class="result-progress-stack" aria-label="Fortschritt und Belohnungen">${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}</section><details class="result-report"><summary><span>GEFECHTSBERICHT</span><small>WERTUNG · KARTE · STATISTIKEN</small><b>＋</b></summary><div class="result-report-body">${decisionResult}${finalFrontMap()}<section class="result-performance" aria-label="Gefechtsleistung"><header><small>GEFECHTSLEISTUNG</small><span>DEINE AKTIONEN</span></header><div class="result-stats"><div><strong>${snapshot.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${snapshot.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${snapshot.kills}</strong><span>ABSCHÜSSE</span></div><div><strong>${snapshot.abilities}</strong><span>FÄHIGKEITEN</span></div></div></section>${resultComparison(report)}<div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div></div></details>`,
+    `<section class="result-hero outcome-${snapshot.outcome}"><div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="result-hero-copy"><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p></div><div class="result-snapshot" aria-label="Endstand"><div class="player"><small>DEIN CORE</small><strong>${snapshot.playerCorePercent}%</strong><span>${snapshot.playerPoints}/9 GEBIETE</span></div><i aria-hidden="true">VS</i><div class="enemy"><small>GEGNER CORE</small><strong>${snapshot.enemyCorePercent}%</strong><span>${snapshot.enemyPoints}/9 GEBIETE</span></div></div></section><section class="result-momentum tone-${momentum.tone}"><small>${momentum.label}</small><div><strong>${momentum.streak >= 2 ? momentum.streak : won ? "↗" : draw ? "＝" : "↺"}</strong><span><b>${momentum.title}</b><em>${momentum.detail}</em></span></div></section><section class="result-actions result-actions-fast" aria-label="Nächste Aktion">${nextAction}<button id="back" class="text-btn result-back">SPIELEN-MENÜ</button></section><section class="result-progress-stack" aria-label="Fortschritt und Belohnungen">${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${nextProgressResult}</section><details class="result-report"><summary><span>GEFECHTSBERICHT</span><small>WERTUNG · KARTE · STATISTIKEN</small><b>＋</b></summary><div class="result-report-body">${decisionResult}${finalFrontMap()}<section class="result-performance" aria-label="Gefechtsleistung"><header><small>GEFECHTSLEISTUNG</small><span>DEINE AKTIONEN</span></header><div class="result-stats"><div><strong>${snapshot.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${snapshot.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${snapshot.kills}</strong><span>ABSCHÜSSE</span></div><div><strong>${snapshot.abilities}</strong><span>FÄHIGKEITEN</span></div></div></section>${resultComparison(report)}<div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div></div></details>`,
   );
   el("rematch").onclick = () => {
     if (wasDraft) {
@@ -747,6 +778,7 @@ function finish() {
   };
   if (nextMission) el("next-mission").onclick = () => start(false, nextMission);
   el("back").onclick = lobby;
+  updateBattleProgress();
   el<HTMLButtonElement>(nextMission ? "next-mission" : "rematch").focus({
     preventScroll: true,
   });
@@ -1241,6 +1273,7 @@ el("edit-deck").onclick = () => {
     (next) => {
       deck = [...next];
       const persisted = saveDeck(deck);
+      updateBattleProgress();
       match = new Match({ playerDeck: deck, playerCommander: commanderId });
       renderCards();
       updateSelection();
