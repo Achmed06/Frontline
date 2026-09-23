@@ -16,6 +16,14 @@ on:
       - "vite.config.ts"
       - "capacitor.config.ts"
       - ".github/workflows/ios-test.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - "scripts/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/ios-test.yml"
   workflow_dispatch:
     inputs:
       signed_ipa:
