@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.52
+## Current v1.53
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1312,3 +1312,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure breakerShieldVisual helper centralizes exact removal strength, attacker vector, slash reach, cross reach and fragment count
 - regression coverage verifies exact 45/10 removal metadata, directional geometry, symmetric fallback and the previously missing special-depletion shield-break event
 - release: package 1.52.0 / v1.52 / iOS 1.52 (152)
+
+
+## v1.53 changes
+
+- active Pioneer capture acceleration is now visible during the capture itself instead of only becoming distinct after the relay is secured
+- the specialist signature reads directly from controlPointPressure.captureMultiplier, so the existing 1.5x Pioneer bonus is the single source of truth for the visual
+- a specialist relay ring, rotating capture nodes and directional advance chevrons appear only while a real accelerated capture is in progress
+- ordinary group support still affects the total capture multiplier, but does not falsely increase Pioneer specialist strength; the two mechanics remain visually and logically distinct
+- the existing capture-progress arc, exact seconds remaining, group dots, multiplier text, contested feedback and final Pioneer secure effect all remain intact
+- the specialist pulse scale reflects the actual combined captureMultiplier × groupMultiplier, making a Pioneer supported by multiple allies visibly more forceful without inventing extra capture speed
+- reverse, contested, decay and ordinary 1.0x capture states do not show Pioneer specialist geometry
+- Reduced Motion freezes specialist rotation while preserving the ring, nodes and directional chevrons
+- capture speed, 1.5x Pioneer multiplier, group support, contest rules, supply rules and all balance values are unchanged
+- a pure captureSpecialistVisual helper centralizes exact specialist boost, total multiplier, node/chevron counts, ring geometry and pulse scale
+- regression coverage verifies the exact 1.5x Pioneer signature, group-vs-specialist separation, non-specialist suppression and malformed fallback
+- release: package 1.53.0 / v1.53 / iOS 1.53 (153)

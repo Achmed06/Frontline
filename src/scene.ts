@@ -15,6 +15,7 @@ import { unitSvg } from "./art";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { matchOvertimeVisual } from "./match-overtime-visual";
 import { controlPointVisual } from "./control-point-visual";
+import { captureSpecialistVisual } from "./capture-specialist-visual";
 import { impactProfile } from "./combat-feedback";
 import { deathBurstDirection } from "./death-burst-direction";
 import { impactDirectionVisual } from "./impact-direction-visual";
@@ -901,6 +902,8 @@ export class ArenaScene extends Phaser.Scene {
             : relayVisual.team === "enemy"
               ? CORAL
               : NEUTRAL;
+        const specialistVisual =
+          captureSpecialistVisual(pressure);
         const relayPulse = this.reducedMotion
           ? 0.72
           : 0.55 + 0.3 * Math.sin(this.clock * (relayVisual.critical ? 6 : 3) + p.id);
@@ -978,6 +981,144 @@ export class ArenaScene extends Phaser.Scene {
               );
             }
           }
+        if (specialistVisual.active) {
+          const specialistColor =
+            pressure.capturer === "player" ? 0x75f0ad : 0xffa986;
+          const brightSpecialist =
+            pressure.capturer === "player" ? 0xd9ffe9 : 0xffe7db;
+          const direction =
+            pressure.capturer === "enemy" ? -1 : 1;
+          const rotation = this.reducedMotion
+            ? -Math.PI / 2
+            : -Math.PI / 2 +
+              this.clock * specialistVisual.sweepSpeed * direction;
+          const pulse = this.reducedMotion
+            ? 0.8
+            : 0.7 +
+              Math.sin(
+                this.clock * 5.8 + p.id * 0.71,
+              ) *
+                0.1;
+
+          g.lineStyle(
+            1.6 + specialistVisual.specialistBoost * 0.8,
+            specialistColor,
+            specialistVisual.alpha * pulse,
+          );
+          g.strokeCircle(
+            p.x,
+            p.y,
+            specialistVisual.ringRadius,
+          );
+
+          for (
+            let node = 0;
+            node < specialistVisual.nodeCount;
+            node++
+          ) {
+            const angle =
+              rotation +
+              (node * Math.PI * 2) /
+                specialistVisual.nodeCount;
+            const nx = Math.cos(angle);
+            const ny = Math.sin(angle);
+            const x =
+              p.x +
+              nx *
+                specialistVisual.ringRadius;
+            const y =
+              p.y +
+              ny *
+                specialistVisual.ringRadius;
+
+            g.fillStyle(
+              node % 2 === 0
+                ? brightSpecialist
+                : specialistColor,
+              specialistVisual.alpha *
+                (0.56 +
+                  specialistVisual.specialistBoost * 0.22),
+            );
+            g.fillCircle(
+              x,
+              y,
+              1.5 +
+                specialistVisual.specialistBoost * 0.8,
+            );
+
+            if (node % 2 === 0) {
+              const tangentX = -ny;
+              const tangentY = nx;
+              const half = 2.6 + specialistVisual.specialistBoost * 1.6;
+              g.lineStyle(
+                1,
+                brightSpecialist,
+                specialistVisual.alpha * 0.5,
+              );
+              g.lineBetween(
+                x - tangentX * half,
+                y - tangentY * half,
+                x + tangentX * half,
+                y + tangentY * half,
+              );
+            }
+          }
+
+          const advanceY =
+            p.y +
+            (pressure.capturer === "player" ? 1 : -1) *
+              (specialistVisual.ringRadius + 7);
+          for (
+            let chevron = 0;
+            chevron < specialistVisual.chevronCount;
+            chevron++
+          ) {
+            const offset =
+              (chevron -
+                (specialistVisual.chevronCount - 1) / 2) *
+              8;
+            const cx = p.x + offset;
+            const reach = specialistVisual.chevronReach;
+            g.lineStyle(
+              chevron ===
+                Math.floor(
+                  specialistVisual.chevronCount / 2,
+                )
+                ? 2
+                : 1.35,
+              specialistColor,
+              specialistVisual.alpha * 0.78,
+            );
+            g.lineBetween(
+              cx - reach,
+              advanceY -
+                direction * reach * 0.6,
+              cx,
+              advanceY,
+            );
+            g.lineBetween(
+              cx + reach,
+              advanceY -
+                direction * reach * 0.6,
+              cx,
+              advanceY,
+            );
+          }
+
+          g.lineStyle(
+            1,
+            brightSpecialist,
+            specialistVisual.alpha *
+              (0.34 +
+                specialistVisual.specialistBoost * 0.22),
+          );
+          g.strokeCircle(
+            p.x,
+            p.y,
+            36 * specialistVisual.pulseScale,
+          );
+        }
+
         } else if (relayVisual.stage === "decay") {
           for (let i = 0; i < 8; i++) {
             const angle = i * (Math.PI / 4) - Math.PI / 2;
