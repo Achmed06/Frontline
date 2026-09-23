@@ -1250,7 +1250,17 @@ export class Match {
       this.removeDead();
       this.checkCoreEnd();
     } else if (card.id === "rally") {
-      this.effect("rally", x, y, team, 0.8);
+      this.effect(
+        "rally",
+        x,
+        y,
+        team,
+        0.8,
+        undefined,
+        card.range,
+        card.heal,
+        card.id,
+      );
       for (const unit of this.state.units) {
         if (!targetIds.has(unit.id)) continue;
         const healing = targetHealing.get(unit.id) ?? 0;
