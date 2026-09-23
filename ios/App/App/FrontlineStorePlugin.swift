@@ -67,7 +67,12 @@ public class FrontlineStorePlugin: CAPPlugin, CAPBridgedPlugin {
                     return
                 }
                 let product = try await Product.products(for: [productID]).first
-                let environmentAllowed = productionStoreEnabled || await testEnvironment()
+                let environmentAllowed: Bool
+                if productionStoreEnabled {
+                    environmentAllowed = true
+                } else {
+                    environmentAllowed = await testEnvironment()
+                }
                 call.resolve([
                     "available": product?.type == .nonConsumable && environmentAllowed,
                     "price": product?.displayPrice ?? "",
@@ -85,7 +90,13 @@ public class FrontlineStorePlugin: CAPPlugin, CAPBridgedPlugin {
                 guard !productID.isEmpty else {
                     call.reject("StoreKit-Produkt ist für diesen Build nicht konfiguriert."); return
                 }
-                guard productionStoreEnabled || await testEnvironment() else {
+                let environmentAllowed: Bool
+                if productionStoreEnabled {
+                    environmentAllowed = true
+                } else {
+                    environmentAllowed = await testEnvironment()
+                }
+                guard environmentAllowed else {
                     call.reject("Dieser Build erlaubt ausschließlich StoreKit-Testkäufe."); return
                 }
                 if await owned() { call.resolve(["status": "purchased", "owned": true]); return }
