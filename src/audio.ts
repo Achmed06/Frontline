@@ -1,39 +1,248 @@
+export type SoundCue =
+  | "select"
+  | "deploy"
+  | "capture"
+  | "warning"
+  | "opportunity"
+  | "overtime"
+  | "lastPush"
+  | "error"
+  | "win"
+  | "lose"
+  | "draw"
+  | "ability"
+  | "commander"
+  | "enemyCommander"
+  | "start";
+
+export type ToneLayer = {
+  wave: "sine" | "triangle" | "square" | "sawtooth";
+  from: number;
+  to: number;
+  delay: number;
+  duration: number;
+  gain: number;
+};
+
+export type NoiseLayer = {
+  delay: number;
+  duration: number;
+  gain: number;
+  lowpass: number;
+};
+
+export type SoundCueSpec = {
+  tones: readonly ToneLayer[];
+  noise?: NoiseLayer;
+};
+
+const tone = (
+  wave: ToneLayer["wave"],
+  from: number,
+  to: number,
+  delay: number,
+  duration: number,
+  gain: number,
+): ToneLayer => ({ wave, from, to, delay, duration, gain });
+
+const SPECS: Record<SoundCue, SoundCueSpec> = {
+  select: {
+    tones: [tone("sine", 620, 780, 0, 0.055, 0.022)],
+  },
+  deploy: {
+    tones: [
+      tone("triangle", 150, 78, 0, 0.17, 0.052),
+      tone("sine", 310, 220, 0.018, 0.12, 0.024),
+    ],
+    noise: { delay: 0, duration: 0.07, gain: 0.018, lowpass: 720 },
+  },
+  ability: {
+    tones: [
+      tone("sine", 220, 620, 0, 0.2, 0.038),
+      tone("triangle", 420, 910, 0.035, 0.18, 0.026),
+    ],
+  },
+  commander: {
+    tones: [
+      tone("triangle", 145, 290, 0, 0.27, 0.048),
+      tone("sine", 290, 580, 0.035, 0.24, 0.032),
+      tone("sine", 580, 870, 0.08, 0.21, 0.023),
+    ],
+    noise: { delay: 0, duration: 0.11, gain: 0.014, lowpass: 900 },
+  },
+  enemyCommander: {
+    tones: [
+      tone("sawtooth", 440, 185, 0, 0.24, 0.026),
+      tone("triangle", 285, 142, 0.055, 0.23, 0.035),
+    ],
+    noise: { delay: 0.02, duration: 0.1, gain: 0.014, lowpass: 620 },
+  },
+  capture: {
+    tones: [
+      tone("sine", 330, 330, 0, 0.13, 0.028),
+      tone("sine", 495, 495, 0.055, 0.14, 0.031),
+      tone("triangle", 660, 690, 0.11, 0.16, 0.033),
+    ],
+  },
+  warning: {
+    tones: [
+      tone("triangle", 300, 175, 0, 0.16, 0.041),
+      tone("triangle", 270, 150, 0.14, 0.17, 0.037),
+    ],
+  },
+  opportunity: {
+    tones: [
+      tone("sine", 280, 520, 0, 0.16, 0.03),
+      tone("triangle", 520, 780, 0.08, 0.18, 0.031),
+    ],
+  },
+  overtime: {
+    tones: [
+      tone("triangle", 190, 390, 0, 0.18, 0.039),
+      tone("triangle", 190, 440, 0.19, 0.19, 0.043),
+    ],
+  },
+  lastPush: {
+    tones: [
+      tone("square", 520, 440, 0, 0.07, 0.018),
+      tone("square", 520, 440, 0.095, 0.07, 0.018),
+      tone("square", 620, 520, 0.19, 0.08, 0.02),
+    ],
+  },
+  error: {
+    tones: [tone("square", 135, 82, 0, 0.14, 0.024)],
+  },
+  start: {
+    tones: [
+      tone("triangle", 165, 330, 0, 0.18, 0.035),
+      tone("sine", 330, 660, 0.085, 0.2, 0.029),
+    ],
+    noise: { delay: 0, duration: 0.055, gain: 0.011, lowpass: 1000 },
+  },
+  win: {
+    tones: [
+      tone("sine", 330, 330, 0, 0.17, 0.027),
+      tone("sine", 440, 440, 0.08, 0.18, 0.03),
+      tone("sine", 550, 550, 0.16, 0.19, 0.032),
+      tone("triangle", 660, 700, 0.24, 0.25, 0.038),
+    ],
+  },
+  lose: {
+    tones: [
+      tone("triangle", 262, 230, 0, 0.18, 0.031),
+      tone("triangle", 196, 175, 0.11, 0.2, 0.032),
+      tone("sine", 147, 110, 0.23, 0.25, 0.034),
+    ],
+  },
+  draw: {
+    tones: [
+      tone("sine", 294, 330, 0, 0.18, 0.026),
+      tone("sine", 330, 294, 0.12, 0.2, 0.026),
+    ],
+  },
+};
+
+export function soundCueSpec(cue: SoundCue): SoundCueSpec {
+  return SPECS[cue];
+}
+
 export class Sound {
   enabled = false;
   private context?: AudioContext;
-  unlock() {
+  private warned = false;
+
+  unlock(): void {
     if (!this.enabled) return;
-    this.context ??= new AudioContext();
-    void this.context.resume();
+    if (typeof AudioContext === "undefined") return;
+    try {
+      this.context ??= new AudioContext();
+      if (this.context.state === "suspended")
+        void this.context.resume().catch((error) => this.warn(error));
+    } catch (error) {
+      this.warn(error);
+    }
   }
-  play(
-    kind:
-      "select" | "deploy" | "capture" | "error" | "win" | "lose" | "ability",
-  ) {
-    if (!this.enabled || !this.context) return;
+
+  play(cue: SoundCue): void {
+    if (!this.enabled) return;
+    this.unlock();
     const ctx = this.context;
-    const notes = {
-      select: [440],
-      deploy: [180, 290],
-      capture: [440, 660, 880],
-      error: [110],
-      win: [330, 440, 660, 880],
-      lose: [220, 165, 110],
-      ability: [260, 520, 780],
-    }[kind];
-    notes.forEach((frequency, i) => {
-      const oscillator = ctx.createOscillator(),
-        gain = ctx.createGain(),
-        t = ctx.currentTime + i * 0.065;
-      oscillator.type = kind === "deploy" ? "triangle" : "sine";
-      oscillator.frequency.setValueAtTime(frequency, t);
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.055, t + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-      oscillator.start(t);
-      oscillator.stop(t + 0.16);
-    });
+    if (!ctx) return;
+
+    const spec = soundCueSpec(cue);
+    const base = ctx.currentTime + 0.005;
+    for (const layer of spec.tones) this.playTone(ctx, base, layer);
+    if (spec.noise) this.playNoise(ctx, base, spec.noise);
+  }
+
+  private playTone(ctx: AudioContext, base: number, layer: ToneLayer): void {
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const start = base + layer.delay;
+    const end = start + layer.duration;
+    const attack = Math.min(0.018, layer.duration * 0.2);
+    const release = Math.min(0.065, layer.duration * 0.45);
+
+    oscillator.type = layer.wave;
+    oscillator.frequency.setValueAtTime(Math.max(20, layer.from), start);
+    oscillator.frequency.exponentialRampToValueAtTime(
+      Math.max(20, layer.to),
+      end,
+    );
+
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(
+      Math.max(0.0002, layer.gain),
+      start + attack,
+    );
+    gain.gain.setValueAtTime(
+      Math.max(0.0002, layer.gain * 0.82),
+      Math.max(start + attack, end - release),
+    );
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.start(start);
+    oscillator.stop(end + 0.01);
+  }
+
+  private playNoise(ctx: AudioContext, base: number, layer: NoiseLayer): void {
+    const frames = Math.max(1, Math.ceil(ctx.sampleRate * layer.duration));
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let seed = frames ^ Math.round(layer.lowpass);
+    for (let i = 0; i < data.length; i++) {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      data[i] = (seed / 0xffffffff) * 2 - 1;
+    }
+
+    const source = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    const start = base + layer.delay;
+    const end = start + layer.duration;
+
+    source.buffer = buffer;
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(layer.lowpass, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(
+      Math.max(0.0002, layer.gain),
+      start + Math.min(0.01, layer.duration * 0.2),
+    );
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    source.start(start);
+    source.stop(end + 0.01);
+  }
+
+  private warn(error: unknown): void {
+    if (this.warned) return;
+    this.warned = true;
+    console.warn("Frontline audio unavailable", error);
   }
 }

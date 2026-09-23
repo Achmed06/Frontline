@@ -2,9 +2,9 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.67
+## Current v1.68
 
-The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
+The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
 ### Core combat
 
@@ -12,7 +12,7 @@ The repository now contains the complete Work 0.52 runtime used by the browser b
 - 3x3 territory grid with connected frontline / deployment rules
 - Core destruction and control-objective win conditions
 - 12 unit cards and 4 tactical abilities
-- ATLAS and LYRA commanders with separate active abilities
+- ATLAS, LYRA and NOVA commanders with separate active abilities
 - Deterministic renderer-independent match engine
 - Rookie, standard and veteran bot difficulty
 - Campaign-specific decks, commanders, objectives and seeded scenarios
@@ -1549,4 +1549,25 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure controlPointSecureVisual helper centralizes canonical capture radius/timing, secure-front expansion, node geometry, directional chevrons and fade
 - regression coverage verifies canonical 48/4.2 values, real Match capture metadata, actual ownership completion, outward expansion, release fade and legacy/malformed suppression
 - release: package 1.67.0 / v1.67 / iOS 1.67 (167)
+
+## v1.68 changes
+
+- the existing minimal oscillator beeps are replaced by a centralized tactical audio synthesis system with distinct layered cues for high-value match events
+- audio remains generated locally through Web Audio, so the game adds no third-party samples, music licensing dependency or network request
+- unit deployment uses a compact low mechanical impulse while tactical abilities use a separate rising energy cue
+- player Commander activation receives a heavier three-layer command signature and enemy Commander activation uses a clearly different descending warning cue
+- normal control-point capture keeps its positive secure chord while losing a previously owned point now has an audible warning in addition to the existing haptic and banner
+- local Core critical pressure, enemy Core breakthrough opportunity, overtime and the final 30-second push each receive distinct non-spam status cues
+- match start now has its own launch signature instead of reusing the deployment sound
+- victory, defeat and draw now use three separate result cues; draws no longer reuse the defeat sound
+- selection and invalid-action sounds remain intentionally short and restrained
+- routine auto-attacks, healing ticks, movement and repeated combat impacts stay silent in this first audio pass to avoid dense-match sound spam
+- noise transients are synthesized deterministically and filtered locally; oscillator/noise layers use bounded gain, frequency and duration values
+- AudioContext startup remains user-gesture gated and fails safely when Web Audio is unavailable, preserving browser and native functionality with sound disabled or unsupported
+- the existing sound preference/toggle remains authoritative and no user setting is reset
+- pure soundCueSpec metadata makes all 15 tactical cues testable without requiring a browser AudioContext
+- regression coverage validates every cue layer, distinct high-value signatures and safe behavior in non-browser test environments
+- README release metadata now reflects all three current commanders and removes the obsolete Work 0.52 wording
+- gameplay timing, combat values, targeting, haptics and balance are unchanged
+- release: package 1.68.0 / v1.68 / iOS 1.68 (168)
 

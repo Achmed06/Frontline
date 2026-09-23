@@ -422,7 +422,7 @@ function start(
         ? `EINSATZ ${MISSIONS.indexOf(mission) + 1} · ${mission.name.toUpperCase()}`
         : `TRAINING · ${difficulty === "rookie" ? "REKRUT" : difficulty === "standard" ? "TAKTIKER" : "VETERAN"}`;
   sound.unlock();
-  sound.play("deploy");
+  sound.play("start");
   updateSelection();
   updateHud(true);
 }
@@ -544,7 +544,7 @@ function finish() {
   if (won) stats.wins++;
   saveStats(stats);
   updateRecord();
-  sound.play(won ? "win" : "lose");
+  sound.play(won ? "win" : draw ? "draw" : "lose");
   haptics.play(won ? "success" : draw ? "warning" : "error");
   const st = match.state.stats;
   const wasSeries = activeSeries;
@@ -766,8 +766,17 @@ function updateHud(force = false) {
               : null;
     if (notice) {
       battleNotices.add(notice);
-      if (notice === "playerCritical") haptics.play("warning");
-      else if (notice === "enemyCritical") haptics.play("ability");
+      if (notice === "playerCritical") {
+        sound.play("warning");
+        haptics.play("warning");
+      } else if (notice === "enemyCritical") {
+        sound.play("opportunity");
+        haptics.play("ability");
+      } else if (notice === "overtime") {
+        sound.play("overtime");
+      } else {
+        sound.play("lastPush");
+      }
       announceBattle(
         notice === "playerCritical"
           ? "DEIN CORE BRAUCHT SCHUTZ"
@@ -957,7 +966,7 @@ function updateHud(force = false) {
       `${enemyCommanderDefinition.name}: ${enemyCommanderDefinition.ability}`,
       true,
     );
-    sound.play("ability");
+    sound.play("enemyCommander");
     haptics.play("warning");
   }
   lastEnemyCommanderCooldown = s.enemyCommanderCooldown;
@@ -1043,6 +1052,7 @@ function updateHud(force = false) {
     if (el("battle-banner").hidden)
       announceBattle("FRONT VERLOREN", `${pointName} IST GEFALLEN`);
     else showToast(`${pointName} verloren. Front neu stabilisieren.`, true);
+    sound.play("warning");
     haptics.play("warning");
   }
   lastPointOwners = s.points.map((point) => point.owner);
@@ -1077,7 +1087,7 @@ function commander() {
   if (!matchLive()) return;
   const result = match.activateCommander();
   showToast(result.message, !result.ok);
-  sound.play(result.ok ? "ability" : "error");
+  sound.play(result.ok ? "commander" : "error");
   haptics.play(result.ok ? "ability" : "error");
   updateHud(true);
 }
