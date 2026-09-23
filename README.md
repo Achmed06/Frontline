@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.76
+## Current v1.77
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1704,4 +1704,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies Core missions, control relay requirements, canonical enemy Commander labels, enemy deck composition and complete 3x3 territory accounting across every mission
 - mission seeds, owners, objectives, star requirements, unlocks, enemy decks, commanders, campaign progress and all combat balance remain unchanged
 - release: package 1.76.0 / v1.76 / iOS 1.76 (176)
+
+## v1.77 changes
+
+- Einsatzserie, Tagesfront and Draft now share the same explicit pre-battle preparation hierarchy as campaign, deck and commander flows
+- Einsatzserie opens with a run-status hero showing current battle, wins, remaining attempts, fixed commander, average deck energy and the locked eight-card series loadout
+- the three-series-win path is visualized as a compact progress track; current, secured and future stages are distinct without changing series rules
+- each available series route now exposes its actual mode, objective requirement, starting front, enemy deck composition and tactical hint before the attack action
+- Tagesfront now promotes its fixed daily setup into a single operation briefing with mode/objective, starting territory counts, arena, difficulty, both commanders and player/enemy average deck cost
+- the fixed daily eight-card deck remains fully visible and completed daily records now also surface the best territory count alongside best time and Core result
+- Draft now shows all eight loadout slots from the start, including explicit empty unit and tactic positions, rather than only displaying already-picked cards
+- Draft receives a three-stage progress track for units, tactics and battle readiness plus a dedicated current-offer label
+- completed Drafts show the actual local-match parameters before the start action while leaving the saved normal deck untouched
+- a pure mode-preparation model centralizes series progress, daily setup summaries and Draft stage/count logic
+- regression coverage verifies new/complete series states, daily territory/setup data, Draft phase transitions and malformed Draft values
+- Series lives, route selection, fixed deck/commander behavior, daily deterministic seeds, daily records, Draft offer generation, mastery, learning and combat balance are unchanged
+- release: package 1.77.0 / v1.77 / iOS 1.77 (177)
 

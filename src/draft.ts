@@ -1,6 +1,7 @@
 /** New local draft mode; completed decks use the existing combat rules. */
 import { CARDS, isValidDeck, type CardId } from "./engine";
 import { unitSvg } from "./art";
+import { draftPreparation } from "./mode-preparation";
 export function draftOffers(
   picks: readonly CardId[],
   random = Math.random,
@@ -23,26 +24,28 @@ export function renderDraft(
 ) {
   const picks: CardId[] = [];
   function render() {
-    const complete = picks.length === 8;
+    const preparation = draftPreparation(picks);
+    const complete = preparation.phase === "ready";
     const offers = draftOffers(picks);
-    container.innerHTML = `<div class="deck-heading"><div class="eyebrow">DRAFT · LOKAL GEGEN BOT</div><button id="draft-close" class="icon-btn" aria-label="Draft verlassen">×</button></div><h2>${complete ? "Deine Auswahl steht." : picks.length < 6 ? "Wähle deine Truppe." : "Wähle deine Taktik."}</h2><p>Sechs Einheiten, zwei Fähigkeiten. Pro Runde wählst du eine von drei Karten. Der Bot erhält dasselbe Deck und deinen gewählten Kommandanten.</p><div class="draft-progress"><b>${picks.length}/8 GEWÄHLT</b><span>${complete ? "BEREIT" : picks.length < 6 ? `EINHEIT ${picks.length + 1}/6` : `TAKTIK ${picks.length - 5}/2`}</span></div><div class="draft-picked">${
-      picks
-        .map((id) => {
-          const card = CARDS.find((c) => c.id === id)!;
-          return `<div title="${card.name}">${unitSvg(id)}<small>${card.name}</small></div>`;
-        })
-        .join("") || "<p>Dein Deck entsteht hier.</p>"
+    container.innerHTML = `<div class="deck-heading"><div class="eyebrow">DRAFT · LOKAL GEGEN BOT</div><button id="draft-close" class="icon-btn" aria-label="Draft verlassen">×</button></div><section class="draft-hero ${complete ? "ready" : preparation.phase}"><div><small>DRAFT-FORTSCHRITT</small><h2>${complete ? "Deine Auswahl steht." : preparation.phase === "units" ? "Baue deine Truppe." : "Lege deine Taktik fest."}</h2><p>Sechs Einheiten, zwei Fähigkeiten. Pro Runde wählst du eine von drei Karten. Der Bot erhält dasselbe Deck und deinen gewählten Kommandanten.</p></div><div class="draft-hero-status"><strong>${preparation.picked}/8</strong><b>${preparation.phaseLabel}</b><span>${preparation.nextSlot}</span></div></section><div class="draft-stage-track" aria-label="${preparation.picked} von 8 Karten gewählt"><span class="${preparation.unitCount === 6 ? "complete" : preparation.phase === "units" ? "active" : ""}"><b>01</b><i></i><small>6 EINHEITEN</small></span><span class="${preparation.phase === "abilities" ? "active" : preparation.abilityCount === 2 ? "complete" : ""}"><b>02</b><i></i><small>2 TAKTIKEN</small></span><span class="${complete ? "complete active" : ""}"><b>03</b><i></i><small>EINSATZ</small></span></div><div class="draft-progress"><b>${preparation.picked}/8 GEWÄHLT</b><span>${preparation.nextSlot}</span></div><div class="draft-picked draft-loadout">${
+      Array.from({ length: 8 }, (_, index) => {
+        const id = picks[index];
+        if (!id)
+          return `<div class="draft-empty ${index >= 6 ? "ability" : "unit"}"><span>+</span><small>${index >= 6 ? `TAKTIK ${index - 5}` : `EINHEIT ${index + 1}`}</small></div>`;
+        const card = CARDS.find((c) => c.id === id)!;
+        return `<div class="filled ${card.kind}" title="${card.name}"><i>ϟ ${card.cost}</i>${unitSvg(id)}<small>${card.name}</small></div>`;
+      }).join("")
     }</div>${
       complete
-        ? `<p>Core-Angriff · Taktiker · bis zu 3 Minuten plus mögliche Verlängerung. Meisterung und Lernaufträge zählen. Dein gespeichertes Einsatzdeck bleibt erhalten.</p><button id="draft-start" class="primary">DRAFT-GEFECHT STARTEN ↗</button>`
-        : `<div class="draft-offers">${offers
+        ? `<section class="draft-ready-card"><small>EINSATZPARAMETER</small><div><span>CORE-ANGRIFF</span><span>TAKTIKER</span><span>3 MIN + OVERTIME</span></div><p>Meisterung und Lernaufträge zählen. Dein gespeichertes Einsatzdeck bleibt erhalten.</p></section><button id="draft-start" class="primary draft-start">DRAFT-GEFECHT STARTEN ↗</button>`
+        : `<div class="draft-choice-label"><span>ANGEBOT ${preparation.picked + 1}/8</span><b>${preparation.phase === "units" ? "EINE EINHEIT WÄHLEN" : "EINE TAKTIK WÄHLEN"}</b></div><div class="draft-offers">${offers
             .map((id) => {
               const card = CARDS.find((c) => c.id === id)!;
               return `<button data-draft-card="${id}"><span class="draft-art">${unitSvg(id)}<b>ϟ ${card.cost}</b></span><strong>${card.name}</strong><small>${card.role}</small><p>${card.description}</p><span class="draft-pick-label">WÄHLEN +</span></button>`;
             })
             .join(
               "",
-            )}</div><p class="draft-tip">Achte auf Energiebedarf und ergänzende Rollen. Die nicht gewählten Karten können später wieder angeboten werden.</p>`
+            )}</div><p class="draft-tip">Achte auf Energiebedarf und ergänzende Rollen. Nicht gewählte Karten können in späteren Runden erneut erscheinen.</p>`
     }`;
     container.querySelector<HTMLButtonElement>("#draft-close")!.onclick =
       onClose;
