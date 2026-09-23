@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.78
+## Current v1.79
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -75,11 +75,39 @@ The **iPhone test build** GitHub Actions workflow compiles the Release iPhone ta
 
 The browser client uses `/api/duel` on the same origin. Native iPhone builds use `VITE_DUEL_SERVER_URL` when a duel server has been configured. Without that variable, solo modes remain available and the native duel screen explains that online duels are not configured.
 
-Server entry point:
+Local server entry point:
 
 ```bash
 pnpm start
 ```
+
+Local development binds to `127.0.0.1:8080` by default. In `NODE_ENV=production`, the validated runtime defaults to `0.0.0.0:8080`, which is suitable for a container behind an HTTPS reverse proxy.
+
+Production container:
+
+```bash
+docker build -t frontline-duel .
+docker run --rm -p 8080:8080 \
+  -e DUEL_MAX_ROOMS=12 \
+  -e DUEL_TRUST_PROXY_HOPS=1 \
+  -e DUEL_ALLOWED_ORIGINS=capacitor://localhost \
+  frontline-duel
+```
+
+Operational endpoints:
+
+- `/healthz` — liveness only
+- `/readyz` — readiness plus current in-memory room count and configured capacity
+
+Deployment variables:
+
+- `PORT` — TCP port, default 8080
+- `HOST` — explicit listen address; production defaults to `0.0.0.0`
+- `DUEL_MAX_ROOMS` — in-memory room capacity, accepted range 2–64, default 12
+- `DUEL_ALLOWED_ORIGINS` — comma-separated exact cross-origin clients such as `capacitor://localhost`
+- `DUEL_TRUST_PROXY_HOPS` — trusted reverse-proxy hops, default 0; forwarded client IP headers are ignored unless this is explicitly enabled
+
+Rooms and active matches are intentionally in-memory. A process restart clears them, so production hosting should use a single duel-server instance until shared room state is implemented.
 
 ## CI
 
@@ -1737,4 +1765,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - no gameplay, progression, StoreKit product entitlement rules, friend-duel simulation or balance changed
 - final registered bundle identifier, public privacy-policy URL and Apple signing credentials remain deployment configuration and are intentionally not invented in source control
 - release: package 1.78.0 / v1.78 / iOS 1.78 (178)
+
+## v1.79 changes
+
+- Friend Duels now have an explicit production server runtime instead of relying on local-only server defaults
+- local development remains safely bound to 127.0.0.1, while NODE_ENV=production defaults to 0.0.0.0 for container/reverse-proxy hosting
+- PORT, DUEL_MAX_ROOMS, DUEL_ALLOWED_ORIGINS and DUEL_TRUST_PROXY_HOPS are parsed through a shared validated runtime configuration and invalid values fail fast
+- the previous hard-coded twelve-room capacity is now a validated 2–64 deployment setting while remaining twelve rooms by default
+- the server exposes /readyz with non-sensitive active-room and capacity information in addition to the existing /healthz liveness endpoint
+- rate limiting can now identify clients correctly behind a trusted reverse proxy, but X-Forwarded-For remains ignored by default and is only honored when an exact trusted proxy hop count is configured
+- a production Dockerfile builds the same Vite client and runs the authoritative Node duel service with a container health check
+- CI now performs a real Docker image build, starts the production container, verifies /healthz and /readyz and checks the configured room capacity
+- server integration coverage verifies readiness state before and after room creation plus enforcement of a configured room-capacity limit
+- native/browser Duel setup copy now distinguishes a configured iPhone online server from local browser testing instead of always calling the mode a local PvP test
+- production documentation explicitly records that rooms are in-memory and a single server instance is required until shared room state exists
+- duel simulation, reconnect timing, room codes, rematches, decks, commanders, rewards and combat balance remain unchanged
+- release: package 1.79.0 / v1.79 / iOS 1.79 (179)
 

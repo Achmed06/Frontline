@@ -36,6 +36,22 @@ jobs:
       - name: Typecheck and production build
         run: pnpm run build
 
+      - name: Build and smoke-test duel server container
+        run: |
+          docker build -t frontline-duel-ci .
+          CONTAINER="$(docker run -d --rm -p 127.0.0.1:18080:8080 -e DUEL_MAX_ROOMS=4 frontline-duel-ci)"
+          trap 'docker rm -f "$CONTAINER" >/dev/null 2>&1 || true' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:18080/readyz > /tmp/frontline-ready.json; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/frontline-ready.json
+          grep -q '"status":"ready"' /tmp/frontline-ready.json
+          grep -q '"capacity":4' /tmp/frontline-ready.json
+          curl -fsS http://127.0.0.1:18080/healthz | grep -q '"status":"ok"'
+
       - name: Validate built entry points
         run: |
           test -s dist/index.html
