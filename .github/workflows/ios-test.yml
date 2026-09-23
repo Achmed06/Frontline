@@ -16,6 +16,14 @@ on:
       - "vite.config.ts"
       - "capacitor.config.ts"
       - ".github/workflows/ios-test.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - "scripts/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/ios-test.yml"
   workflow_dispatch:
     inputs:
       signed_ipa:
@@ -57,6 +65,13 @@ jobs:
           xcodebuild -project ios/App/App.xcodeproj -scheme App
           -configuration Release -destination 'generic/platform=iOS'
           -derivedDataPath releases/native-check CODE_SIGNING_ALLOWED=NO build
+      - name: Verify bundled privacy manifest
+        run: |
+          APP="releases/native-check/Build/Products/Release-iphoneos/App.app"
+          test -d "$APP"
+          MANIFEST="$(find "$APP" -name PrivacyInfo.xcprivacy -type f -print -quit)"
+          test -n "$MANIFEST" || { echo "PrivacyInfo.xcprivacy missing from built app/SDK bundle." >&2; exit 1; }
+          echo "Privacy manifest found: $MANIFEST"
       - name: Package unsigned IPA
         run: |
           APP="releases/native-check/Build/Products/Release-iphoneos/App.app"
@@ -92,6 +107,7 @@ jobs:
       BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID }}
       EXPORT_METHOD: ${{ inputs.export_method }}
       VITE_DUEL_SERVER_URL: ${{ vars.IOS_DUEL_SERVER_URL }}
+      VITE_PRIVACY_URL: ${{ vars.IOS_PRIVACY_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -101,6 +117,23 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Select Xcode 26.3
         run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+      - name: Validate signed release configuration
+        run: |
+          [[ -n "${BUNDLE_ID:-}" && "$BUNDLE_ID" != "com.frontlinegame.app" ]] || { echo "Set IOS_BUNDLE_ID to the registered App ID, not the development placeholder." >&2; exit 1; }
+          node - <<'NODE'
+          const privacy = process.env.VITE_PRIVACY_URL?.trim();
+          if (!privacy) throw new Error("Set IOS_PRIVACY_URL to the public HTTPS privacy policy.");
+          const url = new URL(privacy);
+          if (url.protocol !== "https:" || url.username || url.password || url.hash || ["localhost","127.0.0.1","::1"].includes(url.hostname))
+            throw new Error("IOS_PRIVACY_URL must be a public HTTPS URL without credentials or fragment.");
+          const duel = process.env.VITE_DUEL_SERVER_URL?.trim();
+          if (duel) {
+            const server = new URL(duel);
+            if (server.protocol !== "https:" || server.username || server.password || server.search || server.hash || server.pathname !== "/")
+              throw new Error("IOS_DUEL_SERVER_URL must be an HTTPS origin only.");
+          }
+          console.log("Signed release configuration validated.");
+          NODE
       - name: Export personal test IPA
         env:
           IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}

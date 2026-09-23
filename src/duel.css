@@ -386,3 +386,18 @@ input:focus-visible {
 
 /* Native safe areas include the home indicator and notch. */
 .duel-shell { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+
+.duel-privacy {
+  display: block;
+  width: fit-content;
+  margin: 10px auto max(12px, env(safe-area-inset-bottom));
+  color: #9eb4ad;
+  font-size: 10px;
+  text-decoration: none;
+}
+.duel-privacy:hover,
+.duel-privacy:focus-visible {
+  color: #d7e8df;
+  text-decoration: underline;
+}
+

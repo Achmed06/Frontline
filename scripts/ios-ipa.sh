@@ -12,6 +12,7 @@ fi
 command -v xcodebuild >/dev/null || { echo 'Install/select Xcode 26+ first.' >&2; exit 1; }
 [[ "${TEAM_ID:-}" =~ ^[A-Z0-9]{10}$ ]] || { echo 'Set TEAM_ID to your 10-character Apple team identifier.' >&2; exit 1; }
 [[ "${BUNDLE_ID:-}" =~ ^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]] || { echo 'Set BUNDLE_ID to your registered app identifier.' >&2; exit 1; }
+[[ "$BUNDLE_ID" != "com.frontlinegame.app" ]] || { echo 'Refusing to export the development placeholder bundle identifier.' >&2; exit 1; }
 method="${EXPORT_METHOD:-debugging}"
 [[ "$method" == debugging || "$method" == release-testing ]] || { echo 'Only personal-device export methods are permitted by this script.' >&2; exit 1; }
 xcode_major="$(xcodebuild -version | awk '/Xcode/{split($2,v,".");print v[1]}')"
@@ -61,6 +62,13 @@ fi
 xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
   -destination 'generic/platform=iOS' -archivePath "$output/Frontline.xcarchive" \
   DEVELOPMENT_TEAM="$TEAM_ID" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" "${signing_args[@]}" archive
+archive_app="$output/Frontline.xcarchive/Products/Applications/App.app"
+[[ -d "$archive_app" ]] || { echo 'Archived App.app missing.' >&2; exit 1; }
+actual_bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$archive_app/Info.plist")"
+[[ "$actual_bundle" == "$BUNDLE_ID" ]] || { echo "Archive bundle id mismatch: $actual_bundle" >&2; exit 1; }
+privacy_manifest="$(find "$archive_app" -name PrivacyInfo.xcprivacy -type f -print -quit)"
+[[ -n "$privacy_manifest" ]] || { echo 'PrivacyInfo.xcprivacy missing from archive.' >&2; exit 1; }
+printf 'Verified archive identity %s and privacy manifest %s\n' "$actual_bundle" "$privacy_manifest"
 xcodebuild -exportArchive -archivePath "$output/Frontline.xcarchive" \
   -exportOptionsPlist "$output/ExportOptions.plist" -exportPath "$output" "${export_args[@]}"
 printf 'Export complete: %s\n' "$output"

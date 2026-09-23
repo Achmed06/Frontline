@@ -6479,3 +6479,53 @@ h1 em {
   }
 }
 
+/* v1.78: release/legal links remain secondary but accessible. */
+.lobby-legal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lobby-legal > .text-btn,
+.lobby-legal > a.text-btn {
+  width: auto;
+  min-height: 32px;
+  margin: 0;
+}
+a.privacy-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #9fb4ad;
+  text-decoration: none;
+}
+a.privacy-link:hover,
+a.privacy-link:focus-visible,
+.help-privacy a:hover,
+.help-privacy a:focus-visible {
+  color: #d6e8de;
+  text-decoration: underline;
+}
+.help-privacy {
+  margin: 12px 0 8px;
+  padding-top: 10px;
+  border-top: 1px solid #3e5148;
+  font-size: 9px;
+}
+.help-privacy a {
+  color: #9fb9ae;
+  text-decoration: none;
+}
+@media (max-width: 380px) {
+  .lobby-legal {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .lobby-legal > .text-btn,
+  .lobby-legal > a.text-btn {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}
+

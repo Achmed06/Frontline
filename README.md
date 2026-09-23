@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.77
+## Current v1.78
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1720,4 +1720,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies new/complete series states, daily territory/setup data, Draft phase transitions and malformed Draft values
 - Series lives, route selection, fixed deck/commander behavior, daily deterministic seeds, daily records, Draft offer generation, mastery, learning and combat balance are unchanged
 - release: package 1.77.0 / v1.77 / iOS 1.77 (177)
+
+## v1.78 changes
+
+- native iOS scene startup now preserves FrontlineViewController instead of replacing it with a generic CAPBridgeViewController
+- the custom FrontlineViewController is the controller that registers FrontlineStorePlugin, so StoreKit entitlement, catalog, purchase and restore calls remain reachable under scene-based iPhone lifecycle startup
+- the storyboard's existing FrontlineViewController configuration is preserved when UIKit creates it; programmatic scene recovery now uses the same custom controller
+- signed iOS export refuses the development placeholder bundle identifier com.frontlinegame.app
+- signed GitHub Actions builds now require IOS_PRIVACY_URL and expose it to the Vite build as VITE_PRIVACY_URL
+- privacy-policy URLs are accepted only as public HTTPS links without credentials or fragments; invalid/missing values stay hidden in unsigned/local builds
+- when configured, the privacy policy is directly accessible from the Einsatzbasis, Feldhandbuch and Friend Duel screen
+- signed release configuration validates an optional native duel server as a clean HTTPS origin before signing secrets are used
+- the unsigned iPhone CI build now verifies that a PrivacyInfo.xcprivacy file from the app/SDK bundle is present before packaging the IPA
+- signed archives verify the actual CFBundleIdentifier against BUNDLE_ID and verify a bundled PrivacyInfo.xcprivacy before export
+- source-level release integrity tests protect the custom StoreKit controller chain, app-target membership, bundle-id gate and privacy-manifest CI gate
+- no gameplay, progression, StoreKit product entitlement rules, friend-duel simulation or balance changed
+- final registered bundle identifier, public privacy-policy URL and Apple signing credentials remain deployment configuration and are intentionally not invented in source control
+- release: package 1.78.0 / v1.78 / iOS 1.78 (178)
 
