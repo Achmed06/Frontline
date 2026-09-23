@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.66
+## Current v1.67
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1534,4 +1534,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure lyraRepairVisual helper centralizes canonical healing, exact per-unit repair strength, cleanse state, shell geometry and release fade
 - regression coverage verifies the 80 HP cap, cleanse-only behavior, real Match healing/cleanse metadata, exact unit radius, expansion/fade and non-LYRA suppression
 - release: package 1.66.0 / v1.66 / iOS 1.66 (166)
+
+## v1.67 changes
+
+- normal control-point ownership changes now finish with a dedicated secure animation instead of the legacy generic capture circle
+- completed capture effects now carry the canonical 48-unit capture radius, 4.2-second capture time and explicit control-point source identity
+- a faint fixed 48-unit boundary preserves the exact objective footprint while an expanding secure front confirms ownership across the real capture area
+- six locking perimeter nodes, directional advance chevrons and a gate marker make point ownership changes read as territorial progress instead of a generic explosion
+- player/enemy secure chevrons follow each team's natural advance direction
+- Reduced Motion preserves the exact boundary, ownership direction, lock nodes and gate geometry while freezing orbital and travel motion
+- Pioneer specialist confirmation remains a separate layered effect and continues to communicate its 1.5x capture acceleration
+- frontline movement feedback remains unchanged and still follows the actual column edge transition after the point flips
+- capture radius, 4.2-second capture time, pressure rules, decay, ownership logic and all balance values are unchanged
+- a pure controlPointSecureVisual helper centralizes canonical capture radius/timing, secure-front expansion, node geometry, directional chevrons and fade
+- regression coverage verifies canonical 48/4.2 values, real Match capture metadata, actual ownership completion, outward expansion, release fade and legacy/malformed suppression
+- release: package 1.67.0 / v1.67 / iOS 1.67 (167)
 
