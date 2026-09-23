@@ -53,7 +53,7 @@ export function duelAllowedOrigins(value: string | undefined): string[] {
         url.password ||
         url.search ||
         url.hash ||
-        url.pathname !== "/"
+        !["", "/"].includes(url.pathname)
       )
         throw Error(`Ungültiger Duel-Origin: ${item}`);
       if (url.protocol === "capacitor:" && url.origin !== "null") {
