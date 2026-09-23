@@ -633,6 +633,60 @@ export function coreTurretTarget(state: MatchState, team: Team): Unit | undefine
   return target;
 }
 
+export type UnitCombatTarget =
+  | {
+      target: Unit;
+      distance: number;
+      core: false;
+      inRange: boolean;
+    }
+  | {
+      target: MatchState["cores"][Team];
+      distance: number;
+      core: true;
+      inRange: true;
+    };
+
+/** The exact target a unit is currently pursuing or preparing to attack. */
+export function unitCombatTarget(
+  state: MatchState,
+  unit: Unit,
+): UnitCombatTarget | undefined {
+  if (unit.hp <= 0 || state.phase === "ended") return undefined;
+
+  let target: Unit | undefined;
+  let targetDistance = Infinity;
+  for (const candidate of state.units) {
+    if (candidate.team === unit.team || candidate.hp <= 0) continue;
+    const d = distance(unit, candidate);
+    if (d < targetDistance && d <= Math.max(155, unit.range + 36)) {
+      target = candidate;
+      targetDistance = d;
+    }
+  }
+
+  if (target)
+    return {
+      target,
+      distance: targetDistance,
+      core: false,
+      inRange:
+        targetDistance <= unit.range + unit.radius + target.radius,
+    };
+
+  const enemyCore = state.cores[other(unit.team)];
+  const coreDistance = distance(unit, enemyCore);
+  if (coreDistance <= unit.range + unit.radius + 21)
+    return {
+      target: enemyCore,
+      distance: coreDistance,
+      core: true,
+      inRange: true,
+    };
+
+  return undefined;
+}
+
 export interface PlayResult {
   ok: boolean;
   message: string;
@@ -1623,30 +1677,22 @@ export class Match {
           unit.healCooldown = card.supportInterval ?? unit.interval;
         }
       }
-      let target: Unit | undefined;
-      let targetDistance = Infinity;
-      for (const candidate of this.state.units) {
-        if (candidate.team === unit.team || candidate.hp <= 0) continue;
-        const d = distance(unit, candidate);
-        if (d < targetDistance && d <= Math.max(155, unit.range + 36)) {
-          target = candidate;
-          targetDistance = d;
-        }
-      }
+      const combatTarget = unitCombatTarget(this.state, unit);
       const enemyCore = this.state.cores[other(unit.team)];
-      if (target) {
-        if (targetDistance <= unit.range + unit.radius + target.radius) {
+      if (combatTarget && !combatTarget.core) {
+        const target = combatTarget.target;
+        if (combatTarget.inRange) {
           if (unit.attackCooldown <= 0) {
             attacks.push({ unit, target, amount: unit.damage, core: false });
             unit.attackCooldown = unit.interval;
           }
         } else
           this.move(unit, target, unit.range + unit.radius + target.radius - 3);
-      } else if (distance(unit, enemyCore) <= unit.range + unit.radius + 21) {
+      } else if (combatTarget?.core) {
         if (unit.attackCooldown <= 0) {
           attacks.push({
             unit,
-            target: enemyCore,
+            target: combatTarget.target,
             amount:
               unit.damage *
               (CARDS.find((card) => card.id === unit.cardId)

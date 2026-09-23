@@ -7,6 +7,7 @@ import {
   CORE_TURRET_RANGE,
   controlPointPressure,
   coreTurretTarget,
+  unitCombatTarget,
   deploymentColumns,
   type Effect,
   type Unit,
@@ -25,6 +26,7 @@ import { shieldIntegrityVisual } from "./shield-integrity-visual";
 import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireFeedback } from "./weapon-fire-feedback";
 import { weaponCycleVisual } from "./weapon-cycle-visual";
+import { weaponTargetLockVisual } from "./weapon-target-lock-visual";
 import { deploymentArrivalVisual } from "./deployment-arrival-visual";
 import { corePressure } from "./core-pressure";
 import { commanderActivationVisual } from "./commander-activation-visual";
@@ -1649,6 +1651,171 @@ export class ArenaScene extends Phaser.Scene {
               (weaponCycle.charge - 0.82) *
                 4,
           );
+        }
+      }
+
+      const combatTarget = unitCombatTarget(s, u);
+      if (combatTarget?.inRange) {
+        const targetRadius = combatTarget.core
+          ? 21
+          : combatTarget.target.radius;
+        const targetLock = weaponTargetLockVisual(
+          u.cardId,
+          u.attackCooldown,
+          u.interval,
+          true,
+          u.x,
+          u.y,
+          combatTarget.target.x,
+          combatTarget.target.y,
+          targetRadius,
+        );
+        if (targetLock.active) {
+          const lockColor =
+            targetLock.kind === "rail"
+              ? 0xdff7ff
+              : targetLock.kind === "explosive"
+                ? 0xffc368
+                : targetLock.kind === "heavy"
+                  ? 0xffd59a
+                  : 0x9adfff;
+          const targetX = combatTarget.target.x;
+          const targetY = combatTarget.target.y;
+          const sourceReach = u.radius + 5;
+          const targetReach =
+            targetLock.bracketRadius + 4;
+          const lineStartX =
+            u.x + targetLock.nx * sourceReach;
+          const lineStartY =
+            u.y + targetLock.ny * sourceReach;
+          const lineEndX =
+            targetX - targetLock.nx * targetReach;
+          const lineEndY =
+            targetY - targetLock.ny * targetReach;
+          const lineDx = lineEndX - lineStartX;
+          const lineDy = lineEndY - lineStartY;
+
+          for (
+            let dash = 0;
+            dash < targetLock.dashCount;
+            dash++
+          ) {
+            const startT =
+              (dash + 0.18) /
+              targetLock.dashCount;
+            const endT =
+              Math.min(
+                1,
+                startT +
+                  0.42 /
+                    targetLock.dashCount,
+              );
+            fx.lineStyle(
+              1,
+              lockColor,
+              targetLock.sightAlpha *
+                (0.72 + dash * 0.08),
+            );
+            fx.lineBetween(
+              lineStartX + lineDx * startT,
+              lineStartY + lineDy * startT,
+              lineStartX + lineDx * endT,
+              lineStartY + lineDy * endT,
+            );
+          }
+
+          const r = targetLock.bracketRadius;
+          const arm = targetLock.bracketArm;
+          const nx = targetLock.nx;
+          const ny = targetLock.ny;
+          const px = targetLock.px;
+          const py = targetLock.py;
+          fx.lineStyle(
+            targetLock.kind === "rail" ||
+              targetLock.kind === "explosive"
+              ? 1.8
+              : 1.35,
+            lockColor,
+            targetLock.alpha,
+          );
+          for (const forward of [-1, 1]) {
+            for (const side of [-1, 1]) {
+              const cx =
+                targetX +
+                nx * forward * r +
+                px * side * r;
+              const cy =
+                targetY +
+                ny * forward * r +
+                py * side * r;
+              fx.lineBetween(
+                cx,
+                cy,
+                cx -
+                  nx *
+                    forward *
+                    arm,
+                cy -
+                  ny *
+                    forward *
+                    arm,
+              );
+              fx.lineBetween(
+                cx,
+                cy,
+                cx -
+                  px *
+                    side *
+                    arm,
+                cy -
+                  py *
+                    side *
+                    arm,
+              );
+            }
+          }
+
+          if (targetLock.targetPulse > 0) {
+            const pulse =
+              this.reducedMotion
+                ? targetLock.targetPulse
+                : targetLock.targetPulse *
+                  (0.78 +
+                    Math.sin(
+                      this.clock * 9 +
+                        u.id * 0.43,
+                    ) *
+                      0.16);
+            fx.lineStyle(
+              1.2,
+              0xffffff,
+              targetLock.alpha *
+                pulse *
+                0.72,
+            );
+            fx.strokeCircle(
+              targetX,
+              targetY,
+              Math.max(
+                4,
+                r -
+                  4 -
+                  targetLock.targetPulse * 2,
+              ),
+            );
+            fx.fillStyle(
+              lockColor,
+              targetLock.alpha *
+                pulse *
+                0.55,
+            );
+            fx.fillCircle(
+              targetX,
+              targetY,
+              1.3 +
+                targetLock.targetPulse * 1.4,
+            );
+          }
         }
       }
 

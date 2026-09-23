@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.53
+## Current v1.54
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1328,3 +1328,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure captureSpecialistVisual helper centralizes exact specialist boost, total multiplier, node/chevron counts, ring geometry and pulse scale
 - regression coverage verifies the exact 1.5x Pioneer signature, group-vs-specialist separation, non-specialist suppression and malformed fallback
 - release: package 1.53.0 / v1.53 / iOS 1.53 (153)
+
+
+## v1.54 changes
+
+- high-impact units now visibly acquire their real current combat target late in the weapon cycle instead of showing reload charge with no indication of where the shot is about to go
+- Lancer, Mortar, Sentinel and Disruptor use the same exact target selected by simulation through a new shared unitCombatTarget helper; renderer and combat no longer need separate targeting guesses
+- the shared helper preserves the existing nearest-enemy acquisition radius, firing-range check, Core fallback and first-encountered tie behavior, so target selection and balance remain unchanged
+- target-lock feedback appears only once the real reload cycle passes 62 percent charge and the selected target is actually inside firing range
+- a sparse dashed designator links weapon and target, while vector-oriented corner brackets contract toward the target as the real attackCooldown approaches ready
+- final lock adds a compact target pulse immediately before the shot; the lock disappears naturally when attackCooldown resets after firing
+- Rail and Mortar receive the strongest lock language, Sentinel is quieter and Disruptor keeps a lighter electric variant to avoid battlefield clutter
+- fast Ranger/melee weapons, out-of-range pursued enemies and units without a valid target do not render lock geometry
+- Core targeting works through the same helper when no enemy unit is acquired and the Core is genuinely inside that unit's existing attack range
+- Reduced Motion preserves target orientation and readiness state while suppressing decorative pulse motion
+- attack damage, range, acquisition distance, cooldowns, movement, target priority, Core damage multipliers and all balance values are unchanged
+- a pure weaponTargetLockVisual helper centralizes exact reload charge, lock threshold, vector basis, prominence, bracket contraction and target pulse
+- regression coverage verifies shared nearest-target selection, out-of-range pursuit, Core fallback, late-cycle Lancer lock, profile prominence and malformed fallback
+- release: package 1.54.0 / v1.54 / iOS 1.54 (154)
