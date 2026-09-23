@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.69
+## Current v1.70
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1586,4 +1586,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure effectPresentationBudget helper centralizes priority, density thresholds, deterministic sampling, alpha scaling and camera restraint
 - regression coverage verifies full preservation of tactical effects, heavy-vs-small impact classification, deterministic dense sampling, progressive camera restraint and malformed-count fallback
 - release: package 1.69.0 / v1.69 / iOS 1.69 (169)
+
+## v1.70 changes
+
+- mobile combat layout now profiles the live visual viewport into standard, compact and tight density classes instead of relying only on static CSS height assumptions
+- browser chrome, dynamic viewport resizing and supported iPhone safe-area changes can now update the active combat density without restarting the match
+- standard tall phones keep the full existing match presentation, while shorter screens progressively reclaim arena height from HUD and command-deck chrome
+- iPhone SE-class heights use a dedicated tight profile with a shorter top bar, compact Core HUD, reduced command-deck spacing and smaller battle banners without changing arena coordinates
+- narrow screens keep the existing four-card-per-row interaction pattern but card rows are reduced from 53 px to 48 px, or 44 px in the tight profile, recovering meaningful vertical battlefield space
+- card art, costs and names remain visible in narrow layouts; keyboard shortcut badges are hidden on touch-size mobile layouts where they consume space without helping interaction
+- top-bar sound/help/pause controls gain larger mobile touch surfaces in standard/compact layouts while tight layouts retain a 34 px compromise to preserve battlefield height
+- Core labels, HP values, health tracks, control-objective HUD, arena hints and battle banners receive stronger mobile contrast against the battlefield
+- mobile HUD and command deck gain restrained edge shadows and stronger separator colors so they remain visually distinct over high-action scenes
+- left/right safe-area insets are now respected in addition to the existing top/bottom insets
+- viewport profiling is pure and regression-tested for modern tall phones, short mobile windows, iPhone SE-class dimensions, narrow/tall displays and malformed viewport fallback
+- all changes are presentation-only; match simulation, Phaser arena size, touch targeting, card costs, cooldowns, timing and balance remain unchanged
+- release: package 1.70.0 / v1.70 / iOS 1.70 (170)
 

@@ -4026,3 +4026,379 @@ h1 em {
     grid-template-columns: minmax(64px, 1fr) 62px 62px;
   }
 }
+
+/* v1.70: responsive match readability and small-iPhone combat layout. */
+@media (max-width: 740px) {
+  .device {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .game-top {
+    background: #101f23f7;
+    border-bottom-color: #4d655b;
+    box-shadow: 0 5px 18px #06101352;
+    position: relative;
+    z-index: 3;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-color: #53665d;
+    color: #c5d5cb;
+    background: #18292c;
+  }
+
+  .match-hud {
+    background:
+      linear-gradient(180deg, #1d3033 0%, #15272a 100%);
+    border-bottom: 1px solid #40564d;
+    box-shadow: 0 5px 16px #07111345;
+    position: relative;
+    z-index: 2;
+  }
+
+  .core-info > span {
+    font-size: 9px;
+    color: #bdcbc3;
+  }
+
+  .core-info strong {
+    font-size: 24px;
+    text-shadow: 0 1px 6px #07131288;
+  }
+
+  #enemy-commander-status {
+    font-size: 8px;
+  }
+
+  .clock > span {
+    font-size: 8px;
+    color: #9aaca3;
+  }
+
+  .health-track {
+    height: 4px;
+    background: #43524b;
+  }
+
+  .control-hud {
+    background: #0a1b1cf5;
+    border-color: #dbc982;
+    box-shadow: 0 5px 14px #050c0e55;
+  }
+
+  .control-hud > b {
+    font-size: 9px;
+  }
+
+  .control-hud > div {
+    font-size: 11px;
+  }
+
+  .arena-tip {
+    background: #0f2021f2;
+    border-color: #8aa09255;
+    color: #c0cec2;
+    font-size: 8px;
+    padding: 5px 9px;
+    max-width: calc(100% - 22px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .battle-banner {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #0d282ff7 10%,
+      #0d282ff7 90%,
+      transparent
+    );
+    border-block-color: #d2f1ca99;
+    text-shadow: 0 2px 8px #051114;
+  }
+
+  .battle-banner.danger {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #452526f7 10%,
+      #452526f7 90%,
+      transparent
+    );
+  }
+
+  .command-deck {
+    background: #132527fa;
+    border-top-color: #557064;
+    box-shadow: 0 -7px 20px #0611134d;
+  }
+
+  .energy-caption > span:last-child,
+  .territory-count,
+  .selection-info span {
+    color: #a9bbb0;
+  }
+
+  .selection-info b {
+    color: #d0ddd0;
+  }
+
+  .card {
+    border-color: #5b6d61;
+  }
+
+  .card-name {
+    color: #f0f4e5;
+    text-shadow: 0 1px 3px #07110d;
+  }
+
+  .card kbd,
+  .commander-btn kbd {
+    display: none;
+  }
+
+  .commander-btn {
+    min-height: 40px;
+    border-color: #657957;
+    background: #20372f;
+  }
+
+  .commander-btn b {
+    font-size: 11px;
+  }
+
+  .commander-btn > span:nth-last-child(2) {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 740px) {
+  .device[data-match-layout="compact"] .game-top {
+    height: 44px;
+  }
+
+  .device[data-match-layout="compact"] .overlay {
+    inset-block-start: calc(44px + env(safe-area-inset-top));
+  }
+
+  .device[data-match-layout="compact"] .match-hud {
+    height: 58px;
+    padding-block: 5px;
+  }
+
+  .device[data-match-layout="compact"] .clock > strong {
+    font-size: 27px;
+  }
+
+  .device[data-match-layout="compact"] .command-deck {
+    padding-block: 6px;
+  }
+
+  .device[data-match-layout="compact"] .resource-row,
+  .device[data-match-layout="compact"] .selection-info {
+    height: 22px;
+  }
+
+  .device[data-match-layout="compact"] .card {
+    height: 58px;
+  }
+
+  .device[data-match-layout="compact"] .card-art {
+    height: 39px;
+  }
+
+  .device[data-match-layout="compact"] .card-art svg {
+    height: 43px;
+  }
+
+  .device[data-match-layout="compact"] .commander-btn {
+    height: 36px;
+    min-height: 36px;
+    margin-top: 6px;
+  }
+
+  .device[data-match-layout="compact"] .battle-banner {
+    top: 20%;
+    padding-block: 10px;
+  }
+
+  .device[data-match-layout="compact"] .battle-banner b {
+    font-size: 23px;
+  }
+}
+
+@media (max-width: 740px) {
+  .device[data-match-layout="tight"] .game-top {
+    height: 42px;
+    padding-inline: 10px;
+  }
+
+  .device[data-match-layout="tight"] .overlay {
+    inset-block-start: calc(42px + env(safe-area-inset-top));
+  }
+
+  .device[data-match-layout="tight"] .mini-brand {
+    font-size: 26px;
+  }
+
+  .device[data-match-layout="tight"] .game-top b {
+    font-size: 14px;
+  }
+
+  .device[data-match-layout="tight"] .game-top small {
+    font-size: 6px;
+  }
+
+  .device[data-match-layout="tight"] .icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .device[data-match-layout="tight"] .match-hud {
+    height: 54px;
+    padding: 4px 10px;
+    grid-template-columns: 1fr 76px 1fr;
+    gap: 7px;
+  }
+
+  .device[data-match-layout="tight"] .core-info > span {
+    font-size: 7px;
+    letter-spacing: 0.8px;
+  }
+
+  .device[data-match-layout="tight"] .core-info strong {
+    font-size: 21px;
+  }
+
+  .device[data-match-layout="tight"] .clock > strong {
+    font-size: 25px;
+  }
+
+  .device[data-match-layout="tight"] .clock > span,
+  .device[data-match-layout="tight"] #enemy-commander-status {
+    font-size: 6px;
+  }
+
+  .device[data-match-layout="tight"] .control-hud {
+    margin: 0 9px 3px;
+    padding: 5px 7px;
+  }
+
+  .device[data-match-layout="tight"] .control-hud > b {
+    font-size: 7px;
+  }
+
+  .device[data-match-layout="tight"] .control-hud > div {
+    margin-top: 3px;
+    font-size: 9px;
+  }
+
+  .device[data-match-layout="tight"] .command-deck {
+    padding: 5px 8px 5px;
+  }
+
+  .device[data-match-layout="tight"] .resource-row,
+  .device[data-match-layout="tight"] .selection-info {
+    height: 20px;
+  }
+
+  .device[data-match-layout="tight"] .energy-symbol {
+    font-size: 20px;
+  }
+
+  .device[data-match-layout="tight"] .energy-caption strong {
+    font-size: 19px;
+  }
+
+  .device[data-match-layout="tight"] .selection-info b,
+  .device[data-match-layout="tight"] .selection-info span,
+  .device[data-match-layout="tight"] .territory-count {
+    font-size: 7px;
+  }
+
+  .device[data-match-layout="tight"] .commander-btn {
+    height: 34px;
+    min-height: 34px;
+    margin-top: 5px;
+    padding-inline: 8px;
+  }
+
+  .device[data-match-layout="tight"] .commander-icon {
+    font-size: 20px;
+  }
+
+  .device[data-match-layout="tight"] .battle-banner {
+    top: 17%;
+    padding: 8px 6px;
+  }
+
+  .device[data-match-layout="tight"] .battle-banner small {
+    font-size: 7px;
+  }
+
+  .device[data-match-layout="tight"] .battle-banner b {
+    font-size: 21px;
+  }
+
+  .device[data-match-layout="tight"] .arena-tip {
+    bottom: 4px;
+    font-size: 7px;
+    padding-block: 4px;
+  }
+}
+
+/* Narrow screens keep four cards per row, but reclaim arena height. */
+@media (max-width: 390px) {
+  .device[data-match-width="narrow"] .cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px 5px;
+  }
+
+  .device[data-match-width="narrow"] .card {
+    height: 48px;
+    padding-bottom: 3px;
+  }
+
+  .device[data-match-width="narrow"] .card-art {
+    width: 42px;
+    height: 39px;
+    bottom: 1px;
+  }
+
+  .device[data-match-width="narrow"] .card-art svg {
+    width: 41px;
+    height: 41px;
+  }
+
+  .device[data-match-width="narrow"] .card-name {
+    font-size: 9px;
+  }
+
+  .device[data-match-width="narrow"] .card-cost {
+    top: -3px;
+    min-width: 18px;
+    height: 18px;
+  }
+
+  .device[data-match-layout="tight"][data-match-width="narrow"] .card {
+    height: 44px;
+  }
+
+  .device[data-match-layout="tight"][data-match-width="narrow"] .card-art {
+    width: 38px;
+    height: 36px;
+  }
+
+  .device[data-match-layout="tight"][data-match-width="narrow"] .card-art svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .device[data-match-layout="tight"][data-match-width="narrow"] .card-name {
+    font-size: 8px;
+  }
+}
+

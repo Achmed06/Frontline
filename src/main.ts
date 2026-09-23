@@ -83,6 +83,7 @@ import {
 import { ArenaScene } from "./scene";
 import { unitSvg, commanderSvg } from "./art";
 import { Sound } from "./audio";
+import { matchViewportProfile } from "./mobile-match-layout";
 import { readStats, saveStats, setting, readDeck, saveDeck } from "./storage";
 import {
   createMatchRecord,
@@ -135,6 +136,23 @@ app.innerHTML = `
   </main>
   <aside class="field-notes"><div class="notes-tag">DEIN ERSTER EINSATZ</div><h2>Eine Front.<br>Dein Plan.</h2><ol><li><span>01</span><div><b>Truppe wählen</b><p>Sechs aus ${CARDS.filter((card) => card.kind === "unit").length} Einheiten wählen. Jede mit einer eigenen Rolle.</p></div></li><li><span>02</span><div><b>Boden erobern</b><p>Einheiten im grünen Gebiet einsetzen. Kontrollpunkte erweitern deine Front.</p></div></li><li><span>03</span><div><b>Core durchbrechen</b><p>Schütze deinen Core und erreiche den gegnerischen.</p></div></li></ol><div class="commander-note"><span>DEIN COMMANDER</span><b id="notes-commander">ATLAS <i>◇</i></b><p id="notes-ability">Aegis schützt deine Truppen für den entscheidenden Vorstoß.</p></div><div class="keyboard-note"><span>AUCH MIT TASTATUR</span><p><kbd>1</kbd>–<kbd>8</kbd> Karten &nbsp; <kbd>Q</kbd> Fähigkeit<br><kbd>Esc</kbd> Pause</p></div><div id="local-record" class="local-record"></div></aside>
 `;
+const device = document.querySelector<HTMLElement>(".device")!;
+function syncMatchViewportProfile(): void {
+  const viewport = window.visualViewport;
+  const profile = matchViewportProfile(
+    viewport?.width ?? window.innerWidth,
+    viewport?.height ?? window.innerHeight,
+  );
+  device.dataset.matchLayout = profile.density;
+  device.dataset.matchWidth = profile.narrow ? "narrow" : "regular";
+}
+syncMatchViewportProfile();
+window.addEventListener("resize", syncMatchViewportProfile, { passive: true });
+window.visualViewport?.addEventListener(
+  "resize",
+  syncMatchViewportProfile,
+  { passive: true },
+);
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const sound = new Sound();
