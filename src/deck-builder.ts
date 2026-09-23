@@ -10,6 +10,7 @@ import {
 import { masteryLabel, masteryRank, type Mastery } from "./mastery";
 import { CARDS, isValidDeck, type CardId } from "./engine";
 import { unitSvg } from "./art";
+import { deckLoadout } from "./deck-loadout";
 
 /** Lobby-only editor. Match rules and persistence remain outside this component. */
 export function renderDeckBuilder(
@@ -30,7 +31,8 @@ export function renderDeckBuilder(
     <h2>Stell dich auf.</h2><p class="deck-intro">Wähle sechs Einheiten und zwei Fähigkeiten. Im freien Training erhält der Bot dieselbe Auswahl.</p>
     <section class="deck-library" aria-label="Eigene Deckplätze"><div class="eyebrow">DEINE AUFSTELLUNGEN</div><label for="deck-slot">Speicherplatz</label><select id="deck-slot"></select><label for="deck-slot-name">Deckname</label><input id="deck-slot-name" maxlength="${DECK_NAME_LIMIT}" placeholder="Zum Beispiel: Flankendruck" autocomplete="off"><div class="deck-library-actions"><button id="deck-slot-load" class="secondary">IN EDITOR LADEN</button><button id="deck-slot-save" class="secondary">HIER SPEICHERN</button></div><p id="deck-slot-status" role="status" aria-live="polite">Deckplätze speichern deine Karten. Mit „Deck übernehmen“ aktivierst du die Auswahl. Eine laufende Einsatzserie behält ihr festes Deck.</p></section>
     <p class="deck-intro">MEISTERUNG: Eine Einheit mindestens dreimal in einem abgeschlossenen Gefecht einsetzen = ein Punkt. Bei 1 / 5 / 15 Punkten erhält sie automatisch Bronze / Silber / Gold. Nur optisch, auch Niederlagen zählen.</p><div class="deck-presets">${DECK_PRESETS.map(preset => `<button data-preset="${preset.id}">${preset.name}</button>`).join("") }</div>
-    <div class="deck-summary"><strong id="deck-count"></strong><span id="deck-average"></span></div>
+    <div id="deck-summary" class="deck-summary"><strong id="deck-count"></strong><span id="deck-average"></span></div>
+    <section id="deck-loadout" class="deck-loadout" aria-label="Aktuelle Deckaufstellung"></section>
     <section id="deck-analysis" class="deck-analysis" aria-label="Deckzusammensetzung"></section><div class="roster">${[...units, ...tactics]
       .map(
         (
@@ -62,26 +64,58 @@ export function renderDeckBuilder(
       );
       button.querySelector(".roster-check")!.textContent = chosen ? "✓" : "+";
     });
-    const unitCount = draft.filter((id) =>
-      units.some((c) => c.id === id),
-    ).length;
-    const tacticCount = draft.length - unitCount;
+    const orderedDeck = completeDeck();
+    const loadout = deckLoadout(orderedDeck);
+    const unitCount = loadout.unitCount;
+    const tacticCount = loadout.abilityCount;
+    const validDeck = isValidDeck(orderedDeck);
     get("deck-count").textContent =
       `${unitCount}/6 EINHEITEN · ${tacticCount}/2 TAKTIKEN`;
-    const cards = completeDeck().map((id) =>
+    const cards = orderedDeck.map((id) =>
       CARDS.find((card) => card.id === id)!,
     );
     get("deck-average").textContent =
       `Ø ${(cards.reduce((sum, card) => sum + card.cost, 0) / Math.max(1, cards.length)).toFixed(1)} Energie`;
+    get("deck-summary").classList.toggle("ready", validDeck);
+    get("deck-loadout").innerHTML =
+      `<div class="deck-loadout-head"><div><small>AKTIVE AUFSTELLUNG</small><b>${validDeck ? "EINSATZBEREIT" : "NOCH UNVOLLSTÄNDIG"}</b></div><span>${unitCount + tacticCount}/8 KARTEN</span></div><div class="deck-loadout-grid">${loadout.slots
+        .map((slot) =>
+          slot.cardId
+            ? `<button class="deck-loadout-slot filled ${slot.kind}" data-loadout-card="${slot.cardId}" aria-label="${slot.name} aus Deck entfernen"><span class="loadout-art">${unitSvg(slot.cardId)}</span><i>ϟ ${slot.cost}</i><b>${slot.name}</b><small>${slot.kind === "unit" ? "EINHEIT" : "TAKTIK"}</small><em aria-hidden="true">×</em></button>`
+            : `<div class="deck-loadout-slot empty ${slot.kind}"><span>+</span><b>${slot.label}</b><small>${slot.kind === "unit" ? "EINHEIT WÄHLEN" : "FÄHIGKEIT WÄHLEN"}</small></div>`,
+        )
+        .join("")}</div>`;
+    container
+      .querySelectorAll<HTMLButtonElement>("[data-loadout-card]")
+      .forEach((slot) => {
+        slot.onclick = () => {
+          const id = slot.dataset.loadoutCard as CardId;
+          draft = draft.filter((selected) => selected !== id);
+          update(`${CARDS.find((card) => card.id === id)!.name} aus der Aufstellung entfernt.`);
+        };
+      });
+    container
+      .querySelectorAll<HTMLButtonElement>("[data-preset]")
+      .forEach((button) => {
+        const preset = DECK_PRESETS.find(
+          (item) => item.id === button.dataset.preset,
+        );
+        const active =
+          !!preset &&
+          preset.cards.length === orderedDeck.length &&
+          preset.cards.every((id) => orderedDeck.includes(id));
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
     const analysis = analyzeDeck(draft);
     get("deck-analysis").innerHTML = `<b>DEINE AUFSTELLUNG</b><div class="analysis-counts"><span>${analysis.frontline} Nahkampf</span><span>${analysis.ranged} Fernkampf</span><span>${analysis.support} Heiler</span><span>${analysis.cheap} günstige Einheiten</span></div>${analysis.hints.map(hint => `<p>${hint}</p>`).join("")}<small>Gezählt werden Karten, nicht einzelne Schwarmmitglieder. Hinweise sind keine Siegprognose.</small>`;
-    get<HTMLButtonElement>("deck-save").disabled = !isValidDeck(completeDeck());
-    get<HTMLButtonElement>("deck-slot-save").disabled =
-      !isValidDeck(completeDeck());
+    get<HTMLButtonElement>("deck-save").disabled = !validDeck;
+    get<HTMLButtonElement>("deck-save").classList.toggle("ready", validDeck);
+    get<HTMLButtonElement>("deck-slot-save").disabled = !validDeck;
     get("deck-message").textContent =
       message ||
-      (isValidDeck(completeDeck())
-        ? "Deck vollständig. Alle Einheiten haben für beide Seiten gleiche Werte."
+      (validDeck
+        ? "Deck einsatzbereit. Tippe oben auf eine Karte, um sie direkt wieder zu entfernen."
         : `Noch ${6 - unitCount} ${unitCount === 5 ? "Einheit" : "Einheiten"} und ${2 - tacticCount} ${tacticCount === 1 ? "Fähigkeit" : "Fähigkeiten"} wählen.`);
   }
   buttons.forEach(
