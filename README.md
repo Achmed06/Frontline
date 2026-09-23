@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.54
+## Current v1.55
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1346,3 +1346,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure weaponTargetLockVisual helper centralizes exact reload charge, lock threshold, vector basis, prominence, bracket contraction and target pulse
 - regression coverage verifies shared nearest-target selection, out-of-range pursuit, Core fallback, late-cycle Lancer lock, profile prominence and malformed fallback
 - release: package 1.54.0 / v1.54 / iOS 1.54 (154)
+
+
+## v1.55 changes
+
+- Core damage now changes the physical machine presentation progressively instead of relying only on HP bars, cracks and generic critical particles
+- the existing 60 percent damaged and 30 percent critical thresholds remain the single visual staging boundaries
+- damaged Cores expose asymmetric armor seams, internal conduits, vent leakage and localized electrical sparks that intensify continuously with lost HP
+- critical Cores add wider armor separation, stronger conduit glow, more vent failures and detached edge debris while the turret remains visibly operational and keeps its existing real targeting/reload behavior
+- the mechanical damage layer deliberately avoids disabling, slowing or misaligning the turret so the presentation never implies a gameplay penalty that does not exist
+- Reduced Motion keeps static damage staging and short fixed vent marks instead of animated vent drift
+- destroyed Core presentation remains owned by the existing destruction sequence and is not double-rendered by the new active-damage layer
+- Core HP, turret range, turret damage, reload cadence, target selection and all balance values are unchanged
+- a pure coreDamageStateVisual helper centralizes damage staging, seam/vent/spark counts, armor gap and conduit/warning intensity
+- regression coverage verifies stable suppression, progressive damaged staging, stronger critical staging and deterministic malformed/destroyed fallback
+- release: package 1.55.0 / v1.55 / iOS 1.55 (155)

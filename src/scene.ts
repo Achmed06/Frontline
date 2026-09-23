@@ -29,6 +29,7 @@ import { weaponCycleVisual } from "./weapon-cycle-visual";
 import { weaponTargetLockVisual } from "./weapon-target-lock-visual";
 import { deploymentArrivalVisual } from "./deployment-arrival-visual";
 import { corePressure } from "./core-pressure";
+import { coreDamageStateVisual } from "./core-damage-state-visual";
 import { commanderActivationVisual } from "./commander-activation-visual";
 import { unitHitReaction } from "./unit-hit-reaction";
 import { coreTurretVisual } from "./core-turret-visual";
@@ -5483,6 +5484,7 @@ export class ArenaScene extends Phaser.Scene {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
     const pressure = corePressure(fraction, 1);
+    const coreDamage = coreDamageStateVisual(fraction);
     const destroyed = pressure.state === "destroyed";
     if (turretTarget && !destroyed) {
       const cycle = coreTurretVisual(turretCooldown);
@@ -5579,6 +5581,137 @@ export class ArenaScene extends Phaser.Scene {
       g.fillStyle(color, 0.7);
       g.fillRect(x + dx - 2, y - 7, 4, 11);
     }
+
+    if (coreDamage.state !== "stable" && !destroyed) {
+      const damagePulse = this.reducedMotion
+        ? 0.72
+        : 0.62 + Math.sin(this.clock * 7.2) * 0.16;
+      const seamColor =
+        coreDamage.state === "critical" ? 0xffb06f : 0xffd18f;
+
+      g.lineStyle(
+        1.2,
+        0x071315,
+        0.82,
+      );
+      for (let seam = 0; seam < coreDamage.exposedSeams; seam++) {
+        const side = seam % 2 === 0 ? -1 : 1;
+        const tier = Math.floor(seam / 2);
+        const sx =
+          x +
+          side *
+            (20 +
+              tier * 5 +
+              coreDamage.armorGap * 0.35);
+        const sy =
+          y -
+          15 +
+          tier * 9;
+        g.lineBetween(
+          sx,
+          sy,
+          sx + side * (5 + coreDamage.armorGap * 0.45),
+          sy + 4 + tier,
+        );
+      }
+
+      g.lineStyle(
+        1.15,
+        seamColor,
+        coreDamage.conduitAlpha,
+      );
+      for (let conduit = 0; conduit < Math.min(4, coreDamage.exposedSeams); conduit++) {
+        const side = conduit % 2 === 0 ? -1 : 1;
+        const cy = y - 12 + Math.floor(conduit / 2) * 13;
+        const innerX = x + side * 18;
+        const outerX =
+          x +
+          side *
+            (25 + coreDamage.armorGap * 0.55);
+        g.lineBetween(innerX, cy, outerX, cy + side * 2);
+        g.fillStyle(
+          conduit % 2 === 0 ? color : seamColor,
+          coreDamage.conduitAlpha * 0.9,
+        );
+        g.fillCircle(outerX, cy + side * 2, 1.4);
+      }
+
+      for (let vent = 0; vent < coreDamage.ventCount; vent++) {
+        const side = vent % 2 === 0 ? -1 : 1;
+        const vx = x + side * (29 + (vent % 3) * 2);
+        const vy = y - 10 + Math.floor(vent / 2) * 8;
+        const drift = this.reducedMotion
+          ? 3
+          : 3 + ((this.clock * (7 + vent) + vent * 3.7) % 7);
+        g.lineStyle(
+          1.1,
+          0xd9eef0,
+          coreDamage.ventAlpha *
+            (0.62 + damagePulse * 0.24),
+        );
+        g.lineBetween(
+          vx,
+          vy,
+          vx + side * (2 + vent % 2),
+          vy - drift,
+        );
+      }
+
+      g.lineStyle(
+        1,
+        0xffd9a8,
+        coreDamage.warningAlpha * damagePulse,
+      );
+      for (let spark = 0; spark < coreDamage.sparkCount; spark++) {
+        const side = spark % 2 === 0 ? -1 : 1;
+        const sx = x + side * (22 + (spark % 3) * 4);
+        const sy = y - 7 + Math.floor(spark / 2) * 6;
+        const reach = 3 + (spark % 3) * 1.5;
+        g.lineBetween(
+          sx,
+          sy,
+          sx + side * reach,
+          sy - 2 - (spark % 2) * 2,
+        );
+      }
+
+      if (coreDamage.state === "critical") {
+        g.fillStyle(
+          0xff8b68,
+          coreDamage.warningAlpha * 0.18 * damagePulse,
+        );
+        g.fillEllipse(
+          x,
+          y + 7,
+          66 + coreDamage.armorGap * 2,
+          18,
+        );
+
+        for (let debris = 0; debris < coreDamage.debrisCount; debris++) {
+          const side = debris % 2 === 0 ? -1 : 1;
+          const tier = Math.floor(debris / 2);
+          const dx =
+            x +
+            side *
+              (34 + tier * 3 + coreDamage.armorGap * 0.3);
+          const dy =
+            y +
+            15 -
+            (tier % 3) * 6;
+          g.fillStyle(
+            debris % 3 === 0 ? seamColor : 0x394947,
+            0.42 + damagePulse * 0.18,
+          );
+          g.fillRect(
+            dx,
+            dy,
+            debris % 2 === 0 ? 3 : 2,
+            1.5 + (debris % 3),
+          );
+        }
+      }
+    }
+
     const aimVisual = coreTurretAimVisual(
       x,
       y - 3,
