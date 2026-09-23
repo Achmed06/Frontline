@@ -11,9 +11,8 @@ export type CommanderBriefing = {
 };
 
 export function commanderBriefing(id: CommanderId): CommanderBriefing {
-  const commander = COMMANDERS[id];
-
-  if (id === "atlas")
+  if (id === "atlas") {
+    const commander = COMMANDERS.atlas;
     return {
       id,
       name: commander.name,
@@ -27,8 +26,10 @@ export function commanderBriefing(id: CommanderId): CommanderBriefing {
       ],
       emphasis: "defense",
     };
+  }
 
-  if (id === "lyra")
+  if (id === "lyra") {
+    const commander = COMMANDERS.lyra;
     return {
       id,
       name: commander.name,
@@ -42,7 +43,9 @@ export function commanderBriefing(id: CommanderId): CommanderBriefing {
       ],
       emphasis: "recovery",
     };
+  }
 
+  const commander = COMMANDERS.nova;
   return {
     id,
     name: commander.name,
