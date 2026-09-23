@@ -7,8 +7,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
-        window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = CAPBridgeViewController()
+        // Main.storyboard already points at FrontlineViewController. Keep that
+        // instance when UIKit created it, and recover with the same subclass
+        // if a scene is ever constructed without the storyboard.
+        if window == nil {
+            let appWindow = UIWindow(windowScene: windowScene)
+            appWindow.rootViewController = FrontlineViewController()
+            window = appWindow
+        } else if !(window?.rootViewController is FrontlineViewController) {
+            window?.rootViewController = FrontlineViewController()
+        }
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
