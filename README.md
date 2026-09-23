@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.73
+## Current v1.74
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1654,4 +1654,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies new construction, occupied land, fixed upgrades, movement destinations, locked projects and malformed target choices against the real construction helpers
 - base progression requirements, project costs, unlock thresholds, saved layouts, roads, facing, cosmetic-only rules and combat balance are unchanged
 - release: package 1.73.0 / v1.73 / iOS 1.73 (173)
+
+## v1.74 changes
+
+- the deck builder now exposes the current 6+2 combat loadout as a dedicated visual rail instead of relying only on count text and highlighted roster cards
+- the first six slots are reserved for units and the final two for tactical abilities, matching the real deck validation rules
+- filled loadout slots show canonical card art, name and energy cost; empty slots explicitly show which unit or tactic position is still missing
+- tapping a filled loadout slot removes that exact card immediately, making deck correction substantially faster on touch devices
+- the loadout rail derives all metadata from the canonical CARDS definitions and preserves the same unit/tactic order used by the actual active deck
+- the deck summary now has a distinct ready state and the primary Deck übernehmen action receives a stronger confirmation treatment only when isValidDeck passes
+- matching built-in presets are highlighted automatically without changing or auto-applying the player's draft
+- selected roster cards receive stronger confirmation hierarchy while retaining the existing mastery frame and role styling
+- composition analysis remains descriptive only, but its presentation is visually subordinate to the active 8-card loadout
+- narrow phones render the eight loadout slots as a compact 4x2 grid so the selected deck remains visible without horizontal scrolling
+- a pure deckLoadout helper centralizes slot splitting, empty positions, counts, canonical card metadata and completion state
+- regression coverage verifies complete decks, partial decks, stable unit/tactic ordering, unknown-value safety and canonical card metadata
+- deck validity, card costs, stats, presets, mastery, saved deck slots, active series decks and all combat balance are unchanged
+- release: package 1.74.0 / v1.74 / iOS 1.74 (174)
 
