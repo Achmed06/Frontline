@@ -10,10 +10,10 @@ export function startDuelClock(service: DuelService): () => void {
  const timer=setInterval(()=>{const now=performance.now();service.tick((now-previous)/1000);previous=now;},1000/30);
  timer.unref();return ()=>clearInterval(timer);
 }
-export async function createFrontlineServer(directory: string) {
+export async function createFrontlineServer(directory: string, options: { maxRooms?: number; allowedOrigins?: readonly string[] } = {}) {
  const root=await realpath(directory);
  if(!(await stat(resolve(root,'index.html'))).isFile() || !(await stat(resolve(root,'duel.html'))).isFile()) throw Error('Spielbuild fehlt. Zuerst npm run build ausführen.');
- const service=new DuelService();const api=duelMiddleware(service);
+ const service=new DuelService(Date.now, options.maxRooms ?? 12);const api=duelMiddleware(service, options.allowedOrigins ? [...options.allowedOrigins] : undefined);
  const clients=new Map<string,{start:number;count:number}>();
  const server=createServer(async(req,res)=>{
   res.setHeader('X-Content-Type-Options','nosniff');
@@ -23,6 +23,7 @@ export async function createFrontlineServer(directory: string) {
   try {
    const path=new URL(req.url??'/', 'http://localhost').pathname;
    if(path==='/healthz') {if(req.method!=='GET'&&req.method!=='HEAD'){send(405,'Method not allowed');return;}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');res.end(req.method==='HEAD'?undefined:JSON.stringify({status:'ok'}));return;}
+   if(path==='/readyz') {if(req.method!=='GET'&&req.method!=='HEAD'){send(405,'Method not allowed');return;}res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');res.end(req.method==='HEAD'?undefined:JSON.stringify({status:'ready',...service.status()}));return;}
    if(path==='/api/duel') {
     const now=Date.now(),ip=req.socket.remoteAddress??'unknown';
     let bucket=clients.get(ip);
