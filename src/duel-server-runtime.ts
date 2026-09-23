@@ -3,6 +3,7 @@ export type DuelServerRuntimeConfig = {
   port: number;
   maxRooms: number;
   allowedOrigins: readonly string[];
+  trustedProxyHops: number;
   production: boolean;
 };
 
@@ -74,6 +75,32 @@ export function duelServerRuntimeConfig(
     port: integer(env.PORT, 8080, 1, 65535, "PORT"),
     maxRooms: integer(env.DUEL_MAX_ROOMS, 12, 2, 64, "DUEL_MAX_ROOMS"),
     allowedOrigins: duelAllowedOrigins(env.DUEL_ALLOWED_ORIGINS),
+    trustedProxyHops: integer(
+      env.DUEL_TRUST_PROXY_HOPS,
+      0,
+      0,
+      3,
+      "DUEL_TRUST_PROXY_HOPS",
+    ),
     production,
   };
+}
+
+
+export function duelClientAddress(
+  remoteAddress: string | undefined,
+  forwardedFor: string | string[] | undefined,
+  trustedProxyHops: number,
+): string {
+  const remote = remoteAddress?.trim() || "unknown";
+  if (trustedProxyHops <= 0 || !forwardedFor) return remote;
+  const raw = Array.isArray(forwardedFor) ? forwardedFor.join(",") : forwardedFor;
+  const forwarded = raw
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (!forwarded.length) return remote;
+  const chain = [...forwarded, remote];
+  const index = chain.length - 1 - trustedProxyHops;
+  return index >= 0 ? chain[index] : remote;
 }
