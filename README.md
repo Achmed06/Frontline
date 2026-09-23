@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.68
+## Current v1.69
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1570,4 +1570,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - README release metadata now reflects all three current commanders and removes the obsolete Work 0.52 wording
 - gameplay timing, combat values, targeting, haptics and balance are unchanged
 - release: package 1.68.0 / v1.68 / iOS 1.68 (168)
+
+## v1.69 changes
+
+- dense matches now use a deterministic presentation budget so tactical information stays readable when many transient effects overlap
+- objective captures, frontline shifts, Commander activations, Core hits, tactical abilities, shield breaks and specialist confirmations remain full-strength at every density level
+- deaths, shields, healing, deployments and genuinely heavy impacts remain visible while receiving only restrained alpha compression under extreme load
+- routine projectile and small-impact feedback stays unchanged in normal fights, begins soft compression only after more than 18 simultaneous effects and is deterministically sampled only in genuinely dense states
+- dense routine sampling uses stable effect IDs rather than randomness, so the same simulation state produces the same presentation decision
+- small routine impacts are the primary clutter target; impacts with radius 12 or larger are automatically promoted to high-priority presentation
+- camera impulse intensity now scales down progressively as simultaneous effect count rises, preventing stacked hits and K.O.s from making large fights visually unstable
+- critical visual geometry itself is never removed by the density system even when camera shake is restrained
+- combat-value text keeps its existing independent five-label cap and is not made noisier by this change
+- the effect budget is renderer-only and does not delete, delay or alter simulation effects, damage, projectiles, targeting, capture, status effects or replay determinism
+- a pure effectPresentationBudget helper centralizes priority, density thresholds, deterministic sampling, alpha scaling and camera restraint
+- regression coverage verifies full preservation of tactical effects, heavy-vs-small impact classification, deterministic dense sampling, progressive camera restraint and malformed-count fallback
+- release: package 1.69.0 / v1.69 / iOS 1.69 (169)
 
