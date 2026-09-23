@@ -63,6 +63,7 @@ import { movementFootprintVisual } from "./movement-footprint-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
 import { slowStatusVisual } from "./slow-status-visual";
 import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
+import { pulseStrikeVisual } from "./pulse-strike-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 
 const MINT = 0x41ffc1,
@@ -3664,11 +3665,189 @@ export class ArenaScene extends Phaser.Scene {
                     : e.type === "pulse" || e.type === "blast"
                       ? 0xffc368
                       : color;
-        if (e.type === "pulse" || e.type === "blast" || e.type === "capture") {
+        if (e.type === "blast" || e.type === "capture") {
           fx.fillStyle(effectColor, alpha * 0.22);
           fx.fillCircle(e.x, e.y, 5 + radius * progress);
           fx.lineStyle(2, 0xfff2bf, alpha);
           fx.strokeCircle(e.x, e.y, 3 + radius * progress * 0.65);
+        }
+        if (e.type === "pulse") {
+          const pulseVisual = pulseStrikeVisual(e);
+          if (pulseVisual) {
+            const strikeAlpha = pulseVisual.alpha;
+            const bright = 0xfff6d2;
+            const hot = 0xffd477;
+            const rotation = this.reducedMotion
+              ? e.id * 0.17
+              : e.id * 0.17 + pulseVisual.progress * 0.72;
+
+            fx.fillStyle(
+              effectColor,
+              strikeAlpha * 0.055,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              pulseVisual.shockRadius,
+            );
+
+            fx.lineStyle(
+              3.2,
+              bright,
+              strikeAlpha * 0.9,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              pulseVisual.shockRadius,
+            );
+            fx.lineStyle(
+              1.6,
+              hot,
+              strikeAlpha * 0.68,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              pulseVisual.secondaryRadius,
+            );
+            fx.lineStyle(
+              1,
+              effectColor,
+              strikeAlpha * 0.48,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              pulseVisual.radius,
+            );
+
+            fx.fillStyle(
+              bright,
+              strikeAlpha * 0.82,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              pulseVisual.coreRadius,
+            );
+            fx.fillStyle(
+              effectColor,
+              strikeAlpha * 0.34,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              pulseVisual.coreRadius * 2.1,
+            );
+
+            for (
+              let spoke = 0;
+              spoke < pulseVisual.spokeCount;
+              spoke++
+            ) {
+              const angle =
+                rotation +
+                (spoke * Math.PI * 2) /
+                  pulseVisual.spokeCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const inner =
+                pulseVisual.spokeInner *
+                (0.78 + (spoke % 2) * 0.12);
+              const outer =
+                pulseVisual.spokeOuter *
+                (0.86 + (spoke % 3) * 0.07);
+              const sx = e.x + tx * inner;
+              const sy = e.y + ty * inner;
+              const ex = e.x + tx * outer;
+              const ey = e.y + ty * outer;
+
+              fx.lineStyle(
+                spoke % 2 === 0 ? 1.8 : 1.1,
+                spoke % 2 === 0 ? bright : hot,
+                strikeAlpha *
+                  (spoke % 2 === 0 ? 0.7 : 0.46),
+              );
+              fx.lineBetween(sx, sy, ex, ey);
+              fx.lineBetween(
+                ex,
+                ey,
+                ex - tx * 6 + px * 3,
+                ey - ty * 6 + py * 3,
+              );
+              fx.lineBetween(
+                ex,
+                ey,
+                ex - tx * 6 - px * 3,
+                ey - ty * 6 - py * 3,
+              );
+            }
+
+            fx.lineStyle(
+              1.25,
+              bright,
+              strikeAlpha * 0.56,
+            );
+            for (
+              let arc = 0;
+              arc < pulseVisual.arcCount;
+              arc++
+            ) {
+              const angle =
+                rotation * 1.4 +
+                (arc * Math.PI * 2) /
+                  pulseVisual.arcCount;
+              const tangentX = -Math.sin(angle);
+              const tangentY = Math.cos(angle);
+              const radialX = Math.cos(angle);
+              const radialY = Math.sin(angle);
+              const arcRadius =
+                pulseVisual.innerRadius *
+                (0.82 + (arc % 2) * 0.2);
+              const cx = e.x + radialX * arcRadius;
+              const cy = e.y + radialY * arcRadius;
+              const reach =
+                4 +
+                pulseVisual.intensity * 3;
+              fx.lineBetween(
+                cx - tangentX * reach,
+                cy - tangentY * reach,
+                cx + tangentX * reach,
+                cy + tangentY * reach,
+              );
+            }
+
+            if (!this.reducedMotion) {
+              const flare =
+                1 -
+                Math.min(
+                  1,
+                  pulseVisual.progress / 0.24,
+                );
+              if (flare > 0) {
+                fx.lineStyle(
+                  2.2,
+                  bright,
+                  strikeAlpha * flare * 0.7,
+                );
+                fx.lineBetween(
+                  e.x,
+                  e.y - 34 - flare * 18,
+                  e.x,
+                  e.y + 34 + flare * 18,
+                );
+                fx.lineBetween(
+                  e.x - 34 - flare * 18,
+                  e.y,
+                  e.x + 34 + flare * 18,
+                  e.y,
+                );
+              }
+            }
+          }
         }
         if (e.type === "shield-hit" || e.type === "shield-break") {
           const visual = shieldImpactVisual(e);

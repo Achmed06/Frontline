@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.56
+## Current v1.57
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1378,3 +1378,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure coreTargetAcquisitionVisual helper centralizes the 0.48 second timing, ring contraction, bracket reach, scan position and fade
 - regression coverage verifies initial acquisition, mid-handoff contraction, clean expiry and malformed fallback
 - release: package 1.56.0 / v1.56 / iOS 1.56 (156)
+
+
+## v1.57 changes
+
+- Pulse now lands as a dedicated high-impact tactical strike instead of sharing the same generic expanding circle used by ordinary blast/capture effects
+- the Pulse cast effect now carries the card's real 82-unit damage radius and 85 damage as presentation metadata; gameplay still uses the existing abilityTargetPreview and damageUnit paths
+- the strike opens with a compact white-hot center flare, then drives two expanding shock fronts toward the exact gameplay radius
+- eight radial discharge spokes, impact chevrons and short capacitor arcs make the area hit read as a deliberate energy weapon rather than a generic orange flash
+- the outer boundary remains visible at the real 82-unit radius during the transient effect, so the animation communicates the same footprint that targeting and damage use
+- existing per-target shield absorption, HP impact, directional hit reactions, K.O. bursts and Core-hit feedback still layer on top, preserving exact victim-specific outcomes
+- Reduced Motion keeps the exact-radius rings, spokes and impact staging while suppressing the brief cross-flare/rotational motion
+- Mortar blast and relay capture visuals retain their previous rendering and are no longer coupled to Pulse's presentation branch
+- Pulse cost, 85 unit damage, 45 Core damage, 82 unit radius, 100 Core range, target selection and all balance values are unchanged
+- a pure pulseStrikeVisual helper centralizes strike progress, exact radius, shock-front expansion, spoke geometry, arc count and damage-derived presentation intensity
+- regression coverage verifies exact 82 radius/85 damage metadata from a real Match play, outward expansion, release fade and malformed/non-Pulse suppression
+- release: package 1.57.0 / v1.57 / iOS 1.57 (157)

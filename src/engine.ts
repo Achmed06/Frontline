@@ -1206,7 +1206,17 @@ export class Match {
           (this.state.stats.unitPlays[card.id] ?? 0) + 1;
       }
     } else if (card.id === "pulse") {
-      this.effect("pulse", x, y, team, 0.75);
+      this.effect(
+        "pulse",
+        x,
+        y,
+        team,
+        0.75,
+        undefined,
+        card.range,
+        card.damage,
+        card.id,
+      );
       for (const unit of this.state.units) {
         if (targetIds.has(unit.id))
           this.damageUnit(
