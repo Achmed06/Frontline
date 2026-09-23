@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.70
+## Current v1.71
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1602,4 +1602,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - viewport profiling is pure and regression-tested for modern tall phones, short mobile windows, iPhone SE-class dimensions, narrow/tall displays and malformed viewport fallback
 - all changes are presentation-only; match simulation, Phaser arena size, touch targeting, card costs, cooldowns, timing and balance remain unchanged
 - release: package 1.70.0 / v1.70 / iOS 1.70 (170)
+
+## v1.71 changes
+
+- the post-match screen is rebuilt into a clear tactical debrief instead of presenting every result block with equal visual weight
+- a simulation-backed final snapshot now surfaces outcome, both Core percentages, both territory totals, captures, deployments, kills and tactical-ability usage directly from the finished MatchState
+- the debrief opens with a dedicated win/loss/draw hero and an immediate two-sided Core/territory comparison
+- the existing decision analysis remains intact directly below the hero, so the exact reason the match was decided is still explicit
+- the final 3x3 territory map now follows the decision block as the visual proof of the ending frontline
+- player performance is grouped into a four-column action panel: captures, deployments, kills and abilities
+- historical comparison remains visible but is visually separated from immediate match-decision information
+- campaign stars, series progress, Tagesfront records, learning progress and mastery rewards are grouped into a dedicated progression stack without hiding or deleting any existing reward information
+- next mission, rematch/continue and return-to-base controls now live in a dedicated action panel with a clearer primary/secondary hierarchy
+- feedback remains available but is visually subordinate to the gameplay result and actions
+- narrow-phone layouts receive compact result hero, decision rows, performance values and single-column feedback controls
+- resultSnapshot is a pure tested helper with safe Core-percent clamping and explicit win/loss/draw handling
+- no result logic, progression rules, rewards, history recording, stars, mastery, campaign unlocks or match balance changed
+- release: package 1.71.0 / v1.71 / iOS 1.71 (171)
 
