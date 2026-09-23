@@ -67,6 +67,7 @@ import { stasisCastVisual } from "./stasis-cast-visual";
 import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
 import { repulsorCastVisual } from "./repulsor-cast-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
+import { mortarBlastVisual } from "./mortar-blast-visual";
 import { rallyCastVisual } from "./rally-cast-visual";
 import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
@@ -3670,11 +3671,178 @@ export class ArenaScene extends Phaser.Scene {
                     : e.type === "pulse" || e.type === "blast"
                       ? 0xffc368
                       : color;
-        if (e.type === "blast" || e.type === "capture") {
+        if (e.type === "capture") {
           fx.fillStyle(effectColor, alpha * 0.22);
           fx.fillCircle(e.x, e.y, 5 + radius * progress);
           fx.lineStyle(2, 0xfff2bf, alpha);
           fx.strokeCircle(e.x, e.y, 3 + radius * progress * 0.65);
+        }
+        if (e.type === "blast") {
+          const mortarBlast = mortarBlastVisual(e);
+          if (mortarBlast) {
+            const hot = 0xffd27a;
+            const bright = 0xfff1c7;
+            const soot = 0x5b4a3f;
+            const baseAngle = mortarBlast.directional
+              ? Math.atan2(mortarBlast.ny, mortarBlast.nx)
+              : e.id * 0.19;
+            const rotation = this.reducedMotion
+              ? baseAngle
+              : baseAngle + mortarBlast.progress * 0.22;
+
+            fx.fillStyle(
+              effectColor,
+              mortarBlast.alpha * 0.08,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              mortarBlast.shockRadius,
+            );
+
+            fx.lineStyle(
+              3.1,
+              bright,
+              mortarBlast.alpha * 0.9,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              mortarBlast.shockRadius,
+            );
+
+            fx.lineStyle(
+              1.6,
+              hot,
+              mortarBlast.alpha * 0.68,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              mortarBlast.innerRadius,
+            );
+
+            fx.lineStyle(
+              1,
+              effectColor,
+              mortarBlast.alpha * 0.38,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              mortarBlast.radius,
+            );
+
+            const coreRadius =
+              4.5 + mortarBlast.intensity * 3.5;
+            fx.fillStyle(
+              bright,
+              mortarBlast.alpha * 0.88,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              coreRadius,
+            );
+            fx.fillStyle(
+              soot,
+              mortarBlast.alpha * 0.36,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              coreRadius * 1.8,
+            );
+
+            for (
+              let debris = 0;
+              debris < mortarBlast.debrisCount;
+              debris++
+            ) {
+              const angle =
+                rotation +
+                (debris * Math.PI * 2) /
+                  mortarBlast.debrisCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const directionalBias =
+                mortarBlast.directional
+                  ? Math.max(
+                      0.65,
+                      1 +
+                        (tx * mortarBlast.nx +
+                          ty * mortarBlast.ny) *
+                          0.28,
+                    )
+                  : 1;
+              const inner =
+                mortarBlast.innerRadius *
+                (0.74 + (debris % 3) * 0.07);
+              const outer =
+                mortarBlast.shockRadius *
+                (0.8 + (debris % 2) * 0.12) *
+                directionalBias;
+              const sx = e.x + tx * inner;
+              const sy = e.y + ty * inner;
+              const ex = e.x + tx * outer;
+              const ey = e.y + ty * outer;
+              const tangentX = -ty;
+              const tangentY = tx;
+              const chip =
+                mortarBlast.debrisLength *
+                (0.72 + (debris % 3) * 0.12);
+
+              fx.lineStyle(
+                debris % 3 === 0 ? 1.7 : 1.05,
+                debris % 2 === 0 ? bright : hot,
+                mortarBlast.alpha *
+                  (debris % 3 === 0 ? 0.72 : 0.48),
+              );
+              fx.lineBetween(sx, sy, ex, ey);
+              fx.lineBetween(
+                ex - tangentX * chip * 0.45,
+                ey - tangentY * chip * 0.45,
+                ex + tangentX * chip * 0.45,
+                ey + tangentY * chip * 0.45,
+              );
+            }
+
+            if (mortarBlast.directional) {
+              const recoil =
+                8 + mortarBlast.intensity * 8;
+              fx.lineStyle(
+                1.25,
+                bright,
+                mortarBlast.alpha * 0.52,
+              );
+              fx.lineBetween(
+                e.x - mortarBlast.nx * recoil,
+                e.y - mortarBlast.ny * recoil,
+                e.x + mortarBlast.nx * recoil * 0.55,
+                e.y + mortarBlast.ny * recoil * 0.55,
+              );
+              fx.lineStyle(
+                1,
+                hot,
+                mortarBlast.alpha * 0.4,
+              );
+              fx.lineBetween(
+                e.x - mortarBlast.px * recoil * 0.7,
+                e.y - mortarBlast.py * recoil * 0.7,
+                e.x + mortarBlast.px * recoil * 0.7,
+                e.y + mortarBlast.py * recoil * 0.7,
+              );
+            }
+          } else {
+            fx.fillStyle(effectColor, alpha * 0.22);
+            fx.fillCircle(e.x, e.y, 5 + radius * progress);
+            fx.lineStyle(2, 0xfff2bf, alpha);
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              3 + radius * progress * 0.65,
+            );
+          }
         }
         if (e.type === "pulse") {
           const pulseVisual = pulseStrikeVisual(e);
