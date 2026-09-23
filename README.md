@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.61
+## Current v1.62
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1456,4 +1456,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure stasisCastVisual helper centralizes cast progress, exact radius, slow severity, lattice expansion, node geometry, shard count and release fade
 - regression coverage verifies real Match metadata, exact 78/0.6 values, the real four-second slow outcome, outward expansion, release fade and malformed/non-Stasis suppression
 - release: package 1.61.0 / v1.61 / iOS 1.61 (161)
+
+## v1.62 changes
+
+- Repulsor now opens with a dedicated outward pressure-wave cast instead of the older generic expanding circle with static arrows
+- the Repulsor cast event now carries the card's real 72-unit target radius, exact 55-unit push distance and source card identity as presentation metadata
+- a faint fixed boundary remains at the exact targeting radius while the active pressure front expands through it, keeping cast staging aligned with gameplay reach
+- eight radial impulse vectors, a bright compression front, secondary pressure ring and layered outward pulses make the cast read as directional force rather than generic area damage
+- arrow length, ring spacing and center compression strength are driven by the real 55-unit displacement value instead of renderer-only constants
+- Reduced Motion preserves the exact boundary, pressure front, impulse vectors and center compression while freezing rotational and pulse travel
+- the existing repulsor-move presentation still follows each target's actual clamped start-to-landing vector, so cast footprint and real displacement remain separate but visually linked
+- Stasis metadata and rendering are unchanged even though Stasis and Repulsor share the same ability-resolution branch
+- Repulsor cost, 72 radius, 55-unit requested push, target selection, board clamping and all balance values are unchanged
+- a pure repulsorCastVisual helper centralizes exact radius, push strength, wave expansion, impulse geometry and release fade
+- regression coverage verifies exact 72/55 metadata from a real Match play, outward expansion, fade and malformed/non-Repulsor suppression
+- release: package 1.62.0 / v1.62 / iOS 1.62 (162)
 

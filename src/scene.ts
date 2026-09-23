@@ -65,6 +65,7 @@ import { slowStatusVisual } from "./slow-status-visual";
 import { stasisHitVisual } from "./stasis-hit-visual";
 import { stasisCastVisual } from "./stasis-cast-visual";
 import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
+import { repulsorCastVisual } from "./repulsor-cast-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
 import { rallyCastVisual } from "./rally-cast-visual";
 import { pioneerCaptureVisual } from "./pioneer-capture-visual";
@@ -5205,26 +5206,171 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "repulsor") {
-          const wave = 10 + radius * progress;
-          fx.fillStyle(effectColor, alpha * 0.04);
-          fx.fillCircle(e.x, e.y, wave);
-          fx.lineStyle(2.2, effectColor, alpha * 0.92);
-          fx.strokeCircle(e.x, e.y, wave);
-          for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4;
-            const tx = Math.cos(angle);
-            const ty = Math.sin(angle);
-            const px = -ty;
-            const py = tx;
-            const inner = wave * 0.5;
-            const outer = wave * 0.94;
-            const sx = e.x + tx * inner;
-            const sy = e.y + ty * inner;
-            const ex = e.x + tx * outer;
-            const ey = e.y + ty * outer;
-            fx.lineBetween(sx, sy, ex, ey);
-            fx.lineBetween(ex, ey, ex - tx * 6 + px * 3.5, ey - ty * 6 + py * 3.5);
-            fx.lineBetween(ex, ey, ex - tx * 6 - px * 3.5, ey - ty * 6 - py * 3.5);
+          const cast = repulsorCastVisual(e);
+          if (cast) {
+            const brightPush = 0xfff2d4;
+            const warmPush = 0xffcf80;
+            const rotation = this.reducedMotion
+              ? e.id * 0.07
+              : e.id * 0.07 + cast.progress * 0.38;
+
+            fx.fillStyle(
+              effectColor,
+              cast.alpha * 0.045,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              cast.waveRadius,
+            );
+
+            fx.lineStyle(
+              1.1,
+              effectColor,
+              cast.alpha * 0.34,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              cast.boundaryRadius,
+            );
+
+            fx.lineStyle(
+              3,
+              brightPush,
+              cast.alpha * 0.9,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              cast.waveRadius,
+            );
+
+            fx.lineStyle(
+              1.4,
+              warmPush,
+              cast.alpha * 0.62,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              Math.max(
+                6,
+                cast.waveRadius - cast.ringGap,
+              ),
+            );
+
+            fx.lineStyle(
+              1.1,
+              effectColor,
+              cast.alpha * 0.5,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              cast.innerRadius,
+            );
+
+            for (
+              let spoke = 0;
+              spoke < cast.spokeCount;
+              spoke++
+            ) {
+              const angle =
+                rotation +
+                (spoke * Math.PI * 2) /
+                  cast.spokeCount;
+              const tx = Math.cos(angle);
+              const ty = Math.sin(angle);
+              const px = -ty;
+              const py = tx;
+              const inner =
+                cast.innerRadius * 0.9;
+              const outer =
+                cast.waveRadius * 0.9;
+              const sx = e.x + tx * inner;
+              const sy = e.y + ty * inner;
+              const ex = e.x + tx * outer;
+              const ey = e.y + ty * outer;
+              const arrowLength =
+                cast.arrowLength *
+                (0.86 + (spoke % 2) * 0.12);
+              const arrowWidth =
+                cast.arrowWidth *
+                (0.9 + (spoke % 3) * 0.08);
+
+              fx.lineStyle(
+                spoke % 2 === 0 ? 2 : 1.25,
+                spoke % 2 === 0
+                  ? brightPush
+                  : warmPush,
+                cast.alpha *
+                  (spoke % 2 === 0 ? 0.78 : 0.54),
+              );
+              fx.lineBetween(sx, sy, ex, ey);
+              fx.lineBetween(
+                ex,
+                ey,
+                ex - tx * arrowLength + px * arrowWidth,
+                ey - ty * arrowLength + py * arrowWidth,
+              );
+              fx.lineBetween(
+                ex,
+                ey,
+                ex - tx * arrowLength - px * arrowWidth,
+                ey - ty * arrowLength - py * arrowWidth,
+              );
+            }
+
+            const pulse =
+              this.reducedMotion
+                ? 0.55
+                : (cast.progress * 2.2) % 1;
+            for (let ring = 0; ring < 3; ring++) {
+              const local =
+                (pulse + ring / 3) % 1;
+              const r =
+                cast.innerRadius +
+                (cast.boundaryRadius - cast.innerRadius) *
+                  local;
+              fx.lineStyle(
+                1,
+                effectColor,
+                cast.alpha *
+                  (0.28 + (1 - local) * 0.3),
+              );
+              fx.strokeCircle(e.x, e.y, r);
+            }
+
+            const coreReach =
+              7 + cast.strength * 5;
+            fx.lineStyle(
+              1.5,
+              brightPush,
+              cast.alpha * 0.58,
+            );
+            fx.lineBetween(
+              e.x - coreReach,
+              e.y,
+              e.x + coreReach,
+              e.y,
+            );
+            fx.lineBetween(
+              e.x,
+              e.y - coreReach,
+              e.x,
+              e.y + coreReach,
+            );
+
+            fx.fillStyle(
+              brightPush,
+              cast.alpha * 0.76,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              2.2 + cast.strength * 1.8,
+            );
           }
         }
         if (e.type === "breaker") {
