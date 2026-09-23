@@ -27,15 +27,15 @@ test("acquired enemies remain the target while out of firing range", () => {
   const match = new Match({ seed: 42, botEnabled: false });
   match.state.energy.player = 10;
   match.state.energy.enemy = 10;
-  assert.equal(match.play("player", "sentinel", 210, 430).ok, true);
+  assert.equal(match.play("player", "lancer", 210, 430).ok, true);
   assert.equal(match.play("enemy", "vanguard", 210, 110).ok, true);
 
-  const sentinel = match.state.units.find((unit) => unit.cardId === "sentinel")!;
+  const lancer = match.state.units.find((unit) => unit.cardId === "lancer")!;
   const enemy = match.state.units.find((unit) => unit.team === "enemy")!;
-  Object.assign(sentinel, { x: 210, y: 300 });
-  Object.assign(enemy, { x: 210, y: 160 });
+  Object.assign(lancer, { x: 210, y: 300 });
+  Object.assign(enemy, { x: 210, y: 135 });
 
-  const target = unitCombatTarget(match.state, sentinel);
+  const target = unitCombatTarget(match.state, lancer);
   assert.ok(target && !target.core);
   assert.equal(target.target.id, enemy.id);
   assert.equal(target.inRange, false);
