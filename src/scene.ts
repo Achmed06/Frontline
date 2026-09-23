@@ -65,6 +65,7 @@ import { slowStatusVisual } from "./slow-status-visual";
 import { stasisHitVisual } from "./stasis-hit-visual";
 import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
+import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 
 const MINT = 0x41ffc1,
@@ -4644,26 +4645,6 @@ export class ArenaScene extends Phaser.Scene {
             );
           }
         }
-        if (e.type === "pulse") {
-          const wave = 8 + radius * progress;
-          fx.fillStyle(effectColor, alpha * 0.08);
-          fx.fillCircle(e.x, e.y, wave);
-          fx.lineStyle(3.5, effectColor, alpha * 0.9);
-          fx.strokeCircle(e.x, e.y, wave);
-          fx.lineStyle(1.5, 0xffffff, alpha * 0.5);
-          fx.strokeCircle(e.x, e.y, Math.max(4, wave * 0.58));
-          for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4 + e.id * 0.13;
-            const inner = wave * 0.68;
-            const outer = wave * 0.94;
-            fx.lineBetween(
-              e.x + Math.cos(angle) * inner,
-              e.y + Math.sin(angle) * inner,
-              e.x + Math.cos(angle) * outer,
-              e.y + Math.sin(angle) * outer,
-            );
-          }
-        }
         if (e.type === "rally") {
           const wave = 12 + radius * progress;
           fx.fillStyle(effectColor, alpha * 0.045);
@@ -5059,18 +5040,167 @@ export class ArenaScene extends Phaser.Scene {
           }
         }
         if (e.type === "pioneer") {
-          const wave = 10 + radius * progress;
-          fx.fillStyle(effectColor, alpha * 0.045);
-          fx.fillCircle(e.x, e.y, wave);
-          fx.lineStyle(2.1, effectColor, alpha * 0.92);
-          fx.strokeCircle(e.x, e.y, wave);
-          fx.lineStyle(1.5, 0xffffff, alpha * 0.6);
-          for (const offset of [-1, 0, 1]) {
-            const px = e.x + offset * 11;
-            const tipY = e.y - 8 - progress * 15;
-            fx.lineBetween(px, e.y + 9, px, tipY + 6);
-            fx.lineBetween(px, tipY, px - 4, tipY + 6);
-            fx.lineBetween(px, tipY, px + 4, tipY + 6);
+          const pioneerVisual = pioneerCaptureVisual(e);
+          if (pioneerVisual) {
+            const secureColor = effectColor;
+            const brightSecure = 0xe8fff1;
+            const direction =
+              e.team === "player" ? -1 : 1;
+            const rotation = this.reducedMotion
+              ? e.id * 0.09
+              : e.id * 0.09 +
+                pioneerVisual.progress * 0.38;
+
+            fx.fillStyle(
+              secureColor,
+              pioneerVisual.alpha * 0.055,
+            );
+            fx.fillCircle(
+              e.x,
+              e.y,
+              pioneerVisual.outerRadius,
+            );
+
+            fx.lineStyle(
+              2.4,
+              secureColor,
+              pioneerVisual.alpha * 0.92,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              pioneerVisual.outerRadius,
+            );
+            fx.lineStyle(
+              1.3,
+              brightSecure,
+              pioneerVisual.alpha * 0.66,
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              pioneerVisual.innerRadius,
+            );
+
+            for (
+              let node = 0;
+              node < pioneerVisual.nodeCount;
+              node++
+            ) {
+              const angle =
+                rotation +
+                (node * Math.PI * 2) /
+                  pioneerVisual.nodeCount;
+              const nx = Math.cos(angle);
+              const ny = Math.sin(angle);
+              const cx =
+                e.x + nx * pioneerVisual.nodeRadius;
+              const cy =
+                e.y + ny * pioneerVisual.nodeRadius;
+
+              fx.fillStyle(
+                node % 2 === 0
+                  ? brightSecure
+                  : secureColor,
+                pioneerVisual.alpha *
+                  (node % 2 === 0 ? 0.86 : 0.62),
+              );
+              fx.fillCircle(
+                cx,
+                cy,
+                node % 2 === 0 ? 2.1 : 1.5,
+              );
+              fx.lineStyle(
+                1,
+                secureColor,
+                pioneerVisual.alpha * 0.42,
+              );
+              fx.lineBetween(
+                cx - nx * 5,
+                cy - ny * 5,
+                cx + nx * 3,
+                cy + ny * 3,
+              );
+            }
+
+            const spacing = 12;
+            for (
+              let chevron = 0;
+              chevron < pioneerVisual.chevronCount;
+              chevron++
+            ) {
+              const offset =
+                (chevron -
+                  (pioneerVisual.chevronCount - 1) / 2) *
+                spacing;
+              const cx = e.x + offset;
+              const baseY =
+                e.y +
+                direction *
+                  (9 +
+                    pioneerVisual.progress * 17);
+              const reach =
+                pioneerVisual.chevronReach *
+                (0.82 +
+                  (chevron % 2) * 0.12);
+              fx.lineStyle(
+                chevron ===
+                  Math.floor(
+                    pioneerVisual.chevronCount / 2,
+                  )
+                  ? 2.2
+                  : 1.4,
+                chevron % 2 === 0
+                  ? brightSecure
+                  : secureColor,
+                pioneerVisual.alpha *
+                  (0.55 +
+                    pioneerVisual.bonus * 0.25),
+              );
+              fx.lineBetween(
+                cx - reach * 0.5,
+                baseY - direction * 5,
+                cx,
+                baseY,
+              );
+              fx.lineBetween(
+                cx + reach * 0.5,
+                baseY - direction * 5,
+                cx,
+                baseY,
+              );
+            }
+
+            fx.lineStyle(
+              1.2,
+              brightSecure,
+              pioneerVisual.alpha * 0.5,
+            );
+            const gateHalf =
+              13 + pioneerVisual.bonus * 4;
+            const gateY =
+              e.y +
+              direction *
+                (18 +
+                  pioneerVisual.progress * 9);
+            fx.lineBetween(
+              e.x - gateHalf,
+              gateY,
+              e.x + gateHalf,
+              gateY,
+            );
+            fx.lineBetween(
+              e.x - gateHalf,
+              gateY,
+              e.x - gateHalf,
+              gateY - direction * 7,
+            );
+            fx.lineBetween(
+              e.x + gateHalf,
+              gateY,
+              e.x + gateHalf,
+              gateY - direction * 7,
+            );
           }
         }
         if (e.type === "shield") {

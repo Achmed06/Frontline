@@ -2014,6 +2014,8 @@ export class Match {
             0.75,
             undefined,
             CAPTURE_RADIUS,
+            pressure.captureMultiplier,
+            "pioneer",
           );
         this.effect("capture", point.x, point.y, capturer, 1.1);
         if (capturer === "player") this.state.stats.captured++;

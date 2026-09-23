@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.58
+## Current v1.59
 
 The repository now contains the complete Work 0.52 runtime used by the browser build and the iPhone project.
 
@@ -1410,3 +1410,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure stasisHitVisual helper centralizes exact slow severity, source direction, cage contraction, tether progress and shard count
 - regression coverage verifies the real 0.6 factor, directional contraction, exact per-target metadata, no duplicate onset on an unchanged recast and malformed suppression
 - release: package 1.58.0 / v1.58 / iOS 1.58 (158)
+
+
+## v1.59 changes
+
+- Pioneer-assisted captures now finish with a dedicated secured-territory signature instead of the old generic green ring and three arrows
+- the capture-completion event now carries the exact capture multiplier that controlPointPressure actually used; the current Pioneer bonus is 1.5x
+- the visual keeps the real 48-unit capture radius and stages an expanding secure perimeter, inner confirmation ring, six perimeter nodes, directional advance chevrons and a compact frontline gate
+- chevron count and geometry are driven by the real capture bonus metadata, keeping presentation tied to simulation rather than duplicating the Pioneer card value in the renderer
+- player and enemy capture signatures advance in their natural battlefield direction
+- Reduced Motion keeps the full secured-radius/perimeter information while freezing orbital node rotation
+- the ordinary capture effect still layers with the Pioneer signature, so ownership confirmation and the specialist bonus remain visually distinct
+- removed the legacy second Pulse renderer that was still drawing underneath the dedicated v1.57 Pulse strike; Pulse now has one authoritative presentation path with no redundant overdraw
+- Pioneer HP, damage, speed, 1.5x capture multiplier, group support, capture timing, contested behavior and all balance values are unchanged
+- a pure pioneerCaptureVisual helper centralizes exact radius, multiplier strength, perimeter expansion, node positions and chevron geometry
+- regression coverage verifies exact 48 radius/1.5x metadata, outward expansion, fade and malformed fallback
+- release: package 1.59.0 / v1.59 / iOS 1.59 (159)
