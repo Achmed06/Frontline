@@ -26,7 +26,7 @@ import { atlasShieldVisual } from "./atlas-shield-visual";
 import { breakerShieldVisual } from "./breaker-shield-visual";
 import { shieldIntegrityVisual } from "./shield-integrity-visual";
 import { combatValuePresentation } from "./combat-value-label";
-import { weaponFireFeedback } from "./weapon-fire-feedback";
+import { weaponFireDirection, weaponFireFeedback } from "./weapon-fire-feedback";
 import { weaponCycleVisual } from "./weapon-cycle-visual";
 import { weaponTargetLockVisual } from "./weapon-target-lock-visual";
 import { deploymentArrivalVisual } from "./deployment-arrival-visual";
@@ -1582,6 +1582,30 @@ export class ArenaScene extends Phaser.Scene {
           effect.targetX !== undefined &&
           effect.targetY !== undefined,
       );
+      const firingTarget =
+        firing?.targetUnitId !== undefined
+          ? s.units.find((unit) => unit.id === firing.targetUnitId)
+          : undefined;
+      const firingTargetPoint =
+        firing?.targetX !== undefined && firing.targetY !== undefined
+          ? firingTarget
+            ? (() => {
+                const targetMotion = this.unitMotion.get(firingTarget.id);
+                if (
+                  targetMotion &&
+                  targetMotion.renderedFrame === this.renderFrame
+                )
+                  return unitRenderPosition(targetMotion.render);
+                return sampleUnitRenderPosition(
+                  targetMotion?.render,
+                  firingTarget.x,
+                  firingTarget.y,
+                  this.frameDeltaSeconds,
+                  this.reducedMotion,
+                );
+              })()
+            : { x: firing.targetX, y: firing.targetY }
+          : undefined;
       const repulsorMove = s.effects.find(
         (effect) =>
           effect.type === "repulsor-move" &&
@@ -1598,7 +1622,7 @@ export class ArenaScene extends Phaser.Scene {
         u.x,
         u.y,
         s.time,
-        firing?.targetX,
+        firingTargetPoint?.x ?? firing?.targetX,
       );
       const simulationAdvanced =
         !previous ||
@@ -1687,17 +1711,19 @@ export class ArenaScene extends Phaser.Scene {
             firing.maxLife,
           )
         : null;
-      if (
-        firing &&
-        fireFeedback &&
-        firing.targetX !== undefined &&
-        firing.targetY !== undefined
-      ) {
-        const dx = firing.targetX - firing.x;
-        const dy = firing.targetY - firing.y;
-        const d = Math.max(0.01, Math.hypot(dx, dy));
-        recoilX = (dx / d) * fireFeedback.displacement;
-        recoilY = (dy / d) * fireFeedback.displacement;
+      const fireDirection =
+        firing && fireFeedback && firingTargetPoint
+          ? weaponFireDirection(
+              renderX,
+              renderY,
+              firingTargetPoint.x,
+              firingTargetPoint.y,
+              motion.facing,
+            )
+          : null;
+      if (fireDirection && fireFeedback) {
+        recoilX = fireDirection.nx * fireFeedback.displacement;
+        recoilY = fireDirection.ny * fireFeedback.displacement;
         recoilScale = fireFeedback.scale;
         fireWidthScale = fireFeedback.widthScale;
         fireHeightScale = fireFeedback.heightScale;
@@ -1765,7 +1791,7 @@ export class ArenaScene extends Phaser.Scene {
             settleHeight *
             attackHeight,
         )
-        .setFlipX(motion.facing < 0)
+        .setFlipX((fireDirection?.facing ?? motion.facing) < 0)
         .setAngle(
           this.reducedMotion
             ? 0

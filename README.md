@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.08
+## Current v2.09
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2236,3 +2236,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies real spawn effects retain the spawned unit ID
 - unit speed, deployment legality, spawn positions, energy cost, combat timing and deterministic simulation are unchanged
 - release: package 2.8.0 / v2.08 / iOS 2.08 (208)
+
+
+## v2.09 changes
+
+- active unit attack pose now resolves its target from the live shot target unit ID when available
+- recoil direction is calculated from the visible interpolated shooter position to the visible interpolated target position instead of the original shot snapshot
+- horizontal facing follows that same live presentation direction during the shot, preventing moving targets from briefly making the shooter face the stale side
+- targets already rendered in the current frame reuse their exact presentation point; targets rendered later preview the same interpolation step without mutating their state
+- Unit-to-Core attacks keep the fixed authoritative Core endpoint because they do not carry a target unit ID
+- near-vertical attacks preserve the unit's previous horizontal facing to avoid unnecessary flip jitter
+- regression coverage verifies left/right live aim direction, vertical fallback and coincident endpoints
+- recoil strength, attack timing, target selection, damage and deterministic simulation are unchanged
+- release: package 2.9.0 / v2.09 / iOS 2.09 (209)
