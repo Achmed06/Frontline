@@ -397,17 +397,29 @@ function showCardDrag(
 
   event.preventDefault();
   const point = dragBoardPoint(event.clientX, event.clientY);
+  const validation = point
+    ? match.validatePlay("player", card.id, point.x, point.y)
+    : null;
+  const validTarget = Boolean(point && validation?.ok);
+  const invalidTarget = Boolean(point && validation && !validation.ok);
   const ghost = el<HTMLElement>("card-drag-ghost");
   ghost.style.left = `${event.clientX}px`;
   ghost.style.top = `${event.clientY}px`;
   ghost.classList.toggle("over-arena", Boolean(point));
-  el("arena").parentElement?.classList.toggle("card-drop-ready", Boolean(point));
-  el("arena-tip").textContent = point
-    ? card.kind === "ability"
-      ? "LOSLASSEN · FÄHIGKEIT AUSLÖSEN"
-      : "LOSLASSEN · EINHEIT EINSETZEN"
-    : "INS SPIELFELD ZIEHEN";
+  ghost.classList.toggle("valid-target", validTarget);
+  ghost.classList.toggle("invalid-target", invalidTarget);
+  const arenaWrap = el("arena").parentElement;
+  arenaWrap?.classList.toggle("card-drop-ready", validTarget);
+  arenaWrap?.classList.toggle("card-drop-invalid", invalidTarget);
+  el("arena-tip").textContent = !point
+    ? "INS SPIELFELD ZIEHEN"
+    : validTarget
+      ? card.kind === "ability"
+        ? "LOSLASSEN · FÄHIGKEIT AUSLÖSEN"
+        : "LOSLASSEN · EINHEIT EINSETZEN"
+      : validation?.message.toUpperCase() ?? "ZIEL NICHT VERFÜGBAR";
   el("arena-tip").classList.add("dragging-card");
+  el("arena-tip").classList.toggle("drag-invalid", invalidTarget);
 }
 
 function finishCardDrag(event: PointerEvent, cancelled = false): void {
@@ -425,11 +437,12 @@ function finishCardDrag(event: PointerEvent, cancelled = false): void {
   window.setTimeout(() => delete state.button.dataset.dragConsumed, 0);
   state.button.classList.remove("dragging");
   el("card-drag-ghost").hidden = true;
-  el("arena").parentElement?.classList.remove("card-drop-ready");
-  el("arena-tip").classList.remove("dragging-card");
+  const arenaWrap = el("arena").parentElement;
+  arenaWrap?.classList.remove("card-drop-ready", "card-drop-invalid");
+  el("arena-tip").classList.remove("dragging-card", "drag-invalid");
 
   const point = cancelled ? null : dragBoardPoint(event.clientX, event.clientY);
-  if (point) {
+  if (point && matchLive()) {
     deploy(point.x, point.y);
   } else {
     selected = state.previousSelected;
@@ -684,7 +697,10 @@ function start(
   paused = false;
   cardDragState = null;
   el("card-drag-ghost").hidden = true;
-  el("arena").parentElement?.classList.remove("card-drop-ready");
+  el("arena").parentElement?.classList.remove(
+    "card-drop-ready",
+    "card-drop-invalid",
+  );
   selected = null;
   const startTiming = matchStartTiming(stats.matches);
   matchStartDurationMs = startTiming.countdownMs;
