@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.92
+## Current v1.93
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2016,3 +2016,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - a pure timeLimitOutlook helper mirrors the engine's real score resolution rules and is covered by regression tests
 - combat values, match duration, Overtime rules, control scoring, territory capture, bot behavior and balance are unchanged
 - release: package 1.92.0 / v1.92 / iOS 1.92 (192)
+
+## v1.93 changes
+
+- the Core HUD now distinguishes a genuinely active assault from a Core that is merely damaged or critical
+- a player unit counts toward Durchbruch only when the shared unitCombatTarget logic says it is currently targeting the enemy Core
+- the mirrored player-Core warning uses the exact same target rule for enemy attackers
+- active assaults replace the passive Core status with DURCHBRUCH ×N or CORE UNTER FEUER ×N, where N is the exact number of living units currently committed to the Core
+- nearby defending units naturally remove attackers from the assault count when those attackers switch to the defender, so the HUD cannot claim Core pressure while combat logic is targeting something else
+- dead units are excluded and destroyed Cores keep the existing destroyed status
+- the Core health track receives a restrained lock pulse only while a real assault exists; Reduced Motion keeps the emphasis without animation
+- accessibility labels include the same exact assault count
+- no sound, banner or haptic was added, avoiding duplicate noise with the existing critical-Core and battle-momentum callouts
+- a pure coreAssault helper derives the presentation directly from authoritative MatchState and unitCombatTarget
+- regression coverage verifies multiple attackers, mirrored enemy pressure, defender interception and dead-unit exclusion
+- targeting, unit damage, Core HP, turret behavior, win conditions, bot behavior and combat balance remain unchanged
+- release: package 1.93.0 / v1.93 / iOS 1.93 (193)
+
