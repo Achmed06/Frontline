@@ -43,3 +43,47 @@ export function energySpent(before: number, after: number): number {
   const safeAfter = finiteNonNegative(after);
   return Math.max(0, safeBefore - safeAfter);
 }
+
+
+export type EnergyTempo = {
+  state: "normal" | "high" | "capped";
+  ratio: number;
+  remaining: number;
+  label: string;
+};
+
+export function energyTempo(
+  energy: number,
+  cap: number,
+): EnergyTempo {
+  const safeEnergy = finiteNonNegative(energy);
+  const safeCap =
+    Number.isFinite(cap) && cap > 0 ? cap : 0;
+  if (safeCap <= 0)
+    return {
+      state: "normal",
+      ratio: 0,
+      remaining: 0,
+      label: "ENERGIE",
+    };
+
+  const ratio = Math.max(0, Math.min(1, safeEnergy / safeCap));
+  const remaining = Math.max(0, safeCap - safeEnergy);
+  const state =
+    ratio >= 1 - 1e-8
+      ? "capped"
+      : ratio >= 0.8
+        ? "high"
+        : "normal";
+  return {
+    state,
+    ratio,
+    remaining: state === "capped" ? 0 : remaining,
+    label:
+      state === "capped"
+        ? "ENERGIE VOLL"
+        : state === "high"
+          ? "ENERGIE FAST VOLL"
+          : "ENERGIE",
+  };
+}
