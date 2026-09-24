@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.91
+## Current v1.92
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2001,3 +2001,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - territory ownership, capture rules, supply, Core behavior, timers, bot behavior, rewards and combat balance are unchanged
 - release: package 1.91.0 / v1.91 / iOS 1.91 (191)
 
+
+
+## v1.92 changes
+
+- the final 30 seconds now expose the exact current time-limit outcome instead of making the player mentally combine several HUD values
+- the outlook uses the same tiebreak order as the engine: control time first in Signalkrieg, then Core fraction, then owned territory, then draw
+- Overtime keeps the outlook visible for the full extra period so the player always knows what the current fallback result would be
+- the compact timer area shows VORTEIL DU, VORTEIL GEGNER or GLEICHSTAND plus the exact deciding metric
+- Core mode shows the real Core percentages before falling back to territory
+- Signalkrieg shows actual accumulated control seconds before any Core or territory comparison
+- the normal phase label returns automatically outside the deciding window, avoiding permanent HUD clutter
+- no new banner, sound or haptic was added; the existing last-push and critical-Core moments remain unchanged
+- a pure timeLimitOutlook helper mirrors the engine's real score resolution rules and is covered by regression tests
+- combat values, match duration, Overtime rules, control scoring, territory capture, bot behavior and balance are unchanged
+- release: package 1.92.0 / v1.92 / iOS 1.92 (192)
