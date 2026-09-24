@@ -1330,6 +1330,9 @@ export class Match {
               slow.slowFactor,
               "stasis",
               { x, y },
+              undefined,
+              undefined,
+              unit.id,
             );
           }
           unit.slowTime = slow.slowTime;
