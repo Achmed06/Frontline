@@ -5529,16 +5529,16 @@ export class ArenaScene extends Phaser.Scene {
         }
         if (e.type === "rally") {
           const rallyVisual = rallyCastVisual(e);
+          const targetUnit =
+            e.targetUnitId !== undefined
+              ? s.units.find((unit) => unit.id === e.targetUnitId)
+              : undefined;
+          const targetPoint = targetUnit
+            ? this.unitPresentationPoint(targetUnit, s.effects)
+            : { x: e.x, y: e.y };
+          const rallyX = targetPoint.x;
+          const rallyY = targetPoint.y;
           if (rallyVisual) {
-            const targetUnit =
-              e.targetUnitId !== undefined
-                ? s.units.find((unit) => unit.id === e.targetUnitId)
-                : undefined;
-            const targetPoint = targetUnit
-              ? this.unitPresentationPoint(targetUnit, s.effects)
-              : { x: e.x, y: e.y };
-            const rallyX = targetPoint.x;
-            const rallyY = targetPoint.y;
             const brightRally = 0xe8fff4;
             const softRally = 0xbfffe0;
             const direction = e.team === "player" ? -1 : 1;
@@ -6785,16 +6785,16 @@ export class ArenaScene extends Phaser.Scene {
         }
         if (e.type === "shield") {
           const atlasShield = atlasShieldVisual(e);
+          const targetUnit =
+            e.targetUnitId !== undefined
+              ? s.units.find((unit) => unit.id === e.targetUnitId)
+              : undefined;
+          const targetPoint = targetUnit
+            ? this.unitPresentationPoint(targetUnit, s.effects)
+            : { x: e.x, y: e.y };
+          const shieldX = targetPoint.x;
+          const shieldY = targetPoint.y;
           if (atlasShield) {
-            const targetUnit =
-              e.targetUnitId !== undefined
-                ? s.units.find((unit) => unit.id === e.targetUnitId)
-                : undefined;
-            const targetPoint = targetUnit
-              ? this.unitPresentationPoint(targetUnit, s.effects)
-              : { x: e.x, y: e.y };
-            const shieldX = targetPoint.x;
-            const shieldY = targetPoint.y;
             const shieldColor =
               e.team === "player" ? 0x9bdcff : 0xffb9a5;
             const brightShield = 0xf5fbff;
@@ -7020,7 +7020,7 @@ export class ArenaScene extends Phaser.Scene {
           e.type !== "commander"
         ) {
           fx.lineStyle(2, effectColor, alpha);
-          fx.strokeCircle(shieldX, shieldY, 5 + radius * progress);
+          fx.strokeCircle(e.x, e.y, 5 + radius * progress);
         }
         if (e.type === "death") {
           const profile = impactProfile(e.sourceCardId);
