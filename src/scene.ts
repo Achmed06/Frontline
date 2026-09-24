@@ -98,11 +98,21 @@ import {
   strongestCoreImpactClimax,
   type CoreClimaxCue,
 } from "./core-climax";
+import {
+  combatContactKey,
+  combatContactVisual,
+  isFreshCombatContact,
+  strongestCombatContact,
+  type CombatContactCue,
+} from "./combat-contact";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
   NEUTRAL = 0xffda85;
-export type SceneCombatFeedbackCue = KillConfirmationCue | CoreClimaxCue;
+export type SceneCombatFeedbackCue =
+  | KillConfirmationCue
+  | CoreClimaxCue
+  | CombatContactCue;
 export type SceneBridge = {
   authoritative?: boolean;
   theme: () => ArenaThemeId;
@@ -157,6 +167,8 @@ export class ArenaScene extends Phaser.Scene {
   private frameDeltaSeconds = 1 / 60;
   private renderFrame = 0;
   private reactedEffects = new Set<number>();
+  private contactEffectIds = new Set<number>();
+  private contactPairs = new Map<string, number>();
   private lastCombatFeedbackAt = Number.NEGATIVE_INFINITY;
   private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
@@ -366,6 +378,8 @@ export class ArenaScene extends Phaser.Scene {
       this.unitMotion.clear();
       this.unitVitals.clear();
       this.reactedEffects.clear();
+      this.contactEffectIds.clear();
+      this.contactPairs.clear();
       this.lastCombatFeedbackAt = Number.NEGATIVE_INFINITY;
       this.battleScars = [];
       this.brokenCores.clear();
@@ -3460,6 +3474,47 @@ export class ArenaScene extends Phaser.Scene {
     const newEffects = s.effects.filter(
       (effect) => !this.reactedEffects.has(effect.id),
     );
+    const activeEffectIds = new Set(
+      s.effects.map((effect) => effect.id),
+    );
+    for (const id of this.contactEffectIds)
+      if (!activeEffectIds.has(id)) this.contactEffectIds.delete(id);
+
+    const freshContacts: Effect[] = [];
+    for (const effect of newEffects) {
+      const key = combatContactKey(effect);
+      if (!key) continue;
+      const previous = this.contactPairs.get(key);
+      const fresh = isFreshCombatContact(previous, this.clock);
+      this.contactPairs.set(key, this.clock);
+      if (fresh) freshContacts.push(effect);
+    }
+    for (const [key, lastSeenAt] of this.contactPairs)
+      if (this.clock - lastSeenAt > 12) this.contactPairs.delete(key);
+
+    const rankedContacts = freshContacts
+      .map((effect) => ({
+        effect,
+        visual: combatContactVisual(effect),
+      }))
+      .filter(
+        (
+          candidate,
+        ): candidate is {
+          effect: Effect;
+          visual: NonNullable<
+            ReturnType<typeof combatContactVisual>
+          >;
+        } => candidate.visual !== null,
+      )
+      .sort(
+        (a, b) =>
+          b.visual.strength - a.visual.strength ||
+          a.effect.id - b.effect.id,
+      );
+    for (const candidate of rankedContacts.slice(0, 2))
+      this.contactEffectIds.add(candidate.effect.id);
+
     const enemyCoreFraction = Math.max(
       0,
       Math.min(1, s.cores.enemy.hp / s.cores.enemy.maxHp),
@@ -3469,6 +3524,9 @@ export class ArenaScene extends Phaser.Scene {
       enemyCoreFraction,
     );
     const pendingKill = strongestKillConfirmation(newEffects);
+    const pendingContact = strongestCombatContact(
+      rankedContacts.map((candidate) => candidate.effect),
+    );
     if (
       pendingCoreImpact?.cue &&
       this.clock - this.lastCombatFeedbackAt >= 0.2
@@ -3480,6 +3538,12 @@ export class ArenaScene extends Phaser.Scene {
       this.clock - this.lastCombatFeedbackAt >= 0.14
     ) {
       this.bridge.combatFeedback?.(pendingKill.cue);
+      this.lastCombatFeedbackAt = this.clock;
+    } else if (
+      pendingContact &&
+      this.clock - this.lastCombatFeedbackAt >= 0.22
+    ) {
+      this.bridge.combatFeedback?.(pendingContact.cue);
       this.lastCombatFeedbackAt = this.clock;
     }
     for (const e of s.effects) {
@@ -3582,23 +3646,40 @@ export class ArenaScene extends Phaser.Scene {
               ),
               true,
             );
-          } else if (e.type === "impact" && (e.radius ?? 0) >= 14) {
-            const profile = impactProfile(e.sourceCardId);
-            this.cameras.main.shake(
-              50 + Math.round(profile.scale * 10),
-              Math.min(
-                0.0019,
-                (0.00068 +
-                  ((e.radius ?? 14) - 14) * 0.00016) *
-                  profile.scale *
-                  presentation.cameraScale,
-              ),
-              true,
-            );
+          } else if (e.type === "impact") {
+            const contact = this.contactEffectIds.has(e.id)
+              ? combatContactVisual(e)
+              : null;
+            if (contact) {
+              this.cameras.main.shake(
+                contact.kind === "heavy" ? 76 : 58,
+                Math.min(
+                  0.0022,
+                  contact.cameraIntensity *
+                    presentation.cameraScale,
+                ),
+                true,
+              );
+            } else if ((e.radius ?? 0) >= 14) {
+              const profile = impactProfile(e.sourceCardId);
+              this.cameras.main.shake(
+                50 + Math.round(profile.scale * 10),
+                Math.min(
+                  0.0019,
+                  (0.00068 +
+                    ((e.radius ?? 14) - 14) * 0.00016) *
+                    profile.scale *
+                    presentation.cameraScale,
+                ),
+                true,
+              );
+            }
           }
         }
       }
-      if (!presentation.visible) continue;
+      const contactOverride =
+        e.type === "impact" && this.contactEffectIds.has(e.id);
+      if (!presentation.visible && !contactOverride) continue;
       if (e.targetX !== undefined && e.targetY !== undefined) {
         if (e.type === "repulsor-move") {
           const visual = repulsorDisplacementVisual(e);
