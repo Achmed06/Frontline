@@ -112,6 +112,11 @@ import { frontRace } from "./front-race";
 import { timeLimitOutlook } from "./time-limit-outlook";
 import { coreAssault } from "./core-assault";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
+import {
+  frontSurge,
+  INITIAL_FRONT_SURGE,
+  type FrontSurgeMemory,
+} from "./front-surge";
 import { boardPointFromClient, dragThresholdReached } from "./card-drag";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { matchRenderProfile } from "./match-render-profile";
@@ -370,6 +375,7 @@ let active = false,
   );
 const battleNotices = new Set<string>();
 let battleMomentumMemory: BattleMomentumMemory = INITIAL_BATTLE_MOMENTUM;
+let frontSurgeMemory: FrontSurgeMemory = INITIAL_FRONT_SURGE;
 let lastFrontLeader: "player" | "enemy" | null = null;
 let frontShiftTimer = 0;
 let bannerUntil = 0;
@@ -780,6 +786,7 @@ function start(
   lastCaptured = 0;
   battleNotices.clear();
   battleMomentumMemory = INITIAL_BATTLE_MOMENTUM;
+  frontSurgeMemory = INITIAL_FRONT_SURGE;
   lastFrontLeader = null;
   window.clearTimeout(frontShiftTimer);
   el("territory-count").classList.remove("front-shift");
@@ -810,13 +817,15 @@ function announceBattle(
   label: string,
   title: string,
   tone: "neutral" | "danger" | "opportunity" = "neutral",
+  emphasis: "standard" | "surge" = "standard",
 ) {
   el("battle-banner-label").textContent = label;
   el("battle-banner-title").textContent = title;
   el("battle-banner").classList.toggle("danger", tone === "danger");
   el("battle-banner").classList.toggle("opportunity", tone === "opportunity");
+  el("battle-banner").classList.toggle("surge", emphasis === "surge");
   el("battle-banner").hidden = false;
-  bannerUntil = match.state.time + 2.5;
+  bannerUntil = match.state.time + (emphasis === "surge" ? 2.9 : 2.5);
 }
 function showModal(content: string) {
   el("modal-content").innerHTML = content;
@@ -1656,6 +1665,13 @@ function updateHud(force = false) {
     "just-ready",
     commanderReady && performance.now() < commanderReadyFlashUntil,
   );
+  const currentPointOwners = s.points.map((point) => point.owner);
+  const surge = frontSurge(frontSurgeMemory, {
+    time: s.time,
+    previousOwners: lastPointOwners,
+    currentOwners: currentPointOwners,
+  });
+  frontSurgeMemory = surge.memory;
   const lostPoint =
     active && !ended
       ? s.points.find(
@@ -1663,24 +1679,43 @@ function updateHud(force = false) {
             lastPointOwners[index] === "player" && point.owner === "enemy",
         )
       : undefined;
-  if (lostPoint) {
-    const pointName =
-      `${"ABC"[lostPoint.id % 3]}${Math.floor(lostPoint.id / 3) + 1}`;
-    if (el("battle-banner").hidden)
-      announceBattle("FRONT VERLOREN", `${pointName} IST GEFALLEN`);
-    else showToast(`${pointName} verloren. Front neu stabilisieren.`, true);
-    sound.play("warning");
-    haptics.play("warning");
+  const capturedPoint =
+    active && !ended && s.stats.captured > lastCaptured;
+  if (capturedPoint) lastCaptured = s.stats.captured;
+
+  if (active && !ended && surge.event) {
+    announceBattle(
+      `${surge.event.label} · ${surge.event.captures} PUNKTE`,
+      surge.event.title,
+      surge.event.tone,
+      "surge",
+    );
+    if (surge.event.team === "player") {
+      sound.play("opportunity");
+      haptics.play("success");
+    } else {
+      sound.play("warning");
+      haptics.play("warning");
+    }
+  } else {
+    if (lostPoint) {
+      const pointName =
+        `${"ABC"[lostPoint.id % 3]}${Math.floor(lostPoint.id / 3) + 1}`;
+      if (el("battle-banner").hidden)
+        announceBattle("FRONT VERLOREN", `${pointName} IST GEFALLEN`);
+      else showToast(`${pointName} verloren. Front neu stabilisieren.`, true);
+      sound.play("warning");
+      haptics.play("warning");
+    }
+    if (capturedPoint) {
+      if (el("battle-banner").hidden)
+        announceBattle("GEBIET GESICHERT", "DEINE FRONT RÜCKT VOR");
+      else showToast("Punkt erobert. Deine Front rückt vor.");
+      sound.play("capture");
+      haptics.play("capture");
+    }
   }
-  lastPointOwners = s.points.map((point) => point.owner);
-  if (active && !ended && s.stats.captured > lastCaptured) {
-    lastCaptured = s.stats.captured;
-    if (el("battle-banner").hidden)
-      announceBattle("GEBIET GESICHERT", "DEINE FRONT RÜCKT VOR");
-    else showToast("Punkt erobert. Deine Front rückt vor.");
-    sound.play("capture");
-    haptics.play("capture");
-  }
+  lastPointOwners = currentPointOwners;
   if (active && !ended && s.phase === "ended") {
     if (!finishReadyAt) {
       finishReadyAt = performance.now() + MATCH_END_SEQUENCE_MS;

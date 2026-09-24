@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.14
+## Current v2.15
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -16,6 +16,7 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - Deterministic renderer-independent match engine
 - Rookie, standard and veteran bot difficulty
 - Campaign-specific decks, commanders, objectives and seeded scenarios
+- Front-surge feedback that turns fast multi-point swings into concise match moments without changing combat rules
 
 ### Progression and modes
 

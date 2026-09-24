@@ -2784,6 +2784,47 @@ h1 em {
 .battle-banner.opportunity small {
   color: #cde69e;
 }
+.battle-banner.surge {
+  overflow: hidden;
+  padding-block: 15px;
+  border-block-width: 2px;
+  animation: battle-surge-arrive .46s cubic-bezier(.18, .9, .28, 1);
+}
+.battle-banner.surge b {
+  font-size: 30px;
+  letter-spacing: 1.3px;
+  text-shadow: 0 0 16px #f2ffd52f;
+}
+.battle-banner.surge small {
+  font-weight: 800;
+  letter-spacing: 2.5px;
+}
+.battle-banner.surge::after {
+  content: "";
+  position: absolute;
+  inset: -30% -45%;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    #ffffff00 44%,
+    #fffbd64d 50%,
+    #ffffff00 56%,
+    transparent 62%
+  );
+  transform: translateX(-36%);
+  animation: battle-surge-scan .72s ease-out both;
+}
+.battle-banner.surge.opportunity {
+  box-shadow:
+    0 0 30px #dff56f2b,
+    inset 0 0 28px #edff9d18;
+}
+.battle-banner.surge.danger {
+  box-shadow:
+    0 0 30px #ff73562b,
+    inset 0 0 28px #ff9d8118;
+}
 .mission-result > b {
   display: inline-block;
   animation: star-arrive 0.4s ease-out;
@@ -2796,6 +2837,33 @@ h1 em {
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+@keyframes battle-surge-arrive {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(.94);
+  }
+  58% {
+    opacity: 1;
+    transform: translate(-50%, -1px) scale(1.035);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+@keyframes battle-surge-scan {
+  from {
+    opacity: 0;
+    transform: translateX(-42%);
+  }
+  25% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(42%);
   }
 }
 @keyframes star-arrive {
@@ -2832,8 +2900,12 @@ h1 em {
 }
 @media (prefers-reduced-motion: reduce) {
   .battle-banner,
+  .battle-banner.surge,
   .mission-result > b {
     animation: none;
+  }
+  .battle-banner.surge::after {
+    display: none;
   }
 }
 
