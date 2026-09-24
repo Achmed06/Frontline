@@ -1235,7 +1235,7 @@ function updateHud(force = false) {
     announceBattle(
       "GEGNER-KOMMANDO",
       `${enemyCommanderDefinition.name}: ${enemyCommanderDefinition.ability}`,
-      true,
+      "danger",
     );
     sound.play("enemyCommander");
     haptics.play("warning");
@@ -1346,7 +1346,7 @@ function updateHud(force = false) {
       announceBattle(
         visual?.title ?? "MATCH BEENDET",
         visual?.subtitle ?? s.reason.toUpperCase(),
-        s.winner === "enemy",
+        s.winner === "enemy" ? "danger" : s.winner === "player" ? "opportunity" : "neutral",
       );
     } else if (performance.now() >= finishReadyAt) {
       finishReadyAt = 0;
