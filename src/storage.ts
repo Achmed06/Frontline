@@ -14,11 +14,16 @@ import {
   MATCH_DURATION,
   OVERTIME_DURATION,
 } from "./engine";
+export type QuickPlayOutcome = "player" | "enemy" | "draw";
+
 export type LocalStats = {
   matches: number;
   wins: number;
   rematches: number;
   lastFeedback: string;
+  quickPlayMatches?: number;
+  quickPlayWinStreak?: number;
+  quickPlayLastOutcome?: QuickPlayOutcome;
 };
 const fallback: LocalStats = {
   matches: 0,
@@ -27,10 +32,58 @@ const fallback: LocalStats = {
   lastFeedback: "",
 };
 export function normalizeStats(value: unknown): LocalStats {
-  const source = value && typeof value === "object" ? value as Partial<LocalStats> : {};
-  const count = (value: unknown) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+  const source =
+    value && typeof value === "object"
+      ? (value as Partial<LocalStats>)
+      : {};
+  const count = (value: unknown) =>
+    typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= 0
+      ? value
+      : 0;
   const matches = count(source.matches);
-  return { matches, wins: Math.min(matches, count(source.wins)), rematches: count(source.rematches), lastFeedback: typeof source.lastFeedback === "string" ? source.lastFeedback.slice(0, 1000) : "" };
+  const normalized: LocalStats = {
+    matches,
+    wins: Math.min(matches, count(source.wins)),
+    rematches: count(source.rematches),
+    lastFeedback:
+      typeof source.lastFeedback === "string"
+        ? source.lastFeedback.slice(0, 1000)
+        : "",
+  };
+
+  if (Object.hasOwn(source, "quickPlayMatches")) {
+    normalized.quickPlayMatches = count(source.quickPlayMatches);
+  }
+
+  const quickPlayMatches = normalized.quickPlayMatches ?? 0;
+  const quickPlayOutcome =
+    source.quickPlayLastOutcome === "player" ||
+    source.quickPlayLastOutcome === "enemy" ||
+    source.quickPlayLastOutcome === "draw"
+      ? source.quickPlayLastOutcome
+      : undefined;
+
+  if (Object.hasOwn(source, "quickPlayWinStreak")) {
+    normalized.quickPlayWinStreak =
+      quickPlayOutcome === "player"
+        ? Math.min(
+            quickPlayMatches,
+            count(source.quickPlayWinStreak),
+          )
+        : 0;
+  }
+
+  if (
+    Object.hasOwn(source, "quickPlayLastOutcome") &&
+    quickPlayMatches > 0 &&
+    quickPlayOutcome
+  ) {
+    normalized.quickPlayLastOutcome = quickPlayOutcome;
+  }
+
+  return normalized;
 }
 export function readStats(): LocalStats {
   try { return normalizeStats(JSON.parse(localStorage.getItem("frontline-stats-v1") || "{}")); }
