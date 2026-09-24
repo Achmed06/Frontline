@@ -98,11 +98,21 @@ import {
   strongestCoreImpactClimax,
   type CoreClimaxCue,
 } from "./core-climax";
+import {
+  combatContactKey,
+  combatContactVisual,
+  isFreshCombatContact,
+  strongestCombatContact,
+  type CombatContactCue,
+} from "./combat-contact";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
   NEUTRAL = 0xffda85;
-export type SceneCombatFeedbackCue = KillConfirmationCue | CoreClimaxCue;
+export type SceneCombatFeedbackCue =
+  | KillConfirmationCue
+  | CoreClimaxCue
+  | CombatContactCue;
 export type SceneBridge = {
   authoritative?: boolean;
   theme: () => ArenaThemeId;
@@ -157,6 +167,8 @@ export class ArenaScene extends Phaser.Scene {
   private frameDeltaSeconds = 1 / 60;
   private renderFrame = 0;
   private reactedEffects = new Set<number>();
+  private contactEffectIds = new Set<number>();
+  private contactPairs = new Map<string, number>();
   private lastCombatFeedbackAt = Number.NEGATIVE_INFINITY;
   private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
@@ -366,6 +378,8 @@ export class ArenaScene extends Phaser.Scene {
       this.unitMotion.clear();
       this.unitVitals.clear();
       this.reactedEffects.clear();
+      this.contactEffectIds.clear();
+      this.contactPairs.clear();
       this.lastCombatFeedbackAt = Number.NEGATIVE_INFINITY;
       this.battleScars = [];
       this.brokenCores.clear();
@@ -3460,6 +3474,47 @@ export class ArenaScene extends Phaser.Scene {
     const newEffects = s.effects.filter(
       (effect) => !this.reactedEffects.has(effect.id),
     );
+    const activeEffectIds = new Set(
+      s.effects.map((effect) => effect.id),
+    );
+    for (const id of this.contactEffectIds)
+      if (!activeEffectIds.has(id)) this.contactEffectIds.delete(id);
+
+    const freshContacts: Effect[] = [];
+    for (const effect of newEffects) {
+      const key = combatContactKey(effect);
+      if (!key) continue;
+      const previous = this.contactPairs.get(key);
+      const fresh = isFreshCombatContact(previous, this.clock);
+      this.contactPairs.set(key, this.clock);
+      if (fresh) freshContacts.push(effect);
+    }
+    for (const [key, lastSeenAt] of this.contactPairs)
+      if (this.clock - lastSeenAt > 12) this.contactPairs.delete(key);
+
+    const rankedContacts = freshContacts
+      .map((effect) => ({
+        effect,
+        visual: combatContactVisual(effect),
+      }))
+      .filter(
+        (
+          candidate,
+        ): candidate is {
+          effect: Effect;
+          visual: NonNullable<
+            ReturnType<typeof combatContactVisual>
+          >;
+        } => candidate.visual !== null,
+      )
+      .sort(
+        (a, b) =>
+          b.visual.strength - a.visual.strength ||
+          a.effect.id - b.effect.id,
+      );
+    for (const candidate of rankedContacts.slice(0, 2))
+      this.contactEffectIds.add(candidate.effect.id);
+
     const enemyCoreFraction = Math.max(
       0,
       Math.min(1, s.cores.enemy.hp / s.cores.enemy.maxHp),
@@ -3469,6 +3524,9 @@ export class ArenaScene extends Phaser.Scene {
       enemyCoreFraction,
     );
     const pendingKill = strongestKillConfirmation(newEffects);
+    const pendingContact = strongestCombatContact(
+      rankedContacts.map((candidate) => candidate.effect),
+    );
     if (
       pendingCoreImpact?.cue &&
       this.clock - this.lastCombatFeedbackAt >= 0.2
@@ -3480,6 +3538,12 @@ export class ArenaScene extends Phaser.Scene {
       this.clock - this.lastCombatFeedbackAt >= 0.14
     ) {
       this.bridge.combatFeedback?.(pendingKill.cue);
+      this.lastCombatFeedbackAt = this.clock;
+    } else if (
+      pendingContact &&
+      this.clock - this.lastCombatFeedbackAt >= 0.42
+    ) {
+      this.bridge.combatFeedback?.(pendingContact.cue);
       this.lastCombatFeedbackAt = this.clock;
     }
     for (const e of s.effects) {
@@ -3582,23 +3646,40 @@ export class ArenaScene extends Phaser.Scene {
               ),
               true,
             );
-          } else if (e.type === "impact" && (e.radius ?? 0) >= 14) {
-            const profile = impactProfile(e.sourceCardId);
-            this.cameras.main.shake(
-              50 + Math.round(profile.scale * 10),
-              Math.min(
-                0.0019,
-                (0.00068 +
-                  ((e.radius ?? 14) - 14) * 0.00016) *
-                  profile.scale *
-                  presentation.cameraScale,
-              ),
-              true,
-            );
+          } else if (e.type === "impact") {
+            const contact = this.contactEffectIds.has(e.id)
+              ? combatContactVisual(e)
+              : null;
+            if (contact) {
+              this.cameras.main.shake(
+                contact.kind === "heavy" ? 76 : 58,
+                Math.min(
+                  0.0022,
+                  contact.cameraIntensity *
+                    presentation.cameraScale,
+                ),
+                true,
+              );
+            } else if ((e.radius ?? 0) >= 14) {
+              const profile = impactProfile(e.sourceCardId);
+              this.cameras.main.shake(
+                50 + Math.round(profile.scale * 10),
+                Math.min(
+                  0.0019,
+                  (0.00068 +
+                    ((e.radius ?? 14) - 14) * 0.00016) *
+                    profile.scale *
+                    presentation.cameraScale,
+                ),
+                true,
+              );
+            }
           }
         }
       }
-      if (!presentation.visible) continue;
+      const contactOverride =
+        e.type === "impact" && this.contactEffectIds.has(e.id);
+      if (!presentation.visible && !contactOverride) continue;
       if (e.targetX !== undefined && e.targetY !== undefined) {
         if (e.type === "repulsor-move") {
           const visual = repulsorDisplacementVisual(e);
@@ -4872,6 +4953,145 @@ export class ArenaScene extends Phaser.Scene {
             (direction.active
               ? direction.ny * direction.contactOffset
               : 0);
+          const engagementContact =
+            this.contactEffectIds.has(e.id)
+              ? combatContactVisual(e)
+              : null;
+
+          if (engagementContact) {
+            const densityScale =
+              presentation.density === "saturated"
+                ? 0.78
+                : presentation.density === "dense"
+                  ? 0.86
+                  : presentation.density === "busy"
+                    ? 0.94
+                    : 1;
+            const contactAlpha =
+              engagementContact.alpha *
+              densityScale *
+              (0.82 + engagementContact.strength * 0.18);
+            const burstProgress = Math.min(1, progress / 0.74);
+            const burstRadius =
+              engagementContact.radius *
+              (0.46 + burstProgress * 0.66);
+
+            fx.fillStyle(
+              0xffffff,
+              contactAlpha *
+                (engagementContact.kind === "heavy" ? 0.22 : 0.14),
+            );
+            fx.fillCircle(
+              contactX,
+              contactY,
+              4.2 + engagementContact.strength * 3.4,
+            );
+
+            for (
+              let ring = 0;
+              ring < engagementContact.ringCount;
+              ring++
+            ) {
+              fx.lineStyle(
+                engagementContact.kind === "heavy" && ring === 0
+                  ? 2.35
+                  : 1.35,
+                ring === 0 ? 0xffffff : profileColor,
+                contactAlpha * (ring === 0 ? 0.68 : 0.42),
+              );
+              fx.strokeCircle(
+                contactX,
+                contactY,
+                burstRadius + ring * 7,
+              );
+            }
+
+            const incomingAngle = direction.active
+              ? Math.atan2(direction.ny, direction.nx)
+              : e.id * 0.37;
+            for (
+              let ray = 0;
+              ray < engagementContact.rayCount;
+              ray++
+            ) {
+              const spread =
+                engagementContact.kind === "clash"
+                  ? 0.95
+                  : engagementContact.kind === "heavy"
+                    ? Math.PI * 1.45
+                    : Math.PI * 1.8;
+              const centered =
+                engagementContact.rayCount <= 1
+                  ? 0
+                  : ray / (engagementContact.rayCount - 1) - 0.5;
+              const angle =
+                incomingAngle +
+                Math.PI +
+                centered * spread +
+                Math.sin(e.id * 0.31 + ray * 1.7) * 0.08;
+              const length =
+                (engagementContact.kind === "heavy" ? 11 : 7) *
+                (0.72 + engagementContact.strength * 0.44) *
+                (1 - burstProgress * 0.22);
+              const inner = burstRadius * 0.42;
+              fx.lineStyle(
+                ray % 3 === 0 ? 1.8 : 1.1,
+                ray % 3 === 0 ? 0xffffff : profileColor,
+                contactAlpha * (ray % 3 === 0 ? 0.64 : 0.42),
+              );
+              fx.lineBetween(
+                contactX + Math.cos(angle) * inner,
+                contactY + Math.sin(angle) * inner,
+                contactX + Math.cos(angle) * (inner + length),
+                contactY + Math.sin(angle) * (inner + length),
+              );
+            }
+
+            if (
+              engagementContact.kind === "clash" &&
+              direction.active
+            ) {
+              const slash = 8 + engagementContact.strength * 5;
+              fx.lineStyle(
+                2.25,
+                profileColor,
+                contactAlpha * 0.72,
+              );
+              fx.lineBetween(
+                contactX -
+                  direction.px * slash -
+                  direction.nx * 3,
+                contactY -
+                  direction.py * slash -
+                  direction.ny * 3,
+                contactX +
+                  direction.px * slash +
+                  direction.nx * 4,
+                contactY +
+                  direction.py * slash +
+                  direction.ny * 4,
+              );
+              fx.lineStyle(
+                1.25,
+                0xffffff,
+                contactAlpha * 0.56,
+              );
+              fx.lineBetween(
+                contactX -
+                  direction.nx * slash * 0.7 +
+                  direction.px * 2,
+                contactY -
+                  direction.ny * slash * 0.7 +
+                  direction.py * 2,
+                contactX +
+                  direction.nx * slash * 0.9 -
+                  direction.px * 2,
+                contactY +
+                  direction.ny * slash * 0.9 -
+                  direction.py * 2,
+              );
+            }
+          }
 
           fx.fillStyle(
             0xffffff,

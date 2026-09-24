@@ -8,6 +8,8 @@ const cues: SoundCue[] = [
   "deploy",
   "deployHeavy",
   "capture",
+  "contact",
+  "heavyContact",
   "kill",
   "heavyKill",
   "coreImpact",
@@ -58,6 +60,8 @@ test("high-value battlefield states have distinct cue signatures", () => {
   assert.notDeepEqual(soundCueSpec("deployFast"), soundCueSpec("deploy"));
   assert.notDeepEqual(soundCueSpec("deployHeavy"), soundCueSpec("deploy"));
   assert.notDeepEqual(soundCueSpec("unlock"), soundCueSpec("win"));
+  assert.notDeepEqual(soundCueSpec("contact"), soundCueSpec("deploy"));
+  assert.notDeepEqual(soundCueSpec("heavyContact"), soundCueSpec("contact"));
   assert.notDeepEqual(soundCueSpec("kill"), soundCueSpec("deploy"));
   assert.notDeepEqual(soundCueSpec("heavyKill"), soundCueSpec("kill"));
   assert.notDeepEqual(soundCueSpec("coreImpact"), soundCueSpec("kill"));

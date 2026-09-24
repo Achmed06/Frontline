@@ -12,6 +12,8 @@ export type HapticCue =
   | "deployHeavy"
   | "ability"
   | "capture"
+  | "contact"
+  | "heavyContact"
   | "kill"
   | "heavyKill"
   | "coreImpact"
@@ -34,11 +36,13 @@ export function hapticSpec(cue: HapticCue): HapticSpec {
       return { kind: "impact", style: "light" };
     case "deploy":
     case "reward":
+    case "contact":
     case "kill":
     case "coreImpact":
       return { kind: "impact", style: "medium" };
     case "ability":
     case "deployHeavy":
+    case "heavyContact":
     case "heavyKill":
     case "coreCriticalImpact":
     case "coreBreak":
