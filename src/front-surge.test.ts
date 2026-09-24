@@ -73,6 +73,41 @@ test("announces an enemy counter-surge independently", () => {
   assert.equal(second.event?.tone, "danger");
 });
 
+test("an opposing capture breaks the previous surge chain", () => {
+  const first = frontSurge(INITIAL_FRONT_SURGE, {
+    time: 10,
+    previousOwners: [null, null],
+    currentOwners: ["player", null],
+  });
+  const counter = frontSurge(first.memory, {
+    time: 13,
+    previousOwners: ["player", null],
+    currentOwners: ["enemy", null],
+  });
+  const recapture = frontSurge(counter.memory, {
+    time: 16,
+    previousOwners: ["enemy", null],
+    currentOwners: ["player", null],
+  });
+
+  assert.equal(recapture.event, null);
+});
+
+test("mixed ownership flips in one update never create a surge", () => {
+  const seeded = frontSurge(INITIAL_FRONT_SURGE, {
+    time: 10,
+    previousOwners: [null, null, null],
+    currentOwners: ["player", null, null],
+  });
+  const mixed = frontSurge(seeded.memory, {
+    time: 14,
+    previousOwners: ["player", null, null],
+    currentOwners: ["player", "player", "enemy"],
+  });
+
+  assert.equal(mixed.event, null);
+});
+
 test("does not retrigger the same side during cooldown", () => {
   const first = frontSurge(INITIAL_FRONT_SURGE, {
     time: 10,
