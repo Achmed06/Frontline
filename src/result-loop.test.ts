@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resultMomentum } from "./result-loop";
+import { resultMomentum, resultReplayLabel } from "./result-loop";
 import type { MatchRecord } from "./storage";
 
 const record = (outcome: MatchRecord["outcome"], id: string): MatchRecord => ({
@@ -36,4 +36,41 @@ test("empty history has a safe neutral fallback", () => {
   const momentum = resultMomentum([]);
   assert.equal(momentum.streak, 0);
   assert.equal(momentum.tone, "draw");
+});
+
+
+test("replay label keeps draw neutral instead of framing it as a loss", () => {
+  assert.equal(resultReplayLabel("draw"), "NOCHMAL");
+  assert.equal(resultReplayLabel("enemy"), "SOFORT ZURÜCKSCHLAGEN");
+  assert.equal(resultReplayLabel("player"), "NOCH EIN GEFECHT");
+});
+
+test("Quick Play replay label follows session momentum without inventing a new mode", () => {
+  assert.equal(
+    resultReplayLabel("player", { quickPlay: true, streak: 1 }),
+    "NÄCHSTE FRONT",
+  );
+  assert.equal(
+    resultReplayLabel("player", { quickPlay: true, streak: 2 }),
+    "SERIE HALTEN",
+  );
+  assert.equal(
+    resultReplayLabel("draw", { quickPlay: true, streak: 9 }),
+    "NOCHMAL",
+  );
+  assert.equal(
+    resultReplayLabel("enemy", { quickPlay: true, streak: 4 }),
+    "ZURÜCKSCHLAGEN",
+  );
+});
+
+test("replay label sanitizes malformed streak values", () => {
+  assert.equal(
+    resultReplayLabel("player", { quickPlay: true, streak: Number.NaN }),
+    "NÄCHSTE FRONT",
+  );
+  assert.equal(
+    resultReplayLabel("player", { quickPlay: true, streak: -4 }),
+    "NÄCHSTE FRONT",
+  );
 });

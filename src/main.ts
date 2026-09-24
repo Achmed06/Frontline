@@ -95,7 +95,7 @@ import {
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { resultDecision, resultSnapshot } from "./result-debrief";
-import { resultMomentum } from "./result-loop";
+import { resultMomentum, resultReplayLabel } from "./result-loop";
 import { nextBattleProgress } from "./battle-progress";
 import { rewardReveal } from "./reward-reveal";
 import { dailyPreparation, seriesPreparation } from "./mode-preparation";
@@ -684,13 +684,16 @@ function start(
   activeMission = daily ? null : mission;
   activeQuickPlay =
     quickPlay && !mission && !daily && !inSeries && !draftDeck;
+  const quickPlaySetup = activeQuickPlay
+    ? quickPlayRotation(stats.matches)
+    : null;
   const chosenArena = el<HTMLSelectElement>("arena-theme").value;
   arenaTheme = daily
     ? daily.theme
     : mission
       ? CHAPTERS.reduce((current, chapter) => MISSIONS.findIndex(m => m.id === chapter.firstMission) <= MISSIONS.indexOf(mission) ? chapter.theme : current, "coast" as ArenaThemeId)
-      : activeQuickPlay
-        ? quickPlayRotation(stats.matches).theme
+      : quickPlaySetup
+        ? quickPlaySetup.theme
         : isArenaTheme(chosenArena) ? chosenArena : "coast";
   if (!mission && !daily && !activeQuickPlay) setting("arena-theme", arenaTheme);
   activeDraftDeck = draftDeck ? [...draftDeck] : null;
@@ -703,8 +706,11 @@ function start(
     ? daily.difficulty
     : draftDeck
       ? "standard"
-      : (el<HTMLSelectElement>("difficulty").value as typeof difficulty);
-  if (!draftDeck && !daily) setting("difficulty", difficulty);
+      : quickPlaySetup
+        ? quickPlaySetup.difficulty
+        : (el<HTMLSelectElement>("difficulty").value as typeof difficulty);
+  if (!draftDeck && !daily && !activeQuickPlay)
+    setting("difficulty", difficulty);
   match = new Match({
     seed: daily?.seed ?? mission?.seed ?? crypto.getRandomValues(new Uint32Array(1))[0],
     difficulty: daily?.difficulty ?? mission?.difficulty ?? difficulty,
@@ -721,9 +727,11 @@ function start(
         ? undefined
         : mission
           ? mission.controlObjective
-          : el<HTMLSelectElement>("training-mode").value === "control"
-            ? TRAINING_CONTROL
-            : undefined,
+          : activeQuickPlay
+            ? undefined
+            : el<HTMLSelectElement>("training-mode").value === "control"
+              ? TRAINING_CONTROL
+              : undefined,
   });
   lastPointOwners = match.state.points.map((point) => point.owner);
   renderCommander(match.commanders.player);
@@ -1014,9 +1022,10 @@ function finish() {
         ? "TAGESFRONT WIEDERHOLEN"
         : mission
           ? "EINSATZ WIEDERHOLEN"
-          : won
-            ? "NOCH EIN GEFECHT"
-            : "SOFORT ZURÜCKSCHLAGEN";
+          : resultReplayLabel(report.outcome, {
+              quickPlay: wasQuickPlay,
+              streak: momentum.streak,
+            });
   const nextAction = nextMission
     ? `<button id="next-mission" class="primary result-next-primary">NÄCHSTER EINSATZ <span>↗</span></button><button id="rematch" class="secondary">${rematchLabel} <span>↗</span></button>`
     : `<button id="rematch" class="primary result-next-primary">${rematchLabel} <span>↗</span></button>`;
@@ -2174,12 +2183,8 @@ function openDraft() {
 }
 el("draft").onclick = openDraft;
 el("series").onclick = openSeries;
-el("quick-play").onclick = () => {
-  const rotation = quickPlayRotation(stats.matches);
-  el<HTMLSelectElement>("difficulty").value = rotation.difficulty;
-  el<HTMLSelectElement>("training-mode").value = "core";
+el("quick-play").onclick = () =>
   start(false, null, false, null, null, true);
-};
 el("featured-event-play").onclick = () => {
   const event = featuredEvent(new Date());
   if (event.id === "daily") openDaily();

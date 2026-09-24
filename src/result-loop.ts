@@ -54,3 +54,30 @@ export function resultMomentum(records: readonly MatchRecord[]): ResultMomentum 
     tone: "loss",
   };
 }
+
+
+export type ResultReplayContext = {
+  quickPlay?: boolean;
+  streak?: number;
+};
+
+export function resultReplayLabel(
+  outcome: MatchRecord["outcome"],
+  context: ResultReplayContext = {},
+): string {
+  const streak =
+    Number.isFinite(context.streak) && (context.streak ?? 0) > 0
+      ? Math.floor(context.streak!)
+      : 0;
+
+  if (context.quickPlay) {
+    if (outcome === "player")
+      return streak >= 2 ? "SERIE HALTEN" : "NÄCHSTE FRONT";
+    if (outcome === "draw") return "NOCHMAL";
+    return "ZURÜCKSCHLAGEN";
+  }
+
+  if (outcome === "player") return "NOCH EIN GEFECHT";
+  if (outcome === "draw") return "NOCHMAL";
+  return "SOFORT ZURÜCKSCHLAGEN";
+}

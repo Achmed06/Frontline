@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.94
+## Current v1.95
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2050,3 +2050,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - energy generation rate, ENERGY_CAP, card costs, deployment rules, bot behavior, objectives, rewards and combat balance are unchanged
 - release: package 1.94.0 / v1.94 / iOS 1.94 (194)
 
+
+
+## v1.95 changes
+
+- Quick Play now derives its battlefield and difficulty from the same rotation state on every launch and rematch
+- the first Quick Play remains REKRUT while every later Quick Play correctly moves to the TAKTIKER baseline, including direct rematches
+- Quick Play no longer overwrites the player's separately chosen training difficulty
+- Quick Play no longer mutates the training objective selector and explicitly starts as a Core battle, so returning to custom training preserves the player's previous mode
+- result replay actions now distinguish a draw from a loss instead of showing SOFORT ZURÜCKSCHLAGEN for both
+- Quick Play wins continue the lightweight session flow with NÄCHSTE FRONT, while genuine multi-win momentum uses SERIE HALTEN without creating a separate game mode
+- Quick Play losses use ZURÜCKSCHLAGEN and draws use NOCHMAL
+- regression coverage verifies the replay-copy states; the existing rotation suite continues to verify first-match rookie difficulty and later standard difficulty
+- combat stats, cards, energy, bot logic, objectives, rewards, progression and match duration are unchanged
+- release: package 1.95.0 / v1.95 / iOS 1.95 (195)
