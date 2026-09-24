@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.02
+## Current v2.03
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2159,3 +2159,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies Medic heal effects retain the exact healer and patient IDs
 - healing amount, support range, support interval, movement, targeting and deterministic combat simulation are unchanged
 - release: package 2.2.0 / v2.02 / iOS 2.02 (202)
+
+
+## v2.03 changes
+
+- unit attack shot effects now retain optional live source and target unit IDs alongside their original snapshot coordinates
+- ranged projectiles, beam paths and melee strike presentation follow the interpolated 60 FPS positions of living source/target units during the short attack effect
+- muzzle flashes, projectile trails, target brackets and late impact markers all share the same live endpoints
+- Unit-to-Core shots track only the attacking unit because Core coordinates are fixed
+- Core-turret shots track only the moving target while keeping the turret origin fixed
+- if a tracked unit dies or disappears during the effect, rendering safely falls back to the original snapshot coordinate
+- regression coverage verifies Unit-to-Unit, Unit-to-Core and Core-turret endpoint identity rules
+- authoritative target selection, hit resolution, damage timing, projectile gameplay, movement and deterministic simulation are unchanged
+- release: package 2.3.0 / v2.03 / iOS 2.03 (203)

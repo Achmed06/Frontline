@@ -1643,6 +1643,8 @@ test("shot effects preserve weapon identity for renderer-specific combat feedbac
   assert.equal(rangerShot.maxLife, 0.26);
   assert.equal(rangerShot.targetX, rangedTarget.x);
   assert.equal(rangerShot.targetY, rangedTarget.y);
+  assert.equal(rangerShot.sourceUnitId, ranger.id);
+  assert.equal(rangerShot.targetUnitId, rangedTarget.id);
 
   const melee = quietMatch();
   const vanguard = staticUnit(melee, "player", 210, 310);
@@ -1660,6 +1662,8 @@ test("shot effects preserve weapon identity for renderer-specific combat feedbac
   );
   assert.ok(meleeShot);
   assert.equal(meleeShot.sourceCardId, "vanguard");
+  assert.equal(meleeShot.sourceUnitId, vanguard.id);
+  assert.equal(meleeShot.targetUnitId, meleeTarget.id);
 
   const turret = quietMatch();
   const intruder = staticUnit(turret, "enemy", 210, 470);
@@ -1675,6 +1679,26 @@ test("shot effects preserve weapon identity for renderer-specific combat feedbac
   assert.equal(turretShot.maxLife, 0.25);
   assert.equal(turretShot.targetX, intruder.x);
   assert.equal(turretShot.targetY, intruder.y);
+  assert.equal(turretShot.sourceUnitId, undefined);
+  assert.equal(turretShot.targetUnitId, intruder.id);
+
+  const coreAttack = quietMatch();
+  const coreRanger = staticUnit(coreAttack, "player", 210, 145, "ranger");
+  Object.assign(coreRanger, {
+    range: 110,
+    speed: 0,
+    attackCooldown: 0,
+  });
+  coreAttack.update(1 / 30);
+  const coreShot = coreAttack.state.effects.find(
+    (effect) =>
+      effect.type === "shot" &&
+      effect.team === "player" &&
+      effect.sourceCardId === "ranger",
+  );
+  assert.ok(coreShot);
+  assert.equal(coreShot.sourceUnitId, coreRanger.id);
+  assert.equal(coreShot.targetUnitId, undefined);
 });
 
 test("impact, death and Core-hit effects preserve their weapon source", () => {

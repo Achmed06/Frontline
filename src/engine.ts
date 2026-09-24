@@ -1812,6 +1812,10 @@ export class Match {
         undefined,
         undefined,
         attack.unit.cardId,
+        undefined,
+        undefined,
+        attack.unit.id,
+        attack.core ? undefined : (attack.target as Unit).id,
       );
       if (attack.core) {
         const before = attack.target.hp;
@@ -2017,6 +2021,10 @@ export class Match {
           undefined,
           undefined,
           "core-turret",
+          undefined,
+          undefined,
+          undefined,
+          target.id,
         );
         this.coreCooldown[team] = CORE_TURRET_INTERVAL;
       }
