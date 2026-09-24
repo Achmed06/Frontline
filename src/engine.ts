@@ -1601,13 +1601,14 @@ export class Match {
     y: number,
     team: Team,
     duration: number,
-    target?: { x: number; y: number; id?: number },
+    target?: { x: number; y: number },
     radius?: number,
     value?: number,
     sourceCardId?: string,
     source?: { x: number; y: number },
     cleanse?: boolean,
     sourceUnitId?: number,
+    targetUnitId?: number,
   ): void {
     this.state.effects.push({
       id: this.nextId++,
@@ -1625,8 +1626,8 @@ export class Match {
       ...(Number.isSafeInteger(sourceUnitId) && (sourceUnitId ?? 0) > 0
         ? { sourceUnitId }
         : {}),
-      ...(Number.isSafeInteger(target?.id) && (target?.id ?? 0) > 0
-        ? { targetUnitId: target!.id }
+      ...(Number.isSafeInteger(targetUnitId) && (targetUnitId ?? 0) > 0
+        ? { targetUnitId }
         : {}),
       ...(cleanse ? { cleanse: true } : {}),
     });
@@ -1761,6 +1762,7 @@ export class Match {
             undefined,
             undefined,
             unit.id,
+            patient.id,
           );
           unit.healCooldown = card.supportInterval ?? unit.interval;
         }
