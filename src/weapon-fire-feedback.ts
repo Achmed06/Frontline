@@ -133,3 +133,51 @@ export function weaponFireFeedback(
     muzzleRays,
   };
 }
+
+
+export type WeaponFireDirection = {
+  dx: number;
+  dy: number;
+  distance: number;
+  nx: number;
+  ny: number;
+  facing: -1 | 1;
+};
+
+export function weaponFireDirection(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+  fallbackFacing: -1 | 1 = 1,
+): WeaponFireDirection {
+  const safeSourceX = Number.isFinite(sourceX) ? sourceX : 0;
+  const safeSourceY = Number.isFinite(sourceY) ? sourceY : 0;
+  const safeTargetX = Number.isFinite(targetX) ? targetX : safeSourceX;
+  const safeTargetY = Number.isFinite(targetY) ? targetY : safeSourceY;
+  const dx = safeTargetX - safeSourceX;
+  const dy = safeTargetY - safeSourceY;
+  const distance = Math.hypot(dx, dy);
+  const safeFallback: -1 | 1 = fallbackFacing < 0 ? -1 : 1;
+  const facing: -1 | 1 =
+    Math.abs(dx) > 1 ? (dx < 0 ? -1 : 1) : safeFallback;
+
+  if (!Number.isFinite(distance) || distance < 0.001)
+    return {
+      dx,
+      dy,
+      distance: 0,
+      nx: 0,
+      ny: 0,
+      facing,
+    };
+
+  return {
+    dx,
+    dy,
+    distance,
+    nx: dx / distance,
+    ny: dy / distance,
+    facing,
+  };
+}
