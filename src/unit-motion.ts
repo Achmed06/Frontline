@@ -171,8 +171,12 @@ export function sampleUnitRenderPosition(
         },
       };
 
-    fromX = previous.targetX;
-    fromY = previous.targetY;
+    fromX =
+      previous.fromX +
+      (previous.targetX - previous.fromX) * previous.progress;
+    fromY =
+      previous.fromY +
+      (previous.targetY - previous.fromY) * previous.progress;
     progress = 0;
   }
 
