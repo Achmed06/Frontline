@@ -1212,17 +1212,35 @@ test("Breaker emits its specialist effect only when it actually strips shield", 
 
   assert.equal(target.shield, 7);
   assert.equal(target.hp, target.maxHp);
-  assert.ok(
-    match.state.effects.some(
-      (effect) =>
-        effect.type === "breaker" &&
-        effect.x === target.x &&
-        effect.y === target.y,
-    ),
+  const breakerEffect = match.state.effects.find(
+    (effect) => effect.type === "breaker",
   );
+  assert.ok(breakerEffect);
+  assert.equal(breakerEffect.x, target.x);
+  assert.equal(breakerEffect.y, target.y);
+  assert.equal(breakerEffect.targetUnitId, target.id);
+
+  const shieldHit = match.state.effects.find(
+    (effect) => effect.type === "shield-hit",
+  );
+  assert.ok(shieldHit);
+  assert.equal(shieldHit.targetUnitId, target.id);
+
+  match.state.effects = [];
+  target.shield = 10;
+  target.shieldTime = 6;
+  target.hp = target.maxHp;
+  breaker.attackCooldown = 0;
+  match.update(1 / 30);
+  const shieldBreak = match.state.effects.find(
+    (effect) => effect.type === "shield-break",
+  );
+  assert.ok(shieldBreak);
+  assert.equal(shieldBreak.targetUnitId, target.id);
 
   match.state.effects = [];
   target.shield = 0;
+  target.hp = target.maxHp;
   breaker.attackCooldown = 0;
   match.update(1 / 30);
   assert.equal(
