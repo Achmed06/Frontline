@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Match } from "./engine";
-import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
+import { repulsorDisplacementPoint, repulsorDisplacementVisual } from "./repulsor-displacement-visual";
 
 test("repulsor displacement follows the real start to landing vector", () => {
   const visual = repulsorDisplacementVisual({
@@ -86,6 +86,7 @@ test("real Repulsor play emits an exact per-unit displacement effect", () => {
   assert.equal(move?.targetY, target.y);
   assert.ok((move?.value ?? 0) > 0);
   assert.equal(move?.sourceCardId, "repulsor");
+  assert.equal(move?.targetUnitId, target.id);
 });
 
 test("missing, coincident and malformed displacement stays suppressed", () => {
@@ -111,4 +112,29 @@ test("missing, coincident and malformed displacement stays suppressed", () => {
     }),
     null,
   );
+});
+
+
+test("Repulsor unit presentation follows the same accelerated travel as its trail", () => {
+  const effect = {
+    type: "repulsor-move" as const,
+    x: 100,
+    y: 100,
+    targetX: 155,
+    targetY: 100,
+    life: 0.26,
+    maxLife: 0.52,
+    radius: 10,
+    value: 55,
+  };
+  const visual = repulsorDisplacementVisual(effect);
+  const point = repulsorDisplacementPoint(effect);
+  assert.ok(visual);
+  assert.ok(point);
+  assert.equal(point?.progress, visual?.travelProgress);
+  assert.ok((point?.x ?? 100) > 140);
+  assert.equal(point?.y, 100);
+
+  const snapped = repulsorDisplacementPoint(effect, true);
+  assert.deepEqual(snapped, { x: 155, y: 100, progress: 1 });
 });
