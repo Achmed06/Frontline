@@ -114,6 +114,7 @@ import { coreAssault } from "./core-assault";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import { boardPointFromClient, dragThresholdReached } from "./card-drag";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
+import { matchRenderProfile } from "./match-render-profile";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
 
@@ -2260,6 +2261,7 @@ const scene = new ArenaScene({
   deploy,
   tick: () => updateHud(),
 });
+const matchRender = matchRenderProfile();
 new Phaser.Game({
   type: Phaser.AUTO,
   parent: "arena",
@@ -2270,8 +2272,12 @@ new Phaser.Game({
   antialias: true,
   roundPixels: false,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-  render: { powerPreference: "low-power" },
-  fps: { target: 30, limit: 30, forceSetTimeOut: false },
+  render: { powerPreference: matchRender.powerPreference },
+  fps: {
+    target: matchRender.targetFps,
+    limit: matchRender.limitFps,
+    forceSetTimeOut: false,
+  },
   scene: [scene],
   banner: false,
 });
