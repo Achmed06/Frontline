@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sampleUnitMotion, sampleUnitMotionFrame, sampleUnitRenderPosition, unitTrailPoint } from "./unit-motion";
+import { sampleUnitMotion, sampleUnitMotionFrame, sampleUnitRenderPosition, unitRenderPosition, unitTrailPoint } from "./unit-motion";
 
 test("movement facing follows meaningful horizontal travel", () => {
   assert.deepEqual(sampleUnitMotion(undefined, 100, 100), {
@@ -141,4 +141,23 @@ test("render-only frames preserve movement instead of reporting a false stop", (
   );
   assert.equal(actualStop.moving, false);
   assert.equal(actualStop.stopped, true);
+});
+
+
+test("current render position can be read without advancing interpolation", () => {
+  const state = {
+    fromX: 100,
+    fromY: 80,
+    targetX: 108,
+    targetY: 84,
+    progress: 0.5,
+  };
+  assert.deepEqual(unitRenderPosition(state), { x: 104, y: 82 });
+  assert.deepEqual(state, {
+    fromX: 100,
+    fromY: 80,
+    targetX: 108,
+    targetY: 84,
+    progress: 0.5,
+  });
 });
