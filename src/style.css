@@ -8094,3 +8094,21 @@ a.privacy-link:focus-visible,
   }
 }
 
+
+
+.clock { position: relative; }
+.time-limit-outlook { display:grid; place-items:center; gap:2px; min-width:86px; margin-top:2px; }
+.time-limit-outlook[hidden] { display:none !important; }
+.time-limit-outlook b { color:#e0d18a; font:800 7px/1 "Barlow Condensed", Impact, sans-serif; letter-spacing:.8px; white-space:nowrap; }
+.time-limit-outlook small { display:block; max-width:104px; overflow:hidden; color:#8fa095; font:700 5.2px/1 monospace; letter-spacing:.35px; text-overflow:ellipsis; white-space:nowrap; }
+.time-limit-outlook[data-leader="player"] b { color:#b9ee9a; }
+.time-limit-outlook[data-leader="enemy"] b { color:#ff9a86; }
+.time-limit-outlook[data-leader="draw"] b { color:#e4d38e; }
+.time-limit-outlook[data-reason="control"] small { color:#c8b97f; }
+
+
+@media (max-width:380px) {
+  .time-limit-outlook { min-width:72px; }
+  .time-limit-outlook b { font-size:6.3px; }
+  .time-limit-outlook small { max-width:82px; font-size:4.7px; }
+}
