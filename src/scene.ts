@@ -392,9 +392,39 @@ export class ArenaScene extends Phaser.Scene {
     ]);
   }
 
+  private unitPresentationPoint(
+    unit: Unit,
+    effects?: readonly Effect[],
+  ): { x: number; y: number } {
+    const repulsorMove = effects?.find(
+      (effect) =>
+        effect.type === "repulsor-move" &&
+        effect.targetUnitId === unit.id &&
+        effect.life > 0,
+    );
+    const repulsorPoint = repulsorDisplacementPoint(
+      repulsorMove,
+      this.reducedMotion,
+    );
+    if (repulsorPoint) return repulsorPoint;
+
+    const motion = this.unitMotion.get(unit.id);
+    if (!motion) return { x: unit.x, y: unit.y };
+    if (motion.renderedFrame === this.renderFrame)
+      return unitRenderPosition(motion.render);
+    return sampleUnitRenderPosition(
+      motion.render,
+      unit.x,
+      unit.y,
+      this.frameDeltaSeconds,
+      this.reducedMotion,
+    );
+  }
+
   private drawCoreTargetAcquisition(
     team: "player" | "enemy",
     target?: Unit,
+    targetPoint?: { x: number; y: number },
   ) {
     if (!target) {
       this.coreTargetAcquisition.delete(team);
@@ -416,13 +446,15 @@ export class ArenaScene extends Phaser.Scene {
     );
     if (!visual.active) return;
 
+    const targetX = targetPoint?.x ?? target.x;
+    const targetY = targetPoint?.y ?? target.y;
     const fx = this.fx;
     const color = team === "player" ? MINT : CORAL;
     const bright = team === "player" ? 0xd9fff1 : 0xffe4d8;
     const coreX = 210;
     const coreY = team === "player" ? 525 : 35;
-    const dx = target.x - coreX;
-    const dy = target.y - coreY;
+    const dx = targetX - coreX;
+    const dy = targetY - coreY;
     const distance = Math.max(0.001, Math.hypot(dx, dy));
     const nx = dx / distance;
     const ny = dy / distance;
@@ -431,14 +463,14 @@ export class ArenaScene extends Phaser.Scene {
 
     fx.lineStyle(1.4, color, visual.alpha * 0.62);
     fx.strokeCircle(
-      target.x,
-      target.y,
+      targetX,
+      targetY,
       visual.ringRadius,
     );
     fx.lineStyle(1, bright, visual.alpha * 0.48);
     fx.strokeCircle(
-      target.x,
-      target.y,
+      targetX,
+      targetY,
       visual.innerRadius,
     );
 
@@ -451,11 +483,11 @@ export class ArenaScene extends Phaser.Scene {
         (sweep * Math.PI * 2) /
           visual.sweepCount;
       const sx =
-        target.x +
+        targetX +
         Math.cos(angle) *
           visual.ringRadius;
       const sy =
-        target.y +
+        targetY +
         Math.sin(angle) *
           visual.ringRadius;
       const tx = -Math.sin(angle);
@@ -479,11 +511,11 @@ export class ArenaScene extends Phaser.Scene {
     for (const forward of [-1, 1]) {
       for (const side of [-1, 1]) {
         const bx =
-          target.x +
+          targetX +
           nx * forward * bracket +
           px * side * bracket;
         const by =
-          target.y +
+          targetY +
           ny * forward * bracket +
           py * side * bracket;
         fx.lineBetween(
@@ -502,7 +534,7 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     fx.lineStyle(1, color, visual.alpha * 0.3);
-    fx.lineBetween(coreX, coreY, target.x, target.y);
+    fx.lineBetween(coreX, coreY, targetX, targetY);
 
     if (!this.reducedMotion) {
       const scanX = coreX + dx * visual.scanT;
@@ -1519,8 +1551,37 @@ export class ArenaScene extends Phaser.Scene {
       .sort((a, b) => (b.radius ?? 0) - (a.radius ?? 0))[0];
     const enemyCoreTarget = coreTurretTarget(s, "enemy");
     const playerCoreTarget = coreTurretTarget(s, "player");
-    this.drawCoreTargetAcquisition("enemy", enemyCoreTarget);
-    this.drawCoreTargetAcquisition("player", playerCoreTarget);
+    const enemyCoreTargetPoint = enemyCoreTarget
+      ? this.unitPresentationPoint(enemyCoreTarget, s.effects)
+      : undefined;
+    const playerCoreTargetPoint = playerCoreTarget
+      ? this.unitPresentationPoint(playerCoreTarget, s.effects)
+      : undefined;
+    const enemyCoreShotTarget =
+      enemyCoreShot?.targetUnitId !== undefined
+        ? s.units.find((unit) => unit.id === enemyCoreShot.targetUnitId)
+        : undefined;
+    const playerCoreShotTarget =
+      playerCoreShot?.targetUnitId !== undefined
+        ? s.units.find((unit) => unit.id === playerCoreShot.targetUnitId)
+        : undefined;
+    const enemyCoreShotTargetPoint = enemyCoreShotTarget
+      ? this.unitPresentationPoint(enemyCoreShotTarget, s.effects)
+      : undefined;
+    const playerCoreShotTargetPoint = playerCoreShotTarget
+      ? this.unitPresentationPoint(playerCoreShotTarget, s.effects)
+      : undefined;
+
+    this.drawCoreTargetAcquisition(
+      "enemy",
+      enemyCoreTarget,
+      enemyCoreTargetPoint,
+    );
+    this.drawCoreTargetAcquisition(
+      "player",
+      playerCoreTarget,
+      playerCoreTargetPoint,
+    );
     this.drawCore(
       210,
       35,
@@ -1531,7 +1592,12 @@ export class ArenaScene extends Phaser.Scene {
       enemyCoreHit?.radius ?? 0,
       m.coreTurretCooldownSeconds("enemy"),
       coreHitReaction(enemyCoreHit),
-      coreTurretFireFeedback(enemyCoreShot),
+      coreTurretFireFeedback(
+        enemyCoreShot,
+        enemyCoreShotTargetPoint?.x,
+        enemyCoreShotTargetPoint?.y,
+      ),
+      enemyCoreTargetPoint,
     );
     this.drawCore(
       210,
@@ -1543,7 +1609,12 @@ export class ArenaScene extends Phaser.Scene {
       playerCoreHit?.radius ?? 0,
       m.coreTurretCooldownSeconds("player"),
       coreHitReaction(playerCoreHit),
-      coreTurretFireFeedback(playerCoreShot),
+      coreTurretFireFeedback(
+        playerCoreShot,
+        playerCoreShotTargetPoint?.x,
+        playerCoreShotTargetPoint?.y,
+      ),
+      playerCoreTargetPoint,
     );
     const alive = new Set(s.units.map((u) => u.id));
     for (const [id, sprite] of this.sprites)
@@ -7777,13 +7848,21 @@ export class ArenaScene extends Phaser.Scene {
     turretCooldown = 0,
     hitReaction: CoreHitReaction = coreHitReaction(undefined),
     fireFeedback: CoreTurretFireFeedback = coreTurretFireFeedback(undefined),
+    turretTargetPoint?: { x: number; y: number },
   ) {
     const g = this.g,
       color = team === "player" ? MINT : CORAL;
     const pressure = corePressure(fraction, 1);
     const coreDamage = coreDamageStateVisual(fraction);
     const destroyed = pressure.state === "destroyed";
-    if (turretTarget && !destroyed) {
+    const targetX = turretTargetPoint?.x ?? turretTarget?.x;
+    const targetY = turretTargetPoint?.y ?? turretTarget?.y;
+    if (
+      turretTarget &&
+      Number.isFinite(targetX) &&
+      Number.isFinite(targetY) &&
+      !destroyed
+    ) {
       const cycle = coreTurretVisual(turretCooldown);
       const defensePulse = this.reducedMotion
         ? 0.72
@@ -7801,7 +7880,7 @@ export class ArenaScene extends Phaser.Scene {
         color,
         cycle.sightAlpha * (0.82 + defensePulse * 0.18),
       );
-      g.lineBetween(x, y, turretTarget.x, turretTarget.y);
+      g.lineBetween(x, y, targetX!, targetY!);
 
       const chargeRadius = 29;
       const start = -Math.PI / 2;
@@ -7826,8 +7905,8 @@ export class ArenaScene extends Phaser.Scene {
       );
       for (const sx of [-1, 1]) {
         for (const sy of [-1, 1]) {
-          const tx = turretTarget.x + sx * r;
-          const ty = turretTarget.y + sy * r;
+          const tx = targetX! + sx * r;
+          const ty = targetY! + sy * r;
           const arm = cycle.phase === "lock" ? 9 : 7;
           fx.lineBetween(tx, ty, tx - sx * arm, ty);
           fx.lineBetween(tx, ty, tx, ty - sy * arm);
@@ -7840,11 +7919,11 @@ export class ArenaScene extends Phaser.Scene {
           : 0.62 + Math.sin(this.clock * 9) * 0.18;
         const lockRadius = Math.max(13, turretTarget.radius + 4);
         fx.lineStyle(1.5, color, lockPulse);
-        fx.strokeCircle(turretTarget.x, turretTarget.y, lockRadius);
+        fx.strokeCircle(targetX!, targetY!, lockRadius);
         fx.fillStyle(0xffffff, 0.5 + lockPulse * 0.28);
         fx.fillCircle(
-          turretTarget.x,
-          turretTarget.y,
+          targetX!,
+          targetY!,
           1.8 + cycle.charge * 1.2,
         );
       }
@@ -8012,8 +8091,8 @@ export class ArenaScene extends Phaser.Scene {
     const aimVisual = coreTurretAimVisual(
       x,
       y - 3,
-      turretTarget?.x,
-      turretTarget?.y,
+      targetX,
+      targetY,
       turretCooldown,
     );
     const turretRecoil =
