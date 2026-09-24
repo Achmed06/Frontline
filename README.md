@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.87
+## Current v1.88
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1930,4 +1930,22 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies early-game silence, one-time own advance, enemy danger, real comeback requirements, duplicate suppression and malformed-time safety
 - no territory rule, capture speed, Core behavior, card value, bot behavior, match duration, reward, progression or balance changed
 - release: package 1.87.0 / v1.87 / iOS 1.87 (187)
+
+## v1.88 changes
+
+- cards can now be dragged directly from the bottom deck into the arena and released to deploy, giving the iPhone battle flow a faster one-gesture input path
+- the existing tap-card → aim → release interaction remains fully available, so direct drag is additive rather than a forced control rewrite
+- drag only activates after a deliberate movement threshold, preserving ordinary taps and avoiding accidental deployments from normal finger jitter
+- the dragged card lifts out of the hand as a compact floating card ghost that follows the finger while the source card remains visibly anchored in the deck
+- client touch coordinates are mapped against the actual rendered Phaser canvas, so letterboxing and responsive FIT scaling still resolve to correct simulation coordinates
+- leaving the rendered arena cancels the deployment cleanly and restores the previous card selection instead of committing an off-board action
+- live drag targets use Match.validatePlay directly, so green/red target feedback follows the exact same energy, deployment-zone and ability-target rules as the committed action
+- valid targets receive a restrained lime arena/drop treatment; invalid targets turn coral and surface the actual current validation reason before release
+- pausing, ending the match or otherwise losing the live-match state during a drag fails closed and restores the prior selection
+- touch scrolling conflicts are removed from battle cards while keyboard shortcuts and mouse/tap selection remain unchanged
+- the default battle hint now teaches the simpler choice: tap a card or drag it directly into the field
+- a pure card-drag helper centralizes deliberate-drag threshold detection and rendered-canvas → board coordinate conversion
+- regression coverage verifies tap-jitter rejection, malformed-coordinate safety, scaled coordinate mapping, off-canvas rejection and invalid canvas geometry
+- card costs, energy gain, deployment rules, ability targets, deck contents, bot behavior, progression, rewards and combat balance are unchanged
+- release: package 1.88.0 / v1.88 / iOS 1.88 (188)
 
