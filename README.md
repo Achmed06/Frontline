@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.11
+## Current v2.12
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2271,3 +2271,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - Core target selection, turret range, cooldown, damage and deterministic simulation remain authoritative and unchanged
 - regression coverage verifies live fire target overrides and snapshot fallback behavior
 - release: package 2.11.0 / v2.11 / iOS 2.11 (211)
+
+
+## v2.12 changes
+
+- Rally healing effects now retain the exact healed unit ID, so their floating HP values follow the moving unit instead of the original heal coordinate
+- NOVA tempo bursts now retain the affected unit ID and keep their local rally/tempo presentation centered on the live interpolated unit position
+- ATLAS shield activation bursts now follow each shielded unit while the cast resolves, without moving the persistent shield simulation itself
+- LYRA repair bursts now follow the repaired/cleansed unit during their full visual lifetime
+- combat value labels use a live target unit position whenever an effect carries a target unit ID; Core and frontline labels remain fixed to their world-space anchors
+- damage/shield labels benefit from the same identity-based anchor while impact particles intentionally remain world-space snapshots
+- Rally cast zones without a target unit ID remain anchored to the original cast point
+- regression coverage verifies Rally, NOVA, ATLAS and LYRA effects retain the exact affected unit identity
+- healing, shielding, tempo duration, commander cooldowns, targeting and deterministic simulation are unchanged
+- release: package 2.12.0 / v2.12 / iOS 2.12 (212)

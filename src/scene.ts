@@ -551,7 +551,10 @@ export class ArenaScene extends Phaser.Scene {
     }
   }
 
-  private syncCombatText(effects: readonly Effect[]): void {
+  private syncCombatText(
+    effects: readonly Effect[],
+    units: readonly Unit[],
+  ): void {
     const visible = effects
       .filter((effect) => combatValuePresentation(effect))
       .sort((a, b) => b.id - a.id)
@@ -568,12 +571,21 @@ export class ArenaScene extends Phaser.Scene {
       const info = combatValuePresentation(effect)!;
       const progress = 1 - effect.life / effect.maxLife;
       const alpha = Math.max(0, effect.life / effect.maxLife);
+      const targetUnit =
+        effect.targetUnitId !== undefined
+          ? units.find((unit) => unit.id === effect.targetUnitId)
+          : undefined;
+      const targetPoint = targetUnit
+        ? this.unitPresentationPoint(targetUnit, effects)
+        : undefined;
       const useTarget =
         (effect.type === "heal" || effect.type === "frontline") &&
         effect.targetX !== undefined &&
         effect.targetY !== undefined;
-      const x = useTarget ? effect.targetX! : effect.x;
-      const baseY = useTarget ? effect.targetY! : effect.y;
+      const x =
+        targetPoint?.x ?? (useTarget ? effect.targetX! : effect.x);
+      const baseY =
+        targetPoint?.y ?? (useTarget ? effect.targetY! : effect.y);
       let label = this.combatText.get(effect.id);
       if (!label) {
         label = this.add
@@ -3294,7 +3306,7 @@ export class ArenaScene extends Phaser.Scene {
     for (const id of this.unitVitals.keys())
       if (!livingUnitIds.has(id)) this.unitVitals.delete(id);
 
-    this.syncCombatText(s.effects);
+    this.syncCombatText(s.effects, s.units);
     const activeEffectCount = s.effects.length;
     for (const e of s.effects) {
       const presentation = effectPresentationBudget(
@@ -5271,6 +5283,15 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "heal") {
           const lyraRepair = lyraRepairVisual(e);
           if (lyraRepair) {
+            const targetUnit =
+              e.targetUnitId !== undefined
+                ? s.units.find((unit) => unit.id === e.targetUnitId)
+                : undefined;
+            const targetPoint = targetUnit
+              ? this.unitPresentationPoint(targetUnit, s.effects)
+              : { x: e.x, y: e.y };
+            const repairX = targetPoint.x;
+            const repairY = targetPoint.y;
             const repairColor =
               e.team === "player" ? 0x78ffd0 : 0xffb58d;
             const brightRepair = 0xe9fff7;
@@ -5285,8 +5306,8 @@ export class ArenaScene extends Phaser.Scene {
               lyraRepair.alpha * 0.05,
             );
             fx.fillCircle(
-              e.x,
-              e.y,
+              repairX,
+              repairY,
               lyraRepair.shellRadius,
             );
 
@@ -5296,8 +5317,8 @@ export class ArenaScene extends Phaser.Scene {
               lyraRepair.alpha * 0.9,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              repairX,
+              repairY,
               lyraRepair.shellRadius,
             );
 
@@ -5307,8 +5328,8 @@ export class ArenaScene extends Phaser.Scene {
               lyraRepair.alpha * 0.58,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              repairX,
+              repairY,
               lyraRepair.innerRadius,
             );
 
@@ -5319,14 +5340,14 @@ export class ArenaScene extends Phaser.Scene {
                 (0.68 + lyraRepair.healRatio * 0.22),
             );
             fx.fillRect(
-              e.x - 2.1,
-              e.y - cross,
+              repairX - 2.1,
+              repairY - cross,
               4.2,
               cross * 2,
             );
             fx.fillRect(
-              e.x - cross,
-              e.y - 2.1,
+              repairX - cross,
+              repairY - 2.1,
               cross * 2,
               4.2,
             );
@@ -5343,9 +5364,9 @@ export class ArenaScene extends Phaser.Scene {
               const tx = Math.cos(angle);
               const ty = Math.sin(angle);
               const cx =
-                e.x + tx * lyraRepair.nodeRadius;
+                repairX + tx * lyraRepair.nodeRadius;
               const cy =
-                e.y + ty * lyraRepair.nodeRadius;
+                repairY + ty * lyraRepair.nodeRadius;
 
               fx.fillStyle(
                 node % 2 === 0
@@ -5396,10 +5417,10 @@ export class ArenaScene extends Phaser.Scene {
                   lyraRepair.innerRadius + 1;
                 const outer =
                   lyraRepair.shellRadius + 5;
-                const sx = e.x + tx * inner;
-                const sy = e.y + ty * inner;
-                const ex = e.x + tx * outer;
-                const ey = e.y + ty * outer;
+                const sx = repairX + tx * inner;
+                const sy = repairY + ty * inner;
+                const ex = repairX + tx * outer;
+                const ey = repairY + ty * outer;
                 const sweep =
                   3.5 + lyraRepair.strength * 3;
 
@@ -5417,8 +5438,8 @@ export class ArenaScene extends Phaser.Scene {
                 lyraRepair.alpha * 0.5,
               );
               fx.strokeCircle(
-                e.x,
-                e.y,
+                repairX,
+                repairY,
                 lyraRepair.shellRadius + 7,
               );
             }
@@ -5442,8 +5463,8 @@ export class ArenaScene extends Phaser.Scene {
               const radial =
                 lyraRepair.shellRadius *
                   (0.64 + travel * 0.34);
-              const cx = e.x + tx * radial;
-              const cy = e.y + ty * radial;
+              const cx = repairX + tx * radial;
+              const cy = repairY + ty * radial;
               const length =
                 2.5 + lyraRepair.strength * 2.5;
 
@@ -5508,6 +5529,15 @@ export class ArenaScene extends Phaser.Scene {
         }
         if (e.type === "rally") {
           const rallyVisual = rallyCastVisual(e);
+          const targetUnit =
+            e.targetUnitId !== undefined
+              ? s.units.find((unit) => unit.id === e.targetUnitId)
+              : undefined;
+          const targetPoint = targetUnit
+            ? this.unitPresentationPoint(targetUnit, s.effects)
+            : { x: e.x, y: e.y };
+          const rallyX = targetPoint.x;
+          const rallyY = targetPoint.y;
           if (rallyVisual) {
             const brightRally = 0xe8fff4;
             const softRally = 0xbfffe0;
@@ -5528,8 +5558,8 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.05,
             );
             fx.fillCircle(
-              e.x,
-              e.y,
+              rallyX,
+              rallyY,
               rallyVisual.outerRadius,
             );
 
@@ -5539,8 +5569,8 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.34,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              rallyX,
+              rallyY,
               rallyVisual.radius,
             );
             fx.lineStyle(
@@ -5549,8 +5579,8 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.9,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              rallyX,
+              rallyY,
               rallyVisual.outerRadius,
             );
             fx.lineStyle(
@@ -5559,8 +5589,8 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.68,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              rallyX,
+              rallyY,
               rallyVisual.surgeRadius,
             );
             fx.lineStyle(
@@ -5569,8 +5599,8 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.54,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              rallyX,
+              rallyY,
               rallyVisual.innerRadius,
             );
 
@@ -5586,9 +5616,9 @@ export class ArenaScene extends Phaser.Scene {
               const nx = Math.cos(angle);
               const ny = Math.sin(angle);
               const cx =
-                e.x + nx * rallyVisual.nodeRadius;
+                rallyX + nx * rallyVisual.nodeRadius;
               const cy =
-                e.y + ny * rallyVisual.nodeRadius;
+                rallyY + ny * rallyVisual.nodeRadius;
               const tangentX = -ny;
               const tangentY = nx;
               const nodeSize =
@@ -5621,7 +5651,7 @@ export class ArenaScene extends Phaser.Scene {
               const laneOffset =
                 (lane - 1.5) * laneSpacing;
               const baseY =
-                e.y -
+                rallyY -
                 direction *
                   (8 + travel * 27);
               const tipY =
@@ -5642,15 +5672,15 @@ export class ArenaScene extends Phaser.Scene {
                     : 0.5),
               );
               fx.lineBetween(
-                e.x + laneOffset - halfWidth,
+                rallyX + laneOffset - halfWidth,
                 baseY - direction * 4,
-                e.x + laneOffset,
+                rallyX + laneOffset,
                 tipY,
               );
               fx.lineBetween(
-                e.x + laneOffset + halfWidth,
+                rallyX + laneOffset + halfWidth,
                 baseY - direction * 4,
-                e.x + laneOffset,
+                rallyX + laneOffset,
                 tipY,
               );
             }
@@ -5661,14 +5691,14 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.84,
             );
             fx.fillRect(
-              e.x - 2.2,
-              e.y - cross,
+              rallyX - 2.2,
+              rallyY - cross,
               4.4,
               cross * 2,
             );
             fx.fillRect(
-              e.x - cross,
-              e.y - 2.2,
+              rallyX - cross,
+              rallyY - 2.2,
               cross * 2,
               4.4,
             );
@@ -5681,10 +5711,10 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.58,
             );
             fx.lineBetween(
-              e.x - commandReach,
-              e.y + direction * 14,
-              e.x + commandReach,
-              e.y + direction * 14,
+              rallyX - commandReach,
+              rallyY + direction * 14,
+              rallyX + commandReach,
+              rallyY + direction * 14,
             );
             fx.lineStyle(
               1,
@@ -5692,10 +5722,10 @@ export class ArenaScene extends Phaser.Scene {
               rallyVisual.alpha * 0.42,
             );
             fx.lineBetween(
-              e.x - commandReach * 0.68,
-              e.y - direction * 14,
-              e.x + commandReach * 0.68,
-              e.y - direction * 14,
+              rallyX - commandReach * 0.68,
+              rallyY - direction * 14,
+              rallyX + commandReach * 0.68,
+              rallyY - direction * 14,
             );
           } else {
             const novaTempo = novaTempoActivationVisual(e);
@@ -5718,8 +5748,8 @@ export class ArenaScene extends Phaser.Scene {
                 novaTempo.alpha * 0.05,
               );
               fx.fillCircle(
-                e.x,
-                e.y,
+                rallyX,
+                rallyY,
                 novaTempo.shellRadius,
               );
 
@@ -5729,8 +5759,8 @@ export class ArenaScene extends Phaser.Scene {
                 novaTempo.alpha * 0.92,
               );
               fx.strokeCircle(
-                e.x,
-                e.y,
+                rallyX,
+                rallyY,
                 novaTempo.shellRadius,
               );
 
@@ -5740,8 +5770,8 @@ export class ArenaScene extends Phaser.Scene {
                 novaTempo.alpha * 0.58,
               );
               fx.strokeCircle(
-                e.x,
-                e.y,
+                rallyX,
+                rallyY,
                 novaTempo.surgeRadius,
               );
 
@@ -5772,10 +5802,10 @@ export class ArenaScene extends Phaser.Scene {
                     (tick % 2 === 0 ? 0.76 : 0.48),
                 );
                 fx.lineBetween(
-                  e.x + tx * inner,
-                  e.y + ty * inner,
-                  e.x + tx * outer,
-                  e.y + ty * outer,
+                  rallyX + tx * inner,
+                  rallyY + ty * inner,
+                  rallyX + tx * outer,
+                  rallyY + ty * outer,
                 );
               }
 
@@ -5790,9 +5820,9 @@ export class ArenaScene extends Phaser.Scene {
                   chevron -
                   (novaTempo.chevronCount - 1) / 2;
                 const cx =
-                  e.x + side * spacing;
+                  rallyX + side * spacing;
                 const baseY =
-                  e.y -
+                  rallyY -
                   direction *
                     (4 + travel * 15);
                 const tipY =
@@ -5839,16 +5869,16 @@ export class ArenaScene extends Phaser.Scene {
                 novaTempo.alpha * 0.74,
               );
               fx.lineBetween(
-                e.x - bolt * 0.2,
-                e.y - direction * bolt,
-                e.x + bolt * 0.38,
-                e.y - direction * 1.5,
+                rallyX - bolt * 0.2,
+                rallyY - direction * bolt,
+                rallyX + bolt * 0.38,
+                rallyY - direction * 1.5,
               );
               fx.lineBetween(
-                e.x + bolt * 0.38,
-                e.y - direction * 1.5,
-                e.x - bolt * 0.12,
-                e.y + direction * bolt,
+                rallyX + bolt * 0.38,
+                rallyY - direction * 1.5,
+                rallyX - bolt * 0.12,
+                rallyY + direction * bolt,
               );
 
               const lane =
@@ -5859,10 +5889,10 @@ export class ArenaScene extends Phaser.Scene {
                 novaTempo.alpha * 0.42,
               );
               fx.lineBetween(
-                e.x - lane,
-                e.y + direction * 5,
-                e.x + lane,
-                e.y + direction * 5,
+                rallyX - lane,
+                rallyY + direction * 5,
+                rallyX + lane,
+                rallyY + direction * 5,
               );
             }
           }
@@ -6755,6 +6785,15 @@ export class ArenaScene extends Phaser.Scene {
         }
         if (e.type === "shield") {
           const atlasShield = atlasShieldVisual(e);
+          const targetUnit =
+            e.targetUnitId !== undefined
+              ? s.units.find((unit) => unit.id === e.targetUnitId)
+              : undefined;
+          const targetPoint = targetUnit
+            ? this.unitPresentationPoint(targetUnit, s.effects)
+            : { x: e.x, y: e.y };
+          const shieldX = targetPoint.x;
+          const shieldY = targetPoint.y;
           if (atlasShield) {
             const shieldColor =
               e.team === "player" ? 0x9bdcff : 0xffb9a5;
@@ -6769,7 +6808,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, atlasShield.shellRadius),
+              this.hex(shieldX, shieldY, atlasShield.shellRadius),
               shieldColor,
               atlasShield.alpha * 0.055,
               shieldColor,
@@ -6782,7 +6821,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, atlasShield.shellRadius),
+              this.hex(shieldX, shieldY, atlasShield.shellRadius),
               0x000000,
               0,
               shieldColor,
@@ -6795,7 +6834,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, atlasShield.innerRadius),
+              this.hex(shieldX, shieldY, atlasShield.innerRadius),
               0x000000,
               0,
               brightShield,
@@ -6815,9 +6854,9 @@ export class ArenaScene extends Phaser.Scene {
               const px = -ty;
               const py = tx;
               const cx =
-                e.x + tx * atlasShield.plateRadius;
+                shieldX + tx * atlasShield.plateRadius;
               const cy =
-                e.y + ty * atlasShield.plateRadius;
+                shieldY + ty * atlasShield.plateRadius;
               const tangent =
                 4.5 + atlasShield.gainRatio * 2.5;
 
@@ -6875,8 +6914,8 @@ export class ArenaScene extends Phaser.Scene {
               const py = tx;
               const length =
                 2.5 + atlasShield.gainRatio * 2.5;
-              const sx = e.x + tx * radial;
-              const sy = e.y + ty * radial;
+              const sx = shieldX + tx * radial;
+              const sy = shieldY + ty * radial;
 
               fx.lineStyle(
                 1,
@@ -6902,28 +6941,28 @@ export class ArenaScene extends Phaser.Scene {
               atlasShield.alpha * 0.64,
             );
             fx.lineBetween(
-              e.x,
-              e.y - diamond,
-              e.x + diamond,
-              e.y,
+              shieldX,
+              shieldY - diamond,
+              shieldX + diamond,
+              shieldY,
             );
             fx.lineBetween(
-              e.x + diamond,
-              e.y,
-              e.x,
-              e.y + diamond,
+              shieldX + diamond,
+              shieldY,
+              shieldX,
+              shieldY + diamond,
             );
             fx.lineBetween(
-              e.x,
-              e.y + diamond,
-              e.x - diamond,
-              e.y,
+              shieldX,
+              shieldY + diamond,
+              shieldX - diamond,
+              shieldY,
             );
             fx.lineBetween(
-              e.x - diamond,
-              e.y,
-              e.x,
-              e.y - diamond,
+              shieldX - diamond,
+              shieldY,
+              shieldX,
+              shieldY - diamond,
             );
 
             if (atlasShield.refresh) {
@@ -6933,8 +6972,8 @@ export class ArenaScene extends Phaser.Scene {
                 atlasShield.alpha * 0.42,
               );
               fx.strokeCircle(
-                e.x,
-                e.y,
+                shieldX,
+                shieldY,
                 atlasShield.shellRadius + 6,
               );
             }
@@ -6943,7 +6982,7 @@ export class ArenaScene extends Phaser.Scene {
             fx.fillStyle(effectColor, alpha * 0.045);
             this.polygon(
               fx,
-              this.hex(e.x, e.y, wave),
+              this.hex(shieldX, shieldY, wave),
               effectColor,
               alpha * 0.045,
               effectColor,
@@ -6951,7 +6990,7 @@ export class ArenaScene extends Phaser.Scene {
             fx.lineStyle(2, effectColor, alpha * 0.82);
             this.polygon(
               fx,
-              this.hex(e.x, e.y, wave),
+              this.hex(shieldX, shieldY, wave),
               0x000000,
               0,
               effectColor,
@@ -6959,7 +6998,7 @@ export class ArenaScene extends Phaser.Scene {
             fx.lineStyle(1, 0xffffff, alpha * 0.38);
             this.polygon(
               fx,
-              this.hex(e.x, e.y, Math.max(4, wave - 4)),
+              this.hex(shieldX, shieldY, Math.max(4, wave - 4)),
               0x000000,
               0,
               0xffffff,

@@ -1282,6 +1282,11 @@ export class Match {
             undefined,
             undefined,
             healing,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            unit.id,
           );
         }
         if (tempoUnitIds.has(unit.id))
@@ -1432,6 +1437,10 @@ export class Match {
           unit.radius,
           COMMANDERS.nova.duration,
           "nova",
+          undefined,
+          undefined,
+          undefined,
+          unit.id,
         );
       } else if (commanderId === "atlas") {
         unit.shield = Math.max(unit.shield, COMMANDERS.atlas.shield);
@@ -1446,6 +1455,10 @@ export class Match {
           unit.radius,
           outcome.shieldGain,
           "atlas",
+          undefined,
+          undefined,
+          undefined,
+          unit.id,
         );
       } else {
         unit.hp = Math.min(unit.maxHp, unit.hp + outcome.healing);
@@ -1465,6 +1478,8 @@ export class Match {
           "lyra",
           undefined,
           outcome.cleanse,
+          undefined,
+          unit.id,
         );
       }
     }
