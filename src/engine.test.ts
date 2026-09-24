@@ -1150,10 +1150,12 @@ test("Medic support timing and healing come from card data", () => {
   assert.equal(card.supportInterval, 1.1);
   assert.equal(card.followDistance, 65);
   assert.equal(patient.hp, 50 + card.heal!);
-  assert.equal(
-    match.state.effects.find((effect) => effect.type === "heal")?.value,
-    card.heal,
+  const healEffect = match.state.effects.find(
+    (effect) => effect.type === "heal",
   );
+  assert.equal(healEffect?.value, card.heal);
+  assert.equal(healEffect?.sourceUnitId, medic.id);
+  assert.equal(healEffect?.targetUnitId, patient.id);
   assert.equal(medic.healCooldown, card.supportInterval);
 });
 
