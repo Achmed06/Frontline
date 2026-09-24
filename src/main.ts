@@ -2,7 +2,7 @@ import { renderBaseBuilder } from "./base-builder";
 import { baseMapSvg } from "./base-map";
 import { renderBackupMenu } from "./save-backup-menu";
 import { selectedCardHint } from "./card-hints";
-import { energyReadiness, energySpent } from "./energy-feedback";
+import { energyReadiness, energySpent, energyTempo } from "./energy-feedback";
 import { corePressure, corePressureLabel } from "./core-pressure";
 import { initializeStore, renderStore, supporterOwned } from "./store";
 import { watchAppState } from "./mobile";
@@ -129,7 +129,7 @@ app.innerHTML = `
     <header class="game-top"><div class="mini-brand">F<span>∕</span></div><div><b>FRONTLINE</b><small id="mode-label">EINSATZBASIS</small></div><div class="top-actions"><button id="sound" class="icon-btn" aria-label="Ton einschalten" title="Ton umschalten">♪</button><button id="help" class="icon-btn" aria-label="Spielanleitung">?</button><button id="pause" class="icon-btn" aria-label="Spiel pausieren" disabled>Ⅱ</button></div></header>
     <section class="match-hud" aria-label="Matchstatus"><div id="player-core-info" class="core-info" data-core-state="stable" data-core-status=""><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span><div id="time-limit-outlook" class="time-limit-outlook" data-leader="draw" hidden><b id="time-limit-label">GLEICHSTAND</b><small id="time-limit-detail">CORE · GEBIET GLEICH</small></div></div><div id="enemy-core-info" class="core-info enemy" data-core-state="stable" data-core-status=""><span><span class="enemy-command"><b id="enemy-commander-label">BOT</b><small id="enemy-commander-status">BEREIT</small><i id="enemy-commander-cooldown-progress" aria-hidden="true"></i></span><i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
     <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div><div id="card-drag-ghost" class="card-drag-ghost" hidden aria-hidden="true"></div>
-    <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count" data-front-state="even" aria-label="Front ausgeglichen 3 zu 3. 3 neutrale Zonen."><span class="territory-score"><b id="territory-player">3</b><i>FRONT</i><b id="territory-enemy">3</b></span><span id="territory-segments" class="territory-segments" aria-hidden="true">${Array.from({length:9},()=>"<i data-owner=\"neutral\"></i>").join("")}</span></span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">ANTIPPEN ODER DIREKT INS FELD ZIEHEN</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
+    <section class="command-deck" aria-label="Karten und Fähigkeiten"><div id="resource-row" class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count" data-front-state="even" aria-label="Front ausgeglichen 3 zu 3. 3 neutrale Zonen."><span class="territory-score"><b id="territory-player">3</b><i>FRONT</i><b id="territory-enemy">3</b></span><span id="territory-segments" class="territory-segments" aria-hidden="true">${Array.from({length:9},()=>"<i data-owner=\"neutral\"></i>").join("")}</span></span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">ANTIPPEN ODER DIREKT INS FELD ZIEHEN</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
       <div class="base-status"><span><i></i> FRONTLINE</span><b id="base-stars">0 ★</b></div>
       <nav id="main-loop-nav" class="main-loop-nav" aria-label="Hauptbereiche">
@@ -371,6 +371,8 @@ el<HTMLSelectElement>("difficulty").value = difficulty;
 const cardButtons = new Map<string, HTMLButtonElement>();
 const cardAffordable = new Map<string, boolean>();
 let energySpendTimer = 0;
+let energyWasCapped = false;
+let energyCapFlashUntil = 0;
 type CardDragState = {
   pointerId: number;
   cardId: CardId;
@@ -748,6 +750,10 @@ function start(
   lastCommanderReady = false;
   lastEnemyCommanderCooldown = 0;
   commanderReadyFlashUntil = 0;
+  energyWasCapped = false;
+  energyCapFlashUntil = 0;
+  el("resource-row").classList.remove("energy-high", "energy-capped", "energy-cap-flash");
+  el("cards").classList.remove("energy-cap-flash");
   lastCaptured = 0;
   battleNotices.clear();
   battleMomentumMemory = INITIAL_BATTLE_MOMENTUM;
@@ -1340,6 +1346,43 @@ function updateHud(force = false) {
   }
   el("energy").textContent = String(Math.floor(s.energy.player));
   el("energy-fill").style.width = `${(s.energy.player / ENERGY_CAP) * 100}%`;
+  const tempo = energyTempo(s.energy.player, ENERGY_CAP);
+  const resourceRow = el<HTMLElement>("resource-row");
+  const energyTrack = el("energy-fill").parentElement;
+  resourceRow.classList.toggle("energy-high", live && tempo.state === "high");
+  resourceRow.classList.toggle("energy-capped", live && tempo.state === "capped");
+  resourceRow.setAttribute(
+    "aria-label",
+    live
+      ? `${tempo.label}. ${Math.min(ENERGY_CAP, Math.max(0, s.energy.player)).toFixed(1).replace(".", ",")} von ${ENERGY_CAP}.`
+      : `Energie ${Math.min(ENERGY_CAP, Math.max(0, s.energy.player)).toFixed(1).replace(".", ",")} von ${ENERGY_CAP}.`,
+  );
+  if (
+    live &&
+    tempo.state === "capped" &&
+    !energyWasCapped &&
+    s.time > 0.5
+  ) {
+    energyCapFlashUntil = performance.now() + 900;
+    resourceRow.classList.remove("energy-cap-flash");
+    el("cards").classList.remove("energy-cap-flash");
+    void resourceRow.offsetWidth;
+    resourceRow.classList.add("energy-cap-flash");
+    el("cards").classList.add("energy-cap-flash");
+    window.setTimeout(() => {
+      resourceRow.classList.remove("energy-cap-flash");
+      el("cards").classList.remove("energy-cap-flash");
+    }, 900);
+  }
+  energyWasCapped = live && tempo.state === "capped";
+  energyTrack?.classList.toggle("high", live && tempo.state === "high");
+  energyTrack?.classList.toggle("capped", live && tempo.state === "capped");
+  energyTrack?.classList.toggle(
+    "cap-flash",
+    live &&
+      tempo.state === "capped" &&
+      performance.now() < energyCapFlashUntil,
+  );
   const selectedCard = CARDS.find((card) => card.id === selected);
   const selectedHint = el("selected-hint");
   const selectedReadiness = selectedCard
@@ -1362,9 +1405,13 @@ function updateHud(force = false) {
     selectedHint.textContent =
       `ENERGIE IN ${energyWaitLabel(selectedReadiness.waitSeconds)}s · ${Math.round(selectedReadiness.progress * 100)}%`;
     selectedHint.classList.add("waiting-energy");
+  } else if (live && !selectedCard && tempo.state === "capped") {
+    selectedHint.textContent = "ENERGIE VOLL · JETZT KARTE SPIELEN";
+    selectedHint.classList.add("energy-capped");
+    selectedHint.classList.remove("waiting-energy");
   } else {
     selectedHint.textContent = selectedCardHint(selectedCard);
-    selectedHint.classList.remove("waiting-energy");
+    selectedHint.classList.remove("waiting-energy", "energy-capped");
   }
   const race = frontRace(s.points.map((point) => point.owner));
   const territory = el<HTMLElement>("territory-count");
