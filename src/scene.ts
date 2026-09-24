@@ -3546,25 +3546,23 @@ export class ArenaScene extends Phaser.Scene {
         } else if (e.type === "heal") {
           const visual = healLinkVisual(e);
           if (visual) {
-            const sourceMotion =
+            const sourceUnit =
               e.sourceUnitId !== undefined
-                ? this.unitMotion.get(e.sourceUnitId)
+                ? s.units.find((unit) => unit.id === e.sourceUnitId)
                 : undefined;
-            const targetMotion =
+            const targetUnit =
               e.targetUnitId !== undefined
-                ? this.unitMotion.get(e.targetUnitId)
+                ? s.units.find((unit) => unit.id === e.targetUnitId)
                 : undefined;
-            const sourcePoint =
-              sourceMotion?.renderedFrame === this.renderFrame
-                ? unitRenderPosition(sourceMotion.render)
-                : { x: e.x, y: e.y };
-            const targetPoint =
-              targetMotion?.renderedFrame === this.renderFrame
-                ? unitRenderPosition(targetMotion.render)
-                : {
-                    x: e.targetX ?? sourcePoint.x,
-                    y: e.targetY ?? sourcePoint.y,
-                  };
+            const sourcePoint = sourceUnit
+              ? this.unitPresentationPoint(sourceUnit, s.effects)
+              : { x: e.x, y: e.y };
+            const targetPoint = targetUnit
+              ? this.unitPresentationPoint(targetUnit, s.effects)
+              : {
+                  x: e.targetX ?? sourcePoint.x,
+                  y: e.targetY ?? sourcePoint.y,
+                };
             const sourceX = sourcePoint.x;
             const sourceY = sourcePoint.y;
             const targetX = targetPoint.x;
@@ -3668,22 +3666,20 @@ export class ArenaScene extends Phaser.Scene {
           }
         } else {
           const source = e.sourceCardId ?? "generic";
-          const sourceMotion =
+          const sourceUnit =
             e.sourceUnitId !== undefined
-              ? this.unitMotion.get(e.sourceUnitId)
+              ? s.units.find((unit) => unit.id === e.sourceUnitId)
               : undefined;
-          const targetMotion =
+          const targetUnit =
             e.targetUnitId !== undefined
-              ? this.unitMotion.get(e.targetUnitId)
+              ? s.units.find((unit) => unit.id === e.targetUnitId)
               : undefined;
-          const sourcePoint =
-            sourceMotion?.renderedFrame === this.renderFrame
-              ? unitRenderPosition(sourceMotion.render)
-              : { x: e.x, y: e.y };
-          const targetPoint =
-            targetMotion?.renderedFrame === this.renderFrame
-              ? unitRenderPosition(targetMotion.render)
-              : { x: e.targetX, y: e.targetY };
+          const sourcePoint = sourceUnit
+            ? this.unitPresentationPoint(sourceUnit, s.effects)
+            : { x: e.x, y: e.y };
+          const targetPoint = targetUnit
+            ? this.unitPresentationPoint(targetUnit, s.effects)
+            : { x: e.targetX, y: e.targetY };
           const sourceX = sourcePoint.x;
           const sourceY = sourcePoint.y;
           const targetX = targetPoint.x;
@@ -4481,14 +4477,13 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "shield-hit" || e.type === "shield-break") {
           const visual = shieldImpactVisual(e);
           if (visual) {
-            const targetMotion =
+            const targetUnit =
               e.targetUnitId !== undefined
-                ? this.unitMotion.get(e.targetUnitId)
+                ? s.units.find((unit) => unit.id === e.targetUnitId)
                 : undefined;
-            const targetPoint =
-              targetMotion?.renderedFrame === this.renderFrame
-                ? unitRenderPosition(targetMotion.render)
-                : { x: e.x, y: e.y };
+            const targetPoint = targetUnit
+              ? this.unitPresentationPoint(targetUnit, s.effects)
+              : { x: e.x, y: e.y };
             const shieldX = targetPoint.x;
             const shieldY = targetPoint.y;
             const shieldColor =
@@ -6080,14 +6075,13 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "stasis-hit") {
           const hit = stasisHitVisual(e);
           if (hit) {
-            const targetMotion =
+            const targetUnit =
               e.targetUnitId !== undefined
-                ? this.unitMotion.get(e.targetUnitId)
+                ? s.units.find((unit) => unit.id === e.targetUnitId)
                 : undefined;
-            const targetPoint =
-              targetMotion?.renderedFrame === this.renderFrame
-                ? unitRenderPosition(targetMotion.render)
-                : { x: e.x, y: e.y };
+            const targetPoint = targetUnit
+              ? this.unitPresentationPoint(targetUnit, s.effects)
+              : { x: e.x, y: e.y };
             const stasisX = targetPoint.x;
             const stasisY = targetPoint.y;
             const slowColor = 0x88d5ff;
@@ -6412,14 +6406,13 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "breaker") {
           const breakerVisual = breakerShieldVisual(e);
           if (breakerVisual) {
-            const targetMotion =
+            const targetUnit =
               e.targetUnitId !== undefined
-                ? this.unitMotion.get(e.targetUnitId)
+                ? s.units.find((unit) => unit.id === e.targetUnitId)
                 : undefined;
-            const targetPoint =
-              targetMotion?.renderedFrame === this.renderFrame
-                ? unitRenderPosition(targetMotion.render)
-                : { x: e.x, y: e.y };
+            const targetPoint = targetUnit
+              ? this.unitPresentationPoint(targetUnit, s.effects)
+              : { x: e.x, y: e.y };
             const breakerX = targetPoint.x;
             const breakerY = targetPoint.y;
             const wave =
