@@ -1837,8 +1837,18 @@ export class ArenaScene extends Phaser.Scene {
             (effect.targetUnitId === undefined &&
               Math.hypot(effect.x - u.x, effect.y - u.y) <= u.radius + 8)),
       );
-      const renderX = rendered.x;
-      const renderY = rendered.y;
+      const arrivalPoint =
+        deploymentPresentationPoint(
+          spawnEffect,
+          rendered.x,
+          rendered.y,
+          this.reducedMotion,
+        ) ?? { x: rendered.x, y: rendered.y };
+      const renderX = arrivalPoint.x;
+      const renderY = arrivalPoint.y;
+      const launchStretch = spawnArrival?.launchStretch ?? 1;
+      const launchHeightScale =
+        1 - Math.max(0, launchStretch - 1) * 0.42;
       const hitStrength = hitImpact
         ? Math.max(0, hitImpact.life / hitImpact.maxLife)
         : 0;
@@ -1911,10 +1921,10 @@ export class ArenaScene extends Phaser.Scene {
       const attackHeight = 1 - attackPose * 0.014;
       sprite
         .setPosition(
-          rendered.x +
+          renderX +
             recoilX +
             (this.reducedMotion ? 0 : hitReaction.offsetX),
-          rendered.y +
+          renderY +
             identity.verticalOffset +
             spawnYOffset +
             walkBob +
@@ -1930,7 +1940,8 @@ export class ArenaScene extends Phaser.Scene {
             hitScale *
             hitReaction.widthScale *
             settleWidth *
-            attackWidth,
+            attackWidth *
+            launchStretch,
           size *
             spawnScale *
             walkScale *
@@ -1939,7 +1950,8 @@ export class ArenaScene extends Phaser.Scene {
             hitScale *
             hitReaction.heightScale *
             settleHeight *
-            attackHeight,
+            attackHeight *
+            launchHeightScale,
         )
         .setFlipX((fireDirection?.facing ?? motion.facing) < 0)
         .setAngle(
@@ -1964,15 +1976,15 @@ export class ArenaScene extends Phaser.Scene {
       const facing = (fireDirection?.facing ?? motion.facing) < 0 ? -1 : 1;
       g.fillStyle(0x06171b, 0.55);
       g.fillEllipse(
-        rendered.x,
-        rendered.y + 6,
+        renderX,
+        renderY + 6,
         size * identity.shadowWidth,
         size * identity.shadowHeight,
       );
       g.lineStyle(2, identityColor, identity.ringAlpha);
       g.strokeEllipse(
-        rendered.x,
-        rendered.y + 7,
+        renderX,
+        renderY + 7,
         size * identity.ringWidth,
         size * identity.ringHeight,
       );
@@ -1981,56 +1993,56 @@ export class ArenaScene extends Phaser.Scene {
       if (identity.kind === "heavy") {
         g.lineStyle(1.6, identityColor, 0.4);
         g.lineBetween(
-          rendered.x - size * 0.34,
-          rendered.y + 9,
-          rendered.x - size * 0.22,
-          rendered.y + 9,
+          renderX - size * 0.34,
+          renderY + 9,
+          renderX - size * 0.22,
+          renderY + 9,
         );
         g.lineBetween(
-          rendered.x + size * 0.22,
-          rendered.y + 9,
-          rendered.x + size * 0.34,
-          rendered.y + 9,
+          renderX + size * 0.22,
+          renderY + 9,
+          renderX + size * 0.34,
+          renderY + 9,
         );
       } else if (identity.kind === "siege") {
         g.lineStyle(1.4, identityColor, 0.34);
         for (const side of [-1, 1]) {
           g.lineBetween(
-            rendered.x + side * size * 0.24,
-            rendered.y + 5,
-            rendered.x + side * size * 0.34,
-            rendered.y + 12,
+            renderX + side * size * 0.24,
+            renderY + 5,
+            renderX + side * size * 0.34,
+            renderY + 12,
           );
         }
       } else if (identity.kind === "skirmisher") {
-        const tipX = rendered.x + facing * size * 0.39;
+        const tipX = renderX + facing * size * 0.39;
         g.lineStyle(1.4, identityColor, 0.38);
         g.lineBetween(
           tipX - facing * 6,
-          rendered.y + 3,
+          renderY + 3,
           tipX,
-          rendered.y + 7,
+          renderY + 7,
         );
         g.lineBetween(
           tipX - facing * 6,
-          rendered.y + 11,
+          renderY + 11,
           tipX,
-          rendered.y + 7,
+          renderY + 7,
         );
       } else if (identity.kind === "marksman") {
         g.lineStyle(1.2, identityColor, 0.34);
         g.lineBetween(
-          rendered.x + facing * size * 0.28,
-          rendered.y + 7,
-          rendered.x + facing * size * 0.45,
-          rendered.y + 7,
+          renderX + facing * size * 0.28,
+          renderY + 7,
+          renderX + facing * size * 0.45,
+          renderY + 7,
         );
       } else if (identity.kind === "support") {
         g.fillStyle(identityColor, 0.42);
         for (const [ox, oy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
           g.fillCircle(
-            rendered.x + ox * size * 0.32,
-            rendered.y + 7 + oy * size * 0.15,
+            renderX + ox * size * 0.32,
+            renderY + 7 + oy * size * 0.15,
             1.25,
           );
         }
@@ -2039,8 +2051,8 @@ export class ArenaScene extends Phaser.Scene {
         for (let node = 0; node < 4; node++) {
           const a = node * Math.PI * 0.5;
           g.fillCircle(
-            rendered.x + Math.cos(a) * size * 0.34,
-            rendered.y + 7 + Math.sin(a) * size * 0.14,
+            renderX + Math.cos(a) * size * 0.34,
+            renderY + 7 + Math.sin(a) * size * 0.14,
             1.1,
           );
         }
@@ -2048,8 +2060,8 @@ export class ArenaScene extends Phaser.Scene {
         g.fillStyle(identityColor, 0.34);
         for (let node = -1; node <= 1; node++)
           g.fillCircle(
-            rendered.x + node * 4.5,
-            rendered.y + 10 + Math.abs(node) * 1.5,
+            renderX + node * 4.5,
+            renderY + 10 + Math.abs(node) * 1.5,
             1.15,
           );
       }
