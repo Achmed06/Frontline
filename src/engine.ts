@@ -1732,9 +1732,12 @@ export class Match {
         0.62,
         undefined,
         clamp(unit.radius * 2.2, 18, 34),
-        undefined,
+        unit.maxHp,
         sourceCardId,
         sourcePosition,
+        undefined,
+        undefined,
+        unit.id,
       );
       if (source === "player") this.state.stats.kills++;
     }

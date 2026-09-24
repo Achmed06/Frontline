@@ -82,6 +82,11 @@ import { novaTempoActivationVisual } from "./nova-tempo-activation-visual";
 import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 import { effectPresentationBudget } from "./effect-density";
+import {
+  killConfirmation,
+  strongestKillConfirmation,
+  type KillConfirmationCue,
+} from "./kill-confirmation";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
@@ -93,6 +98,7 @@ export type SceneBridge = {
   running: () => boolean;
   selected: () => string | null;
   deploy: (x: number, y: number) => void;
+  combatFeedback?: (cue: KillConfirmationCue) => void;
   tick: () => void;
 };
 export class ArenaScene extends Phaser.Scene {
@@ -139,6 +145,7 @@ export class ArenaScene extends Phaser.Scene {
   private frameDeltaSeconds = 1 / 60;
   private renderFrame = 0;
   private reactedEffects = new Set<number>();
+  private lastKillFeedbackAt = Number.NEGATIVE_INFINITY;
   private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
   private coreTargetAcquisition = new Map<
@@ -347,6 +354,7 @@ export class ArenaScene extends Phaser.Scene {
       this.unitMotion.clear();
       this.unitVitals.clear();
       this.reactedEffects.clear();
+      this.lastKillFeedbackAt = Number.NEGATIVE_INFINITY;
       this.battleScars = [];
       this.brokenCores.clear();
       this.coreTargetAcquisition.clear();
@@ -3278,6 +3286,16 @@ export class ArenaScene extends Phaser.Scene {
 
     this.syncCombatText(s.effects, s.units);
     const activeEffectCount = s.effects.length;
+    const pendingKill = strongestKillConfirmation(
+      s.effects.filter((effect) => !this.reactedEffects.has(effect.id)),
+    );
+    if (
+      pendingKill &&
+      this.clock - this.lastKillFeedbackAt >= 0.14
+    ) {
+      this.bridge.combatFeedback?.(pendingKill.cue);
+      this.lastKillFeedbackAt = this.clock;
+    }
     for (const e of s.effects) {
       const presentation = effectPresentationBudget(
         e,
@@ -3342,13 +3360,23 @@ export class ArenaScene extends Phaser.Scene {
           else if (e.type === "death") {
             const size = e.radius ?? 18;
             const profile = impactProfile(e.sourceCardId);
+            const confirmation = killConfirmation(e);
+            const confirmationBoost = confirmation
+              ? 1 + confirmation.intensity * (confirmation.heavy ? 0.24 : 0.1)
+              : 1;
             this.cameras.main.shake(
-              90 + Math.round(size * (1.8 + profile.scale * 0.45)),
+              90 +
+                Math.round(
+                  size *
+                    (1.8 + profile.scale * 0.45) *
+                    confirmationBoost,
+                ),
               Math.min(
-                0.0036,
+                confirmation?.heavy ? 0.0042 : 0.0036,
                 (0.00125 +
                   size * 0.00005 * profile.scale) *
-                  presentation.cameraScale,
+                  presentation.cameraScale *
+                  confirmationBoost,
               ),
               true,
             );
@@ -7007,6 +7035,25 @@ export class ArenaScene extends Phaser.Scene {
             e.y + (direction.active ? direction.ny * direction.offset : 0);
           const tangentX = -direction.ny;
           const tangentY = direction.nx;
+          const confirmation = killConfirmation(e);
+
+          if (confirmation && progress < 0.72) {
+            const confirmAlpha =
+              fade *
+              confirmation.intensity *
+              (1 - progress / 0.72);
+            fx.lineStyle(
+              confirmation.heavy ? 2.2 : 1.35,
+              0xf5ffd0,
+              confirmAlpha * (confirmation.heavy ? 0.88 : 0.62),
+            );
+            fx.strokeCircle(
+              centerX,
+              centerY,
+              (10 + burst * 0.72 + progress * 12) *
+                confirmation.ringScale,
+            );
+          }
 
           fx.fillStyle(0xffffff, fade * 0.42);
           fx.fillCircle(

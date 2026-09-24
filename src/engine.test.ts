@@ -304,7 +304,10 @@ test("Pulse deals area damage, removes deaths once, and can finish a core", () =
   assert.equal(match.play("player", "pulse", 210, 220).ok, true);
   assert.equal(match.state.units.length, 0);
   assert.equal(match.state.stats.kills, 1);
-  assert.ok(match.state.effects.some((effect) => effect.type === "death"));
+  const death = match.state.effects.find((effect) => effect.type === "death");
+  assert.ok(death);
+  assert.equal(death.value, enemy.maxHp);
+  assert.equal(death.targetUnitId, enemy.id);
   match.state.energy.player = 4;
   match.state.cores.enemy.hp = 40;
   assert.equal(match.play("player", "pulse", 210, 35).ok, true);

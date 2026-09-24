@@ -2321,6 +2321,10 @@ const scene = new ArenaScene({
   running: sceneRunning,
   selected: () => selected,
   deploy,
+  combatFeedback: (cue) => {
+    sound.play(cue);
+    haptics.play(cue);
+  },
   tick: () => updateHud(),
 });
 const matchRender = matchRenderProfile();
