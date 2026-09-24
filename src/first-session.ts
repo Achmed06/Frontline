@@ -23,7 +23,7 @@ export function firstSessionFocus(matches: number): FirstSessionFocus {
       showAdvancedBattle: false,
       kicker: "DEIN ERSTES GEFECHT",
       title: "3 MINUTEN.\nEINE FRONT.",
-      copy: "Karte wählen. Boden gewinnen. Core durchbrechen. Mehr musst du für den Start nicht wissen.",
+      copy: "Truppe einsetzen. Boden gewinnen. Core durchbrechen. Mehr musst du für den Start nicht wissen.",
       cta: "ERSTES GEFECHT STARTEN",
     };
 
