@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.12
+## Current v2.13
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2285,3 +2285,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies Rally, NOVA, ATLAS and LYRA effects retain the exact affected unit identity
 - healing, shielding, tempo duration, commander cooldowns, targeting and deterministic simulation are unchanged
 - release: package 2.12.0 / v2.12 / iOS 2.12 (212)
+
+
+## v2.13 changes
+
+- live unit target presentation is now resolved through the shared repulsor-aware presentation helper instead of duplicating normal interpolation logic
+- active shot recoil/facing now points at the actual visible Repulsor flight position when its target is being displaced
+- weapon target-lock brackets and sight lines follow that same Repulsor flight path instead of the target's post-knockback simulation coordinate
+- Pulse, Rally, Stasis and Repulsor ability target markers use the same visible unit presentation point
+- Repulsor movement preview arrows now begin at the actual in-flight unit position while still ending at the authoritative landing destination
+- Core targets remain fixed to authoritative Core coordinates
+- existing Repulsor displacement regression coverage continues to verify the exact visual travel path used by these presentation hooks
+- targeting rules, landing calculations, energy costs, attack timing, damage and deterministic simulation are unchanged
+- release: package 2.13.0 / v2.13 / iOS 2.13 (213)
