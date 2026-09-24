@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.01
+## Current v2.02
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2146,3 +2146,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - the current interpolated point can now be read without mutating presentation state, with regression coverage for that behavior
 - authoritative target selection, attack range, damage, collision and simulation timing are unchanged
 - release: package 2.1.0 / v2.01 / iOS 2.01 (201)
+
+
+## v2.02 changes
+
+- Medic healing links now stay attached to both the healer and patient while either unit moves during the heal animation
+- targeted Medic heal effects carry optional source and target unit IDs in addition to their original snapshot coordinates
+- the renderer resolves those IDs to the current interpolated 60 FPS presentation positions after units have been drawn
+- beam lines, source/target rings, moving heal packets, reduced-motion markers and the target cross all share the same live endpoints
+- if either tracked unit no longer exists, the effect safely falls back to its original snapshot coordinate
+- Rally, LYRA and other non-linked heal effects keep their existing behavior and do not receive tracked unit IDs
+- regression coverage verifies Medic heal effects retain the exact healer and patient IDs
+- healing amount, support range, support interval, movement, targeting and deterministic combat simulation are unchanged
+- release: package 2.2.0 / v2.02 / iOS 2.02 (202)
