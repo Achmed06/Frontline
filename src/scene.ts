@@ -5488,14 +5488,14 @@ export class ArenaScene extends Phaser.Scene {
             const lift = progress * 18;
             fx.fillStyle(effectColor, alpha);
             fx.fillRect(
-              repairX - 2,
-              repairY - 10 - lift,
+              e.x - 2,
+              e.y - 10 - lift,
               4,
               15,
             );
             fx.fillRect(
-              repairX - 7,
-              repairY - 5 - lift,
+              e.x - 7,
+              e.y - 5 - lift,
               14,
               4,
             );
