@@ -5938,6 +5938,16 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "stasis-hit") {
           const hit = stasisHitVisual(e);
           if (hit) {
+            const targetMotion =
+              e.targetUnitId !== undefined
+                ? this.unitMotion.get(e.targetUnitId)
+                : undefined;
+            const targetPoint =
+              targetMotion?.renderedFrame === this.renderFrame
+                ? unitRenderPosition(targetMotion.render)
+                : { x: e.x, y: e.y };
+            const stasisX = targetPoint.x;
+            const stasisY = targetPoint.y;
             const slowColor = 0x88d5ff;
             const brightSlow = 0xe6f7ff;
             const cageRotation = this.reducedMotion
@@ -5950,7 +5960,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, hit.shellRadius),
+              this.hex(stasisX, stasisY, hit.shellRadius),
               slowColor,
               hit.alpha * 0.07,
               slowColor,
@@ -5962,7 +5972,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, hit.shellRadius),
+              this.hex(stasisX, stasisY, hit.shellRadius),
               0x000000,
               0,
               slowColor,
@@ -5973,8 +5983,8 @@ export class ArenaScene extends Phaser.Scene {
               hit.alpha * 0.72,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              stasisX,
+              stasisY,
               hit.innerRadius,
             );
 
@@ -5988,9 +5998,9 @@ export class ArenaScene extends Phaser.Scene {
               const px = -ty;
               const py = tx;
               const cx =
-                e.x + tx * hit.shellRadius * 0.78;
+                stasisX + tx * hit.shellRadius * 0.78;
               const cy =
-                e.y + ty * hit.shellRadius * 0.78;
+                stasisY + ty * hit.shellRadius * 0.78;
               fx.lineStyle(
                 1.4,
                 corner % 2 === 0 ? brightSlow : slowColor,
@@ -6017,8 +6027,8 @@ export class ArenaScene extends Phaser.Scene {
             ) {
               const sourceX = e.sourceX!;
               const sourceY = e.sourceY!;
-              const dx = e.x - sourceX;
-              const dy = e.y - sourceY;
+              const dx = stasisX - sourceX;
+              const dy = stasisY - sourceY;
               const packetX =
                 sourceX + dx * hit.tetherProgress;
               const packetY =
@@ -6032,8 +6042,8 @@ export class ArenaScene extends Phaser.Scene {
               fx.lineBetween(
                 sourceX,
                 sourceY,
-                e.x,
-                e.y,
+                stasisX,
+                stasisY,
               );
 
               if (!this.reducedMotion) {
@@ -6081,10 +6091,10 @@ export class ArenaScene extends Phaser.Scene {
                 hit.shellRadius *
                 (0.7 + (shard % 3) * 0.08);
               fx.lineBetween(
-                e.x + Math.cos(angle) * inner,
-                e.y + Math.sin(angle) * inner,
-                e.x + Math.cos(angle) * outer,
-                e.y + Math.sin(angle) * outer,
+                stasisX + Math.cos(angle) * inner,
+                stasisY + Math.sin(angle) * inner,
+                stasisX + Math.cos(angle) * outer,
+                stasisY + Math.sin(angle) * outer,
               );
             }
           }
