@@ -3296,10 +3296,7 @@ export class ArenaScene extends Phaser.Scene {
             const dy = e.targetY - e.y;
             const travel = this.reducedMotion
               ? 1
-              : Math.min(
-                  1,
-                  visual.progress * 1.55,
-                );
+              : visual.travelProgress;
             const centerX = e.x + dx * travel;
             const centerY = e.y + dy * travel;
             const repulsorColor = 0xc29aff;
