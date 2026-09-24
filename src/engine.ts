@@ -1659,6 +1659,9 @@ export class Match {
         shieldDamage,
         sourceCardId,
         sourcePosition,
+        undefined,
+        undefined,
+        unit.id,
       );
       if (shieldBefore > 0 && unit.shield <= 0)
         this.effect(
@@ -1672,6 +1675,9 @@ export class Match {
           shieldDamage,
           sourceCardId,
           sourcePosition,
+          undefined,
+          undefined,
+          unit.id,
         );
     }
 
@@ -1851,6 +1857,9 @@ export class Match {
               removedShield,
               card.id,
               attack.unit,
+              undefined,
+              undefined,
+              target.id,
             );
             if (target.shield <= 0)
               this.effect(
@@ -1868,6 +1877,9 @@ export class Match {
                 removedShield,
                 card.id,
                 attack.unit,
+                undefined,
+                undefined,
+                target.id,
               );
           }
         }
