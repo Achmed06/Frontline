@@ -47,6 +47,44 @@ export function sampleUnitMotion(
   };
 }
 
+
+export type UnitMotionFrame = UnitMotionSample & {
+  sampledAt: number;
+  x: number;
+  y: number;
+};
+
+export function sampleUnitMotionFrame(
+  previous: UnitMotionFrame | undefined,
+  x: number,
+  y: number,
+  sampledAt: number,
+  attackTargetX?: number,
+): UnitMotionFrame {
+  const safeSampledAt = Number.isFinite(sampledAt)
+    ? sampledAt
+    : previous?.sampledAt ?? 0;
+  const simulationAdvanced =
+    !previous ||
+    previous.sampledAt !== safeSampledAt ||
+    Math.abs(previous.x - x) > 1e-6 ||
+    Math.abs(previous.y - y) > 1e-6;
+
+  if (!simulationAdvanced)
+    return {
+      ...previous,
+      sampledAt: safeSampledAt,
+      stopped: false,
+    };
+
+  return {
+    ...sampleUnitMotion(previous, x, y, attackTargetX),
+    sampledAt: safeSampledAt,
+    x,
+    y,
+  };
+}
+
 export function unitTrailPoint(
   x: number,
   y: number,
