@@ -82,6 +82,7 @@ import { novaTempoActivationVisual } from "./nova-tempo-activation-visual";
 import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 import { effectPresentationBudget } from "./effect-density";
+import { matchRhythm } from "./match-rhythm";
 import {
   killConfirmation,
   strongestKillConfirmation,
@@ -770,10 +771,14 @@ export class ArenaScene extends Phaser.Scene {
     fx.clear();
     const themeId = this.bridge.theme();
     const theme = ARENA_THEMES[themeId];
+    const rhythm = matchRhythm(s);
+    const rhythmPulse = this.reducedMotion
+      ? 0.65
+      : 0.5 + 0.5 * Math.sin(this.clock * rhythm.pulseRate);
     g.fillStyle(theme.water);
     g.fillRect(0, 0, 420, 560);
     // Fine survey grid and faint terrain contours around an angular platform.
-    g.lineStyle(1, 0x69d9ec, 0.035);
+    g.lineStyle(1, 0x69d9ec, rhythm.gridAlpha);
     for (let x = 0; x < 420; x += 20) g.lineBetween(x, 0, x, 560);
     for (let y = 0; y < 560; y += 20) g.lineBetween(0, y, 420, y);
     for (let k = 0; k < 5; k++) {
@@ -782,6 +787,28 @@ export class ArenaScene extends Phaser.Scene {
       g.strokeEllipse(420 + k * 12, 300, 90 + k * 25, 300 + k * 45);
     }
     this.drawThemeAtmosphere(g, themeId, theme.accent);
+    if (rhythm.stage !== "opening") {
+      const bandAlpha =
+        rhythm.edgeAlpha * (0.72 + rhythmPulse * 0.28);
+      const bandHeight =
+        5 +
+        rhythm.intensity *
+          (rhythm.stage === "climax" ? 10 : 6);
+      g.fillStyle(CORAL, bandAlpha);
+      g.fillRect(0, 0, 420, bandHeight);
+      g.fillStyle(MINT, bandAlpha);
+      g.fillRect(0, 560 - bandHeight, 420, bandHeight);
+
+      if (rhythm.stage === "pressure" || rhythm.stage === "climax") {
+        const sideAlpha =
+          rhythm.edgeAlpha *
+          (rhythm.stage === "climax" ? 0.66 : 0.42) *
+          (0.75 + rhythmPulse * 0.25);
+        g.fillStyle(theme.accent, sideAlpha);
+        g.fillRect(0, 118, 4, 324);
+        g.fillRect(416, 118, 4, 324);
+      }
+    }
     const boundary = [
       [28, 62],
       [80, 20],
@@ -951,12 +978,26 @@ export class ArenaScene extends Phaser.Scene {
       g.lineStyle(6, CORAL, 0.06 + pulse * 0.14);
       g.strokePoints(enemyFront.map(([x, y]) => ({ x, y })), false);
     }
-    g.lineStyle(2, MINT, playerCaptureWave ? 0.92 : unitDeploymentSelected ? 0.88 : 0.65);
+    g.lineStyle(
+      2 + rhythm.intensity * 0.18,
+      MINT,
+      playerCaptureWave
+        ? 0.92
+        : unitDeploymentSelected
+          ? 0.88
+          : 0.62 + rhythm.intensity * 0.11,
+    );
     g.strokePoints(
       front.map(([x, y]) => ({ x, y })),
       false,
     );
-    g.lineStyle(1.5, CORAL, enemyCaptureWave ? 0.72 : 0.3);
+    g.lineStyle(
+      1.5 + rhythm.intensity * 0.16,
+      CORAL,
+      enemyCaptureWave
+        ? 0.72
+        : 0.28 + rhythm.intensity * 0.12,
+    );
     g.strokePoints(
       enemyFront.map(([x, y]) => ({ x, y })),
       false,
