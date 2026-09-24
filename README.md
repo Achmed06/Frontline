@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.04
+## Current v2.05
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2184,3 +2184,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies Breaker, absorbed shield hits and shield breaks retain the exact affected unit ID
 - shield damage, shield-break amount, HP damage, movement, targeting and deterministic combat simulation are unchanged
 - release: package 2.4.0 / v2.04 / iOS 2.04 (204)
+
+
+## v2.05 changes
+
+- Stasis hit effects now retain the affected unit ID so the cage and tether follow the target's interpolated 60 FPS presentation position
+- the original Stasis cast point and source-to-target direction remain snapshot-based, preserving the actual cast direction while the target keeps moving
+- live ability targeting rings now use the same interpolated position as each visible unit instead of stepping at the 30 Hz simulation cadence
+- Pulse shield/lethal markers, Rally heal/tempo markers, Stasis status markers and blocked-movement indicators stay visually locked to their target units while aiming
+- Repulsor preview arrows now begin at the visible interpolated unit position and point to the authoritative landing destination
+- Core ability previews remain fixed to authoritative Core coordinates
+- target validation, affected-unit selection, landing calculations, energy costs and deterministic combat simulation are unchanged
+- regression coverage verifies Stasis hit effects retain the exact affected unit ID
+- release: package 2.5.0 / v2.05 / iOS 2.05 (205)
