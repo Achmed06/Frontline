@@ -1400,11 +1400,12 @@ function updateHud(force = false) {
     selectedHint.textContent = selectedCard
       ? `BEREIT BEI LOS · ${selectedCard.name}`
       : "KARTE VORWÄHLEN · BEI LOS DIREKT EINSETZEN";
-    selectedHint.classList.remove("waiting-energy");
+    selectedHint.classList.remove("waiting-energy", "energy-capped");
   } else if (live && selectedReadiness && !selectedReadiness.affordable) {
     selectedHint.textContent =
       `ENERGIE IN ${energyWaitLabel(selectedReadiness.waitSeconds)}s · ${Math.round(selectedReadiness.progress * 100)}%`;
     selectedHint.classList.add("waiting-energy");
+    selectedHint.classList.remove("energy-capped");
   } else if (live && !selectedCard && tempo.state === "capped") {
     selectedHint.textContent = "ENERGIE VOLL · JETZT KARTE SPIELEN";
     selectedHint.classList.add("energy-capped");
