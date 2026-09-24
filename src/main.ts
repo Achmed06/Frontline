@@ -1061,6 +1061,7 @@ function updateHud(force = false) {
     !ended &&
     allowCountdownPreselect &&
     now < matchReadyAt;
+  el("cards").classList.toggle("preselecting", preselecting);
   if (preselecting) {
     selectedHint.textContent = selectedCard
       ? `BEREIT BEI LOS · ${selectedCard.name}`
