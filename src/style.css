@@ -7454,3 +7454,27 @@ a.privacy-link:focus-visible,
   }
 }
 
+/* v1.85: returning players can prepare a card during the compressed launch. */
+.cards.preselecting .card:not(:disabled) {
+  border-color: #759788;
+  opacity: .92;
+}
+.cards.preselecting .card:not(:disabled)::after {
+  opacity: .24;
+}
+.cards.preselecting .card.selected {
+  border-color: #dce990;
+  box-shadow:
+    0 0 0 1px #eaf5a72b,
+    0 5px 15px #b8d56624;
+}
+.cards.preselecting .card.selected .card-name {
+  color: #eef3b9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cards.preselecting .card:not(:disabled) {
+    transition: none;
+  }
+}
+
