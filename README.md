@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.00
+## Current v2.01
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2134,3 +2134,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - deterministic combat simulation, damage, movement speed, targeting, collision, bot logic, energy and match timing are unchanged
 - existing unit-motion interpolation regression coverage continues to verify 60 FPS, 30 FPS fallback, reduced-motion and large-displacement behavior
 - release: package 2.0.0 / v2.00 / iOS 2.00 (200)
+
+
+## v2.01 changes
+
+- live weapon target locks now follow the same interpolated presentation position as moving enemy units
+- lock brackets, sight dashes and target pulses no longer terminate on the older 30 Hz simulation position while the target sprite moves at 60 FPS
+- target positions are previewed without advancing their interpolation state twice in the same render frame
+- targets already rendered in the current frame reuse their exact presentation position, keeping lock geometry stable regardless of unit iteration order
+- Core targeting remains fixed to authoritative Core coordinates
+- the current interpolated point can now be read without mutating presentation state, with regression coverage for that behavior
+- authoritative target selection, attack range, damage, collision and simulation timing are unchanged
+- release: package 2.1.0 / v2.01 / iOS 2.01 (201)
