@@ -1630,6 +1630,8 @@ export class ArenaScene extends Phaser.Scene {
           effect.type === "impact" &&
           Math.hypot(effect.x - u.x, effect.y - u.y) <= u.radius + 8,
       );
+      const renderX = rendered.x;
+      const renderY = rendered.y;
       const hitStrength = hitImpact
         ? Math.max(0, hitImpact.life / hitImpact.maxLife)
         : 0;
@@ -1753,7 +1755,7 @@ export class ArenaScene extends Phaser.Scene {
           Math.PI *
             2 *
             Math.max(0.018, weaponCycle.charge);
-        const cycleY = u.y + 9;
+        const cycleY = renderY + 9;
         const readyBoost =
           weaponCycle.charge >= 0.82
             ? this.reducedMotion
@@ -1771,7 +1773,7 @@ export class ArenaScene extends Phaser.Scene {
           0.42 * weaponCycle.prominence,
         );
         fx.strokeCircle(
-          u.x,
+          renderX,
           cycleY,
           weaponCycle.radius + 1.8,
         );
@@ -1784,7 +1786,7 @@ export class ArenaScene extends Phaser.Scene {
         );
         fx.beginPath();
         fx.arc(
-          u.x,
+          renderX,
           cycleY,
           weaponCycle.radius,
           start,
@@ -1809,9 +1811,9 @@ export class ArenaScene extends Phaser.Scene {
           const inner = weaponCycle.radius - 2.5;
           const outer = weaponCycle.radius + 1.5;
           fx.lineBetween(
-            u.x + Math.cos(a) * inner,
+            renderX + Math.cos(a) * inner,
             cycleY + Math.sin(a) * inner,
-            u.x + Math.cos(a) * outer,
+            renderX + Math.cos(a) * outer,
             cycleY + Math.sin(a) * outer,
           );
         }
@@ -1819,7 +1821,7 @@ export class ArenaScene extends Phaser.Scene {
         if (weaponCycle.charge >= 0.82) {
           const pipAngle = end;
           const pipX =
-            u.x +
+            renderX +
             Math.cos(pipAngle) *
               weaponCycle.radius;
           const pipY =
@@ -1852,8 +1854,8 @@ export class ArenaScene extends Phaser.Scene {
           u.attackCooldown,
           u.interval,
           true,
-          u.x,
-          u.y,
+          renderX,
+          renderY,
           combatTarget.target.x,
           combatTarget.target.y,
           targetRadius,
@@ -1873,9 +1875,9 @@ export class ArenaScene extends Phaser.Scene {
           const targetReach =
             targetLock.bracketRadius + 4;
           const lineStartX =
-            u.x + targetLock.nx * sourceReach;
+            renderX + targetLock.nx * sourceReach;
           const lineStartY =
-            u.y + targetLock.ny * sourceReach;
+            renderY + targetLock.ny * sourceReach;
           const lineEndX =
             targetX - targetLock.nx * targetReach;
           const lineEndY =
@@ -2022,8 +2024,8 @@ export class ArenaScene extends Phaser.Scene {
         const px = -ny;
         const py = nx;
         const forward = size * 0.34;
-        const muzzleX = u.x + nx * forward;
-        const muzzleY = u.y - 3 + ny * forward;
+        const muzzleX = renderX + nx * forward;
+        const muzzleY = renderY - 3 + ny * forward;
         const muzzleColor =
           fireFeedback.kind === "electric"
             ? 0x9adfff
@@ -2125,8 +2127,8 @@ export class ArenaScene extends Phaser.Scene {
       );
       if (!this.reducedMotion && motion.moving && motion.moved > 0.04) {
         const trail = unitTrailPoint(
-          u.x,
-          u.y + 8,
+          renderX,
+          renderY + 8,
           motion.dx,
           motion.dy,
           footprint.trailDistance,
@@ -2253,8 +2255,8 @@ export class ArenaScene extends Phaser.Scene {
           settle * settleAlpha,
         );
         g.strokeEllipse(
-          u.x,
-          u.y + 8,
+          renderX,
+          renderY + 8,
           size *
             (footprint.settleWidthScale +
               (1 - settle) * 0.18),
@@ -2291,8 +2293,8 @@ export class ArenaScene extends Phaser.Scene {
               (medicCycle.ready ? 0.07 : 0.035),
           );
           fx.fillCircle(
-            u.x,
-            u.y,
+            renderX,
+            renderY,
             medicCycle.ringRadius - 4,
           );
 
@@ -2326,8 +2328,8 @@ export class ArenaScene extends Phaser.Scene {
             );
             fx.beginPath();
             fx.arc(
-              u.x,
-              u.y,
+              renderX,
+              renderY,
               medicCycle.ringRadius,
               from,
               to,
@@ -2350,11 +2352,11 @@ export class ArenaScene extends Phaser.Scene {
                 : this.clock *
                   (0.65 + medicCycle.charge * 0.55));
             const packetX =
-              u.x +
+              renderX +
               Math.cos(angle) *
                 medicCycle.packetRadius;
             const packetY =
-              u.y +
+              renderY +
               Math.sin(angle) *
                 medicCycle.packetRadius;
 
@@ -2383,14 +2385,14 @@ export class ArenaScene extends Phaser.Scene {
               medicCycle.alpha * readyPulse,
             );
             fx.fillRect(
-              u.x - 1.2,
-              u.y - medicCycle.crossReach,
+              renderX - 1.2,
+              renderY - medicCycle.crossReach,
               2.4,
               medicCycle.crossReach * 2,
             );
             fx.fillRect(
-              u.x - medicCycle.crossReach,
-              u.y - 1.2,
+              renderX - medicCycle.crossReach,
+              renderY - 1.2,
               medicCycle.crossReach * 2,
               2.4,
             );
@@ -2401,8 +2403,8 @@ export class ArenaScene extends Phaser.Scene {
               medicCycle.alpha * 0.52,
             );
             fx.strokeCircle(
-              u.x,
-              u.y,
+              renderX,
+              renderY,
               medicCycle.ringRadius + 3,
             );
           }
@@ -2433,8 +2435,8 @@ export class ArenaScene extends Phaser.Scene {
               (0.025 + shieldVisual.integrity * 0.035),
           );
           fx.fillCircle(
-            u.x,
-            u.y,
+            renderX,
+            renderY,
             shieldVisual.innerRadius,
           );
 
@@ -2468,8 +2470,8 @@ export class ArenaScene extends Phaser.Scene {
             );
             fx.beginPath();
             fx.arc(
-              u.x,
-              u.y,
+              renderX,
+              renderY,
               shieldVisual.shellRadius,
               from,
               to,
@@ -2485,10 +2487,10 @@ export class ArenaScene extends Phaser.Scene {
                   (0.32 + shieldVisual.integrity * 0.3),
               );
               fx.fillCircle(
-                u.x +
+                renderX +
                   Math.cos(mid) *
                     shieldVisual.shellRadius,
-                u.y +
+                renderY +
                   Math.sin(mid) *
                     shieldVisual.shellRadius,
                 1.15,
@@ -2518,22 +2520,22 @@ export class ArenaScene extends Phaser.Scene {
                 shieldVisual.innerRadius *
                 (0.62 + (crack % 2) * 0.12);
               const sx =
-                u.x + Math.cos(angle) * outer;
+                renderX + Math.cos(angle) * outer;
               const sy =
-                u.y + Math.sin(angle) * outer;
+                renderY + Math.sin(angle) * outer;
               const mx =
-                u.x +
+                renderX +
                 Math.cos(angle + 0.12) *
                   ((outer + inner) / 2);
               const my =
-                u.y +
+                renderY +
                 Math.sin(angle + 0.12) *
                   ((outer + inner) / 2);
               const ex =
-                u.x +
+                renderX +
                 Math.cos(angle - 0.08) * inner;
               const ey =
-                u.y +
+                renderY +
                 Math.sin(angle - 0.08) * inner;
               fx.lineBetween(sx, sy, mx, my);
               fx.lineBetween(mx, my, ex, ey);
@@ -2549,16 +2551,16 @@ export class ArenaScene extends Phaser.Scene {
                 0.58,
             );
             fx.strokeCircle(
-              u.x,
-              u.y,
+              renderX,
+              renderY,
               shieldVisual.releaseRadius,
             );
           }
 
           this.statusPips(
             fx,
-            u.x,
-            u.y,
+            renderX,
+            renderY,
             u.shieldTime,
             shieldColor,
             -2.9,
@@ -2587,8 +2589,8 @@ export class ArenaScene extends Phaser.Scene {
               (0.035 + tempoVisual.moveStrength * 0.03),
           );
           fx.fillEllipse(
-            u.x,
-            u.y + 12,
+            renderX,
+            renderY + 12,
             24 + tempoVisual.moveStrength * 12,
             7 + tempoVisual.moveStrength * 2,
           );
@@ -2605,7 +2607,7 @@ export class ArenaScene extends Phaser.Scene {
                   (tempoVisual.flowLength +
                     tempoVisual.chevronSpacing));
             const y =
-              u.y +
+              renderY +
               12 +
               direction *
                 (3 +
@@ -2622,15 +2624,15 @@ export class ArenaScene extends Phaser.Scene {
                 (1 - chevron * 0.08),
             );
             fx.lineBetween(
-              u.x - halfWidth,
+              renderX - halfWidth,
               y - direction * 3,
-              u.x,
+              renderX,
               y,
             );
             fx.lineBetween(
-              u.x + halfWidth,
+              renderX + halfWidth,
               y - direction * 3,
-              u.x,
+              renderX,
               y,
             );
           }
@@ -2646,8 +2648,8 @@ export class ArenaScene extends Phaser.Scene {
               (0.58 + tempoVisual.attackStrength * 0.28),
           );
           fx.strokeCircle(
-            u.x,
-            u.y,
+            renderX,
+            renderY,
             tempoVisual.ringRadius,
           );
 
@@ -2670,20 +2672,20 @@ export class ArenaScene extends Phaser.Scene {
             const outer =
               tempoVisual.ringRadius + 2;
             fx.lineBetween(
-              u.x + Math.cos(angle) * inner,
-              u.y + Math.sin(angle) * inner,
-              u.x + Math.cos(angle) * outer,
-              u.y + Math.sin(angle) * outer,
+              renderX + Math.cos(angle) * inner,
+              renderY + Math.sin(angle) * inner,
+              renderX + Math.cos(angle) * outer,
+              renderY + Math.sin(angle) * outer,
             );
           }
 
           if (!this.reducedMotion) {
             const attackPipX =
-              u.x +
+              renderX +
               Math.cos(ringAngle) *
                 tempoVisual.ringRadius;
             const attackPipY =
-              u.y +
+              renderY +
               Math.sin(ringAngle) *
                 tempoVisual.ringRadius;
             fx.fillStyle(
@@ -2708,8 +2710,8 @@ export class ArenaScene extends Phaser.Scene {
                 0.52,
             );
             fx.strokeCircle(
-              u.x,
-              u.y,
+              renderX,
+              renderY,
               tempoVisual.ringRadius +
                 tempoVisual.release * 7,
             );
@@ -2717,8 +2719,8 @@ export class ArenaScene extends Phaser.Scene {
 
           this.statusPips(
             fx,
-            u.x,
-            u.y,
+            renderX,
+            renderY,
             u.rallyTime,
             tempoColor,
             0.18,
@@ -2747,8 +2749,8 @@ export class ArenaScene extends Phaser.Scene {
             slowVisual.alpha * 0.055,
           );
           fx.fillEllipse(
-            u.x,
-            u.y + 12,
+            renderX,
+            renderY + 12,
             slowVisual.floorWidth,
             slowVisual.floorHeight,
           );
@@ -2759,8 +2761,8 @@ export class ArenaScene extends Phaser.Scene {
             slowVisual.alpha * slowPulse,
           );
           fx.strokeEllipse(
-            u.x,
-            u.y + 12,
+            renderX,
+            renderY + 12,
             slowVisual.floorWidth,
             slowVisual.floorHeight,
           );
@@ -2771,8 +2773,8 @@ export class ArenaScene extends Phaser.Scene {
             slowVisual.alpha * 0.66,
           );
           fx.strokeCircle(
-            u.x,
-            u.y,
+            renderX,
+            renderY,
             slowVisual.innerRadius,
           );
 
@@ -2789,11 +2791,11 @@ export class ArenaScene extends Phaser.Scene {
               (band * Math.PI * 2) /
                 slowVisual.bandCount;
             const cx =
-              u.x +
+              renderX +
               Math.cos(angle) *
                 slowVisual.orbitRadius;
             const cy =
-              u.y +
+              renderY +
               Math.sin(angle) *
                 slowVisual.orbitRadius *
                 0.48;
@@ -2846,10 +2848,10 @@ export class ArenaScene extends Phaser.Scene {
             const inner =
               slowVisual.innerRadius + 2;
             fx.lineBetween(
-              u.x + Math.cos(angle) * inner,
-              u.y + Math.sin(angle) * inner,
-              u.x + Math.cos(angle) * cageRadius,
-              u.y + Math.sin(angle) * cageRadius,
+              renderX + Math.cos(angle) * inner,
+              renderY + Math.sin(angle) * inner,
+              renderX + Math.cos(angle) * cageRadius,
+              renderY + Math.sin(angle) * cageRadius,
             );
           }
 
@@ -2865,16 +2867,16 @@ export class ArenaScene extends Phaser.Scene {
               cageRadius +
               slowVisual.release * 7;
             fx.strokeCircle(
-              u.x,
-              u.y,
+              renderX,
+              renderY,
               releaseRadius,
             );
           }
 
           this.statusPips(
             fx,
-            u.x,
-            u.y,
+            renderX,
+            renderY,
             u.slowTime,
             slowColor,
             1.72,
@@ -2908,8 +2910,8 @@ export class ArenaScene extends Phaser.Scene {
 
       fx.fillStyle(0x061519, 0.9);
       fx.fillRoundedRect(
-        u.x - healthWidth / 2 - 1,
-        u.y - 23,
+        renderX - healthWidth / 2 - 1,
+        renderY - 23,
         healthWidth + 2,
         4,
         2,
@@ -2917,16 +2919,16 @@ export class ArenaScene extends Phaser.Scene {
       if (vitals.trailHpRatio > health + 0.002) {
         fx.fillStyle(0xff9f68, 0.82);
         fx.fillRect(
-          u.x - healthWidth / 2 + healthWidth * health,
-          u.y - 22,
+          renderX - healthWidth / 2 + healthWidth * health,
+          renderY - 22,
           healthWidth * (vitals.trailHpRatio - health),
           2,
         );
       }
       fx.fillStyle(healthColor);
       fx.fillRect(
-        u.x - healthWidth / 2,
-        u.y - 22,
+        renderX - healthWidth / 2,
+        renderY - 22,
         healthWidth * health,
         2,
       );
@@ -2934,8 +2936,8 @@ export class ArenaScene extends Phaser.Scene {
       if (vitals.trailShieldRatio > 0.002) {
         fx.fillStyle(0x061519, 0.86);
         fx.fillRoundedRect(
-          u.x - healthWidth / 2 - 1,
-          u.y - 28,
+          renderX - healthWidth / 2 - 1,
+          renderY - 28,
           healthWidth + 2,
           3,
           1.5,
@@ -2943,8 +2945,8 @@ export class ArenaScene extends Phaser.Scene {
         if (vitals.trailShieldRatio > vitals.shieldRatio + 0.002) {
           fx.fillStyle(0xa9dfff, 0.36);
           fx.fillRect(
-            u.x - healthWidth / 2 + healthWidth * vitals.shieldRatio,
-            u.y - 27,
+            renderX - healthWidth / 2 + healthWidth * vitals.shieldRatio,
+            renderY - 27,
             healthWidth *
               (vitals.trailShieldRatio - vitals.shieldRatio),
             1,
@@ -2953,8 +2955,8 @@ export class ArenaScene extends Phaser.Scene {
         if (vitals.shieldRatio > 0) {
           fx.fillStyle(0x9bdcff, 0.95);
           fx.fillRect(
-            u.x - healthWidth / 2,
-            u.y - 27,
+            renderX - healthWidth / 2,
+            renderY - 27,
             healthWidth * vitals.shieldRatio,
             1,
           );
@@ -2971,17 +2973,17 @@ export class ArenaScene extends Phaser.Scene {
           0xffb36a,
           damageState.armorAlpha * damagePulse,
         );
-        const scarY = u.y - 2;
+        const scarY = renderY - 2;
         fx.lineBetween(
-          u.x - size * 0.2,
+          renderX - size * 0.2,
           scarY - size * 0.12,
-          u.x + size * 0.08,
+          renderX + size * 0.08,
           scarY + size * 0.04,
         );
         fx.lineBetween(
-          u.x + size * 0.02,
+          renderX + size * 0.02,
           scarY + size * 0.02,
-          u.x + size * 0.22,
+          renderX + size * 0.22,
           scarY - size * 0.13,
         );
 
@@ -2992,8 +2994,8 @@ export class ArenaScene extends Phaser.Scene {
               (damageState.state === "critical" ? 0.2 : 0.1),
           );
           fx.fillEllipse(
-            u.x + 2,
-            u.y + 10,
+            renderX + 2,
+            renderY + 10,
             damageState.groundWidth,
             damageState.groundHeight,
           );
@@ -3003,10 +3005,10 @@ export class ArenaScene extends Phaser.Scene {
             damageState.intensity * 0.16,
           );
           fx.lineBetween(
-            u.x - damageState.groundWidth * 0.28,
-            u.y + 10,
-            u.x + damageState.groundWidth * 0.32,
-            u.y + 10,
+            renderX - damageState.groundWidth * 0.28,
+            renderY + 10,
+            renderX + damageState.groundWidth * 0.32,
+            renderY + 10,
           );
         }
 
@@ -3026,11 +3028,11 @@ export class ArenaScene extends Phaser.Scene {
             spark * 0.58 +
             Math.sin(u.id + spark) * 0.16;
           const startX =
-            u.x +
+            renderX +
             Math.cos(angle) *
               (size * 0.16 + spark * 0.8);
           const startY =
-            u.y - 3 +
+            renderY - 3 +
             Math.sin(angle) *
               (size * 0.12 + spark * 0.5);
           const reach =
@@ -3071,7 +3073,7 @@ export class ArenaScene extends Phaser.Scene {
             Math.sin(u.id * 0.61 + puff * 2.1) *
             damageState.smokeSpread;
           const smokeX =
-            u.x +
+            renderX +
             side +
             (this.reducedMotion
               ? 0
@@ -3082,7 +3084,7 @@ export class ArenaScene extends Phaser.Scene {
                   ) *
                   1.6);
           const smokeY =
-            u.y -
+            renderY -
             7 -
             riseProgress * damageState.smokeRise;
           const smokeSize =
@@ -3104,15 +3106,15 @@ export class ArenaScene extends Phaser.Scene {
       if (health <= 0.3 && u.hp > 0) {
         const danger = 0.55 + 0.4 * Math.sin(this.clock * 8 + u.id);
         fx.lineStyle(1.5, 0xff7b68, danger * 0.75);
-        fx.strokeCircle(u.x, u.y - 1, size * 0.53);
+        fx.strokeCircle(renderX, renderY - 1, size * 0.53);
         fx.fillStyle(0xffd18a, danger);
         this.polygon(
           fx,
           [
-            [u.x, u.y - 31],
-            [u.x + 3.5, u.y - 27],
-            [u.x, u.y - 23],
-            [u.x - 3.5, u.y - 27],
+            [renderX, renderY - 31],
+            [renderX + 3.5, renderY - 27],
+            [renderX, renderY - 23],
+            [renderX - 3.5, renderY - 27],
           ],
           0xffd18a,
           danger,
