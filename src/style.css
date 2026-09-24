@@ -720,6 +720,93 @@ h1 em {
   flex-shrink: 0;
   filter: drop-shadow(0 4px 3px #081b2277);
 }
+.card-art {
+  position: relative;
+}
+.card-art::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 31px;
+  height: 8px;
+  transform: translateX(-50%);
+  border: 1px solid #ffffff35;
+  border-radius: 50%;
+  opacity: .72;
+  pointer-events: none;
+}
+.card[data-identity="heavy"] .card-art::before {
+  width: 41px;
+  height: 10px;
+  border-width: 2px;
+}
+.card[data-identity="siege"] .card-art::before {
+  width: 39px;
+  height: 7px;
+  border-radius: 3px;
+}
+.card[data-identity="skirmisher"] .card-art::before {
+  width: 28px;
+  transform: translateX(-50%) skewX(-24deg);
+}
+.card[data-identity="marksman"] .card-art::before {
+  width: 25px;
+  height: 4px;
+}
+.card[data-identity="swarm"] .card-art::before {
+  width: 22px;
+  height: 6px;
+  border-style: dotted;
+}
+.card[data-identity="support"] .card-art::before {
+  width: 30px;
+  border-color: #baffdf66;
+}
+.card[data-identity="controller"] .card-art::before {
+  width: 33px;
+  border-style: dashed;
+}
+.card[data-identity="heavy"] .card-art svg,
+.deck-portrait[data-identity="heavy"] svg,
+.card-drag-ghost.identity-heavy > i svg {
+  transform: scale(1.1) translateY(1px);
+}
+.card[data-identity="siege"] .card-art svg,
+.deck-portrait[data-identity="siege"] svg,
+.card-drag-ghost.identity-siege > i svg {
+  transform: scale(1.07);
+}
+.card[data-identity="skirmisher"] .card-art svg,
+.deck-portrait[data-identity="skirmisher"] svg,
+.card-drag-ghost.identity-skirmisher > i svg {
+  transform: scale(.98) translateY(-1px);
+}
+.card[data-identity="marksman"] .card-art svg,
+.deck-portrait[data-identity="marksman"] svg,
+.card-drag-ghost.identity-marksman > i svg {
+  transform: scale(.95) translateY(-2px);
+}
+.card[data-identity="swarm"] .card-art svg,
+.deck-portrait[data-identity="swarm"] svg,
+.card-drag-ghost.identity-swarm > i svg {
+  transform: scale(.9);
+}
+.card[data-identity="support"] .card-art svg,
+.deck-portrait[data-identity="support"] svg,
+.card-drag-ghost.identity-support > i svg {
+  transform: scale(1.01) translateY(-1px);
+}
+.card[data-identity="controller"] .card-art svg,
+.deck-portrait[data-identity="controller"] svg,
+.card-drag-ghost.identity-controller > i svg {
+  transform: scale(1.03);
+}
+.card[data-identity="standard"] .card-art svg,
+.deck-portrait[data-identity="standard"] svg,
+.card-drag-ghost.identity-standard > i svg {
+  transform: scale(1);
+}
 .card-name {
   font-family: "Barlow Condensed", sans-serif;
   font-size: 10px;
