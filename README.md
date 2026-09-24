@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.13
+## Current v2.14
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2298,3 +2298,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - existing Repulsor displacement regression coverage continues to verify the exact visual travel path used by these presentation hooks
 - targeting rules, landing calculations, energy costs, attack timing, damage and deterministic simulation are unchanged
 - release: package 2.13.0 / v2.13 / iOS 2.13 (213)
+
+
+## v2.14 changes
+
+- Medic heal links now resolve both healer and patient through the shared repulsor-aware unit presentation path
+- shot, beam and melee effect endpoints now use the same visible presentation point as the actual units during Repulsor displacement
+- shield-hit and shield-break shells now stay centered on the visible in-flight target instead of the post-knockback simulation coordinate
+- Stasis hit cages and Breaker specialist waves follow that same Repulsor flight path while their original cast/impact direction remains unchanged
+- effects safely fall back to their stored snapshot coordinates when a referenced unit no longer exists
+- the shared presentation helper remains the single source of truth for normal interpolation plus active Repulsor displacement
+- projectile damage, heal amount, shield damage, slow effects, knockback landing and deterministic simulation are unchanged
+- release: package 2.14.0 / v2.14 / iOS 2.14 (214)
