@@ -1574,7 +1574,9 @@ export class ArenaScene extends Phaser.Scene {
         (effect) =>
           effect.type === "shot" &&
           effect.team === u.team &&
-          Math.hypot(effect.x - u.x, effect.y - u.y) < 5 &&
+          (effect.sourceUnitId === u.id ||
+            (effect.sourceUnitId === undefined &&
+              Math.hypot(effect.x - u.x, effect.y - u.y) < 5)) &&
           effect.targetX !== undefined &&
           effect.targetY !== undefined,
       );
@@ -1660,7 +1662,9 @@ export class ArenaScene extends Phaser.Scene {
       const hitImpact = s.effects.find(
         (effect) =>
           effect.type === "impact" &&
-          Math.hypot(effect.x - u.x, effect.y - u.y) <= u.radius + 8,
+          (effect.targetUnitId === u.id ||
+            (effect.targetUnitId === undefined &&
+              Math.hypot(effect.x - u.x, effect.y - u.y) <= u.radius + 8)),
       );
       const renderX = rendered.x;
       const renderY = rendered.y;
