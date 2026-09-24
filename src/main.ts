@@ -111,6 +111,7 @@ import { quickPlayRotation } from "./quick-play-rotation";
 import { quickPlayBaseline, quickPlaySessionCue } from "./quick-play-session";
 import { frontRace } from "./front-race";
 import { timeLimitOutlook } from "./time-limit-outlook";
+import { matchRhythm } from "./match-rhythm";
 import { coreAssault } from "./core-assault";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import {
@@ -1525,6 +1526,7 @@ function updateHud(force = false) {
       (point) => point.owner === "player" && !point.supplied,
     );
     const contested = s.points.some((point) => point.contested);
+    const rhythm = matchRhythm(s);
     el("arena-tip").textContent = disconnected
       ? "VERSORGUNG UNTERBROCHEN"
       : contested
@@ -1533,7 +1535,7 @@ function updateHud(force = false) {
           ? "ERREICHE DEN GEGNERISCHEN CORE"
           : control
             ? "HALTE DIE MARKIERTEN RELAIS"
-            : "EROBERE DIE MITTE";
+            : rhythm.neutralTip;
   }
   for (const card of deckCards) {
     const b = cardButtons.get(card.id)!;
