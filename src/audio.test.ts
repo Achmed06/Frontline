@@ -6,6 +6,8 @@ const cues: SoundCue[] = [
   "select",
   "deploy",
   "capture",
+  "kill",
+  "heavyKill",
   "warning",
   "opportunity",
   "overtime",
@@ -48,6 +50,8 @@ test("high-value battlefield states have distinct cue signatures", () => {
   assert.notDeepEqual(soundCueSpec("draw"), soundCueSpec("lose"));
   assert.notDeepEqual(soundCueSpec("start"), soundCueSpec("deploy"));
   assert.notDeepEqual(soundCueSpec("unlock"), soundCueSpec("win"));
+  assert.notDeepEqual(soundCueSpec("kill"), soundCueSpec("deploy"));
+  assert.notDeepEqual(soundCueSpec("heavyKill"), soundCueSpec("kill"));
 });
 
 test("disabled sound remains safe in non-browser test environments", () => {
