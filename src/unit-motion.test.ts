@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sampleUnitMotion, sampleUnitRenderPosition, unitTrailPoint } from "./unit-motion";
+import { sampleUnitMotion, sampleUnitMotionFrame, sampleUnitRenderPosition, unitTrailPoint } from "./unit-motion";
 
 test("movement facing follows meaningful horizontal travel", () => {
   assert.deepEqual(sampleUnitMotion(undefined, 100, 100), {
@@ -99,4 +99,46 @@ test("large displacements and reduced-motion rendering snap immediately", () => 
   assert.equal(reduced.x, 134);
   assert.equal(reduced.y, 104);
   assert.equal(reduced.state.progress, 1);
+});
+
+
+test("render-only frames preserve movement instead of reporting a false stop", () => {
+  const moving = sampleUnitMotionFrame(
+    {
+      x: 100,
+      y: 100,
+      dx: 2,
+      dy: -1,
+      moved: Math.hypot(2, 1),
+      moving: true,
+      facing: 1,
+      stopped: false,
+      sampledAt: 1,
+    },
+    102,
+    99,
+    2,
+  );
+  assert.equal(moving.moving, true);
+  assert.equal(moving.stopped, false);
+
+  const duplicateRender = sampleUnitMotionFrame(
+    moving,
+    102,
+    99,
+    2,
+  );
+  assert.equal(duplicateRender.moving, true);
+  assert.equal(duplicateRender.stopped, false);
+  assert.equal(duplicateRender.dx, moving.dx);
+  assert.equal(duplicateRender.dy, moving.dy);
+
+  const actualStop = sampleUnitMotionFrame(
+    duplicateRender,
+    102,
+    99,
+    3,
+  );
+  assert.equal(actualStop.moving, false);
+  assert.equal(actualStop.stopped, true);
 });
