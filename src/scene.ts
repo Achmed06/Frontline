@@ -7855,8 +7855,8 @@ export class ArenaScene extends Phaser.Scene {
     const pressure = corePressure(fraction, 1);
     const coreDamage = coreDamageStateVisual(fraction);
     const destroyed = pressure.state === "destroyed";
-    const targetX = turretTargetPoint?.x ?? targetX;
-    const targetY = turretTargetPoint?.y ?? targetY;
+    const targetX = turretTargetPoint?.x ?? turretTarget?.x;
+    const targetY = turretTargetPoint?.y ?? turretTarget?.y;
     if (
       turretTarget &&
       Number.isFinite(targetX) &&
