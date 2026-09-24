@@ -8105,3 +8105,10 @@ a.privacy-link:focus-visible,
 .time-limit-outlook[data-leader="enemy"] b { color:#ff9a86; }
 .time-limit-outlook[data-leader="draw"] b { color:#e4d38e; }
 .time-limit-outlook[data-reason="control"] small { color:#c8b97f; }
+
+
+@media (max-width:380px) {
+  .time-limit-outlook { min-width:72px; }
+  .time-limit-outlook b { font-size:6.3px; }
+  .time-limit-outlook small { max-width:82px; font-size:4.7px; }
+}
