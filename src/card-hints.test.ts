@@ -56,6 +56,6 @@ test("ordinary unit and empty selection keep their concise fallbacks", () => {
   assert.equal(selectedCardHint(vanguard), vanguard.description);
   assert.equal(
     selectedCardHint(undefined),
-    "Karte wählen → halten, zielen, loslassen",
+    "ANTIPPEN ODER DIREKT INS FELD ZIEHEN",
   );
 });
