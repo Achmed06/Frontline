@@ -70,7 +70,10 @@ import { unitDamageStateVisual } from "./unit-damage-state-visual";
 import { slowStatusVisual } from "./slow-status-visual";
 import { stasisHitVisual } from "./stasis-hit-visual";
 import { stasisCastVisual } from "./stasis-cast-visual";
-import { repulsorDisplacementVisual } from "./repulsor-displacement-visual";
+import {
+  repulsorDisplacementPoint,
+  repulsorDisplacementVisual,
+} from "./repulsor-displacement-visual";
 import { repulsorCastVisual } from "./repulsor-cast-visual";
 import { pulseStrikeVisual } from "./pulse-strike-visual";
 import { mortarBlastVisual } from "./mortar-blast-visual";
@@ -1575,6 +1578,16 @@ export class ArenaScene extends Phaser.Scene {
           effect.targetX !== undefined &&
           effect.targetY !== undefined,
       );
+      const repulsorMove = s.effects.find(
+        (effect) =>
+          effect.type === "repulsor-move" &&
+          effect.targetUnitId === u.id &&
+          effect.life > 0,
+      );
+      const repulsorPoint = repulsorDisplacementPoint(
+        repulsorMove,
+        this.reducedMotion,
+      );
       const previous = this.unitMotion.get(u.id);
       const motion = sampleUnitMotionFrame(
         previous,
@@ -1598,13 +1611,25 @@ export class ArenaScene extends Phaser.Scene {
         simulationAdvanced && motion.stopped
           ? this.clock + 0.18
           : previous?.settleUntil ?? 0;
-      const rendered = sampleUnitRenderPosition(
-        previous?.render,
-        u.x,
-        u.y,
-        this.frameDeltaSeconds,
-        this.reducedMotion,
-      );
+      const rendered = repulsorPoint
+        ? {
+            x: repulsorPoint.x,
+            y: repulsorPoint.y,
+            state: {
+              fromX: repulsorPoint.x,
+              fromY: repulsorPoint.y,
+              targetX: repulsorPoint.x,
+              targetY: repulsorPoint.y,
+              progress: 1,
+            },
+          }
+        : sampleUnitRenderPosition(
+            previous?.render,
+            u.x,
+            u.y,
+            this.frameDeltaSeconds,
+            this.reducedMotion,
+          );
       this.unitMotion.set(u.id, {
         x: u.x,
         y: u.y,
@@ -1625,9 +1650,11 @@ export class ArenaScene extends Phaser.Scene {
         ? 0
         : Math.max(0, Math.min(1, (settleUntil - this.clock) / 0.18));
       const walkBob =
-        !this.reducedMotion && motion.moving ? Math.sin(phase) * 1.6 : 0;
+        !this.reducedMotion && motion.moving && !repulsorPoint
+          ? Math.sin(phase) * 1.6
+          : 0;
       const walkScale =
-        !this.reducedMotion && motion.moving
+        !this.reducedMotion && motion.moving && !repulsorPoint
           ? 1 + Math.sin(phase * 2) * 0.018
           : 1;
       const hitImpact = s.effects.find(
@@ -1671,12 +1698,31 @@ export class ArenaScene extends Phaser.Scene {
       }
       const attackPose = fireFeedback?.strength ?? 0;
       const horizontalLean =
-        !this.reducedMotion && motion.moving && motion.moved > 0.001
+        !this.reducedMotion && repulsorMove && repulsorPoint
           ? Math.max(
-              -2.2,
-              Math.min(2.2, (motion.dx / motion.moved) * 2.2),
+              -5.5,
+              Math.min(
+                5.5,
+                (((repulsorMove.targetX ?? repulsorPoint.x) -
+                  repulsorMove.x) /
+                  Math.max(
+                    0.01,
+                    Math.hypot(
+                      (repulsorMove.targetX ?? repulsorPoint.x) -
+                        repulsorMove.x,
+                      (repulsorMove.targetY ?? repulsorPoint.y) -
+                        repulsorMove.y,
+                    ),
+                  )) *
+                  5.5,
+              ),
             )
-          : 0;
+          : !this.reducedMotion && motion.moving && motion.moved > 0.001
+            ? Math.max(
+                -2.2,
+                Math.min(2.2, (motion.dx / motion.moved) * 2.2),
+              )
+            : 0;
       const settleWidth = 1 + settle * 0.035;
       const settleHeight = 1 - settle * 0.025;
       const attackWidth = 1 + attackPose * 0.028;
@@ -3250,10 +3296,7 @@ export class ArenaScene extends Phaser.Scene {
             const dy = e.targetY - e.y;
             const travel = this.reducedMotion
               ? 1
-              : Math.min(
-                  1,
-                  visual.progress * 1.55,
-                );
+              : visual.travelProgress;
             const centerX = e.x + dx * travel;
             const centerY = e.y + dy * travel;
             const repulsorColor = 0xc29aff;

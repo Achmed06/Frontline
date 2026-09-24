@@ -13,6 +13,7 @@ export type RepulsorDisplacementVisual = {
   streakCount: number;
   landingRadius: number;
   shockLength: number;
+  travelProgress: number;
 };
 
 type RepulsorMoveEffect = Pick<
@@ -69,6 +70,7 @@ export function repulsorDisplacementVisual(
   const strength = clamp01(distance / 55);
   const nx = dx / actualDistance;
   const ny = dy / actualDistance;
+  const travelProgress = clamp01(progress * 1.55);
 
   return {
     active: alpha > 0,
@@ -83,5 +85,28 @@ export function repulsorDisplacementVisual(
     streakCount: 3 + Math.round(strength * 3),
     landingRadius: radius + 5 + strength * 7,
     shockLength: 8 + strength * 10,
+    travelProgress,
+  };
+}
+
+export function repulsorDisplacementPoint(
+  effect: RepulsorMoveEffect | undefined,
+  snap = false,
+): { x: number; y: number; progress: number } | null {
+  const visual = repulsorDisplacementVisual(effect);
+  if (
+    !visual ||
+    !effect ||
+    !Number.isFinite(effect.targetX) ||
+    !Number.isFinite(effect.targetY)
+  )
+    return null;
+  const progress = snap ? 1 : visual.travelProgress;
+  const targetX = effect.targetX as number;
+  const targetY = effect.targetY as number;
+  return {
+    x: effect.x + (targetX - effect.x) * progress,
+    y: effect.y + (targetY - effect.y) * progress,
+    progress,
   };
 }

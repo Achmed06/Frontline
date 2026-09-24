@@ -1354,6 +1354,9 @@ export class Match {
               movement.distance,
               "repulsor",
               { x, y },
+              undefined,
+              undefined,
+              unit.id,
             );
           }
           unit.x = movement.x;

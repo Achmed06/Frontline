@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.05
+## Current v2.06
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2197,3 +2197,17 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - target validation, affected-unit selection, landing calculations, energy costs and deterministic combat simulation are unchanged
 - regression coverage verifies Stasis hit effects retain the exact affected unit ID
 - release: package 2.5.0 / v2.05 / iOS 2.05 (205)
+
+
+## v2.06 changes
+
+- Repulsor displacement effects now retain the exact pushed unit ID
+- the pushed unit itself follows the same accelerated visual travel curve as the Repulsor trail instead of snapping immediately to the landing point
+- all unit-attached overlays and live combat feedback continue to follow that rendered position because the Repulsor presentation point is written through the shared unit render state
+- pushed units suppress normal walk bob during the displacement and use a stronger directional lean so the motion reads as knockback instead of normal movement
+- Reduced Motion keeps the existing immediate snap to the authoritative landing coordinate
+- when the Repulsor presentation completes, the render state ends exactly on the authoritative simulation position, avoiding a second catch-up interpolation
+- Repulsor trail geometry now shares the same travel-progress calculation as the pushed unit
+- regression coverage verifies live target identity, shared travel progress and Reduced Motion snapping
+- push distance, collision bounds, capture logic, targeting, damage and deterministic simulation are unchanged
+- release: package 2.6.0 / v2.06 / iOS 2.06 (206)
