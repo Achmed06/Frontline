@@ -677,6 +677,7 @@ test("combat damage emits scaled hit impacts and lethal hits keep size-aware dea
   assert.ok(impact);
   assert.ok((impact.radius ?? 0) >= 12);
   assert.equal(impact.value, 50);
+  assert.equal(impact.targetUnitId, target.id);
   assert.equal(target.hp, 0);
   assert.ok(death);
   assert.equal(death.radius, 22);
