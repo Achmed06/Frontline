@@ -109,6 +109,7 @@ import { matchStartTiming } from "./match-start-timing";
 import { quickPlayRotation } from "./quick-play-rotation";
 import { quickPlaySessionCue } from "./quick-play-session";
 import { frontRace } from "./front-race";
+import { timeLimitOutlook } from "./time-limit-outlook";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import { boardPointFromClient, dragThresholdReached } from "./card-drag";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
@@ -125,7 +126,7 @@ app.innerHTML = `
   </aside>
   <main class="device" aria-label="Project Frontline Spiel">
     <header class="game-top"><div class="mini-brand">F<span>∕</span></div><div><b>FRONTLINE</b><small id="mode-label">EINSATZBASIS</small></div><div class="top-actions"><button id="sound" class="icon-btn" aria-label="Ton einschalten" title="Ton umschalten">♪</button><button id="help" class="icon-btn" aria-label="Spielanleitung">?</button><button id="pause" class="icon-btn" aria-label="Spiel pausieren" disabled>Ⅱ</button></div></header>
-    <section class="match-hud" aria-label="Matchstatus"><div id="player-core-info" class="core-info" data-core-state="stable" data-core-status=""><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span></div><div id="enemy-core-info" class="core-info enemy" data-core-state="stable" data-core-status=""><span><span class="enemy-command"><b id="enemy-commander-label">BOT</b><small id="enemy-commander-status">BEREIT</small><i id="enemy-commander-cooldown-progress" aria-hidden="true"></i></span><i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
+    <section class="match-hud" aria-label="Matchstatus"><div id="player-core-info" class="core-info" data-core-state="stable" data-core-status=""><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span><div id="time-limit-outlook" class="time-limit-outlook" data-leader="draw" hidden><b id="time-limit-label">GLEICHSTAND</b><small id="time-limit-detail">CORE · GEBIET GLEICH</small></div></div><div id="enemy-core-info" class="core-info enemy" data-core-state="stable" data-core-status=""><span><span class="enemy-command"><b id="enemy-commander-label">BOT</b><small id="enemy-commander-status">BEREIT</small><i id="enemy-commander-cooldown-progress" aria-hidden="true"></i></span><i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
     <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div><div id="card-drag-ghost" class="card-drag-ghost" hidden aria-hidden="true"></div>
     <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count" data-front-state="even" aria-label="Front ausgeglichen 3 zu 3. 3 neutrale Zonen."><span class="territory-score"><b id="territory-player">3</b><i>FRONT</i><b id="territory-enemy">3</b></span><span id="territory-segments" class="territory-segments" aria-hidden="true">${Array.from({length:9},()=>"<i data-owner=\"neutral\"></i>").join("")}</span></span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">ANTIPPEN ODER DIREKT INS FELD ZIEHEN</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
@@ -1295,6 +1296,25 @@ function updateHud(force = false) {
   }
   el("timer").classList.toggle("urgent", remaining <= 30);
   el("timer").classList.toggle("overtime", s.phase === "overtime");
+  const showTimeLimitOutlook =
+    active &&
+    live &&
+    s.phase !== "ended" &&
+    (remaining <= 30 || s.phase === "overtime");
+  const outlookEl = el<HTMLElement>("time-limit-outlook");
+  outlookEl.hidden = !showTimeLimitOutlook;
+  el("phase-label").hidden = showTimeLimitOutlook;
+  if (showTimeLimitOutlook) {
+    const outlook = timeLimitOutlook(s, control);
+    outlookEl.dataset.leader = outlook.leader;
+    outlookEl.dataset.reason = outlook.reason;
+    el("time-limit-label").textContent = outlook.label;
+    el("time-limit-detail").textContent = outlook.detail;
+    outlookEl.setAttribute(
+      "aria-label",
+      `Zeitlimit: ${outlook.label}. ${outlook.detail}`,
+    );
+  }
   for (const team of ["player", "enemy"] as const) {
     const pressure = corePressure(
       s.cores[team].hp,
