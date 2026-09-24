@@ -3520,8 +3520,8 @@ export class ArenaScene extends Phaser.Scene {
               for (const fraction of [0.33, 0.66]) {
                 fx.fillStyle(healColor, visual.alpha * 0.65);
                 fx.fillCircle(
-                  e.x + dx * fraction,
-                  e.y + dy * fraction,
+                  sourceX + dx * fraction,
+                  sourceY + dy * fraction,
                   2,
                 );
               }
@@ -3530,16 +3530,16 @@ export class ArenaScene extends Phaser.Scene {
             const crossRadius = visual.targetRadius + 5;
             fx.lineStyle(1.4, healColor, visual.alpha * 0.55);
             fx.lineBetween(
-              e.targetX - 4,
-              e.targetY - crossRadius,
-              e.targetX + 4,
-              e.targetY - crossRadius,
+              targetX - 4,
+              targetY - crossRadius,
+              targetX + 4,
+              targetY - crossRadius,
             );
             fx.lineBetween(
-              e.targetX,
-              e.targetY - crossRadius - 4,
-              e.targetX,
-              e.targetY - crossRadius + 4,
+              targetX,
+              targetY - crossRadius - 4,
+              targetX,
+              targetY - crossRadius + 4,
             );
           }
         } else {
