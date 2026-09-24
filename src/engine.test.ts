@@ -750,6 +750,11 @@ test("Stasis needs live enemies, costs energy once and slows only enemies withou
   const ally = staticUnit(m, "player", 230, 280);
   const outside = staticUnit(m, "enemy", 330, 280);
   assert.ok(m.play("player", "stasis", 210, 280).ok);
+  const stasisHit = m.state.effects.find(
+    (effect) => effect.type === "stasis-hit",
+  );
+  assert.ok(stasisHit);
+  assert.equal(stasisHit.targetUnitId, enemy.id);
   assert.equal(m.state.energy.player, 2);
   assert.equal(enemy.slowTime, 4);
   assert.equal(enemy.slowFactor, 0.6);

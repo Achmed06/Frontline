@@ -5938,6 +5938,16 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "stasis-hit") {
           const hit = stasisHitVisual(e);
           if (hit) {
+            const targetMotion =
+              e.targetUnitId !== undefined
+                ? this.unitMotion.get(e.targetUnitId)
+                : undefined;
+            const targetPoint =
+              targetMotion?.renderedFrame === this.renderFrame
+                ? unitRenderPosition(targetMotion.render)
+                : { x: e.x, y: e.y };
+            const stasisX = targetPoint.x;
+            const stasisY = targetPoint.y;
             const slowColor = 0x88d5ff;
             const brightSlow = 0xe6f7ff;
             const cageRotation = this.reducedMotion
@@ -5950,7 +5960,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, hit.shellRadius),
+              this.hex(stasisX, stasisY, hit.shellRadius),
               slowColor,
               hit.alpha * 0.07,
               slowColor,
@@ -5962,7 +5972,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, hit.shellRadius),
+              this.hex(stasisX, stasisY, hit.shellRadius),
               0x000000,
               0,
               slowColor,
@@ -5973,8 +5983,8 @@ export class ArenaScene extends Phaser.Scene {
               hit.alpha * 0.72,
             );
             fx.strokeCircle(
-              e.x,
-              e.y,
+              stasisX,
+              stasisY,
               hit.innerRadius,
             );
 
@@ -5988,9 +5998,9 @@ export class ArenaScene extends Phaser.Scene {
               const px = -ty;
               const py = tx;
               const cx =
-                e.x + tx * hit.shellRadius * 0.78;
+                stasisX + tx * hit.shellRadius * 0.78;
               const cy =
-                e.y + ty * hit.shellRadius * 0.78;
+                stasisY + ty * hit.shellRadius * 0.78;
               fx.lineStyle(
                 1.4,
                 corner % 2 === 0 ? brightSlow : slowColor,
@@ -6017,8 +6027,8 @@ export class ArenaScene extends Phaser.Scene {
             ) {
               const sourceX = e.sourceX!;
               const sourceY = e.sourceY!;
-              const dx = e.x - sourceX;
-              const dy = e.y - sourceY;
+              const dx = stasisX - sourceX;
+              const dy = stasisY - sourceY;
               const packetX =
                 sourceX + dx * hit.tetherProgress;
               const packetY =
@@ -6032,8 +6042,8 @@ export class ArenaScene extends Phaser.Scene {
               fx.lineBetween(
                 sourceX,
                 sourceY,
-                e.x,
-                e.y,
+                stasisX,
+                stasisY,
               );
 
               if (!this.reducedMotion) {
@@ -6081,10 +6091,10 @@ export class ArenaScene extends Phaser.Scene {
                 hit.shellRadius *
                 (0.7 + (shard % 3) * 0.08);
               fx.lineBetween(
-                e.x + Math.cos(angle) * inner,
-                e.y + Math.sin(angle) * inner,
-                e.x + Math.cos(angle) * outer,
-                e.y + Math.sin(angle) * outer,
+                stasisX + Math.cos(angle) * inner,
+                stasisY + Math.sin(angle) * inner,
+                stasisX + Math.cos(angle) * outer,
+                stasisY + Math.sin(angle) * outer,
               );
             }
           }
@@ -7272,11 +7282,18 @@ export class ArenaScene extends Phaser.Scene {
         for (const id of abilityTargets?.unitIds ?? []) {
           const target = s.units.find((unit) => unit.id === id);
           if (!target) continue;
+          const targetMotion = this.unitMotion.get(target.id);
+          const targetPoint =
+            targetMotion?.renderedFrame === this.renderFrame
+              ? unitRenderPosition(targetMotion.render)
+              : { x: target.x, y: target.y };
+          const targetX = targetPoint.x;
+          const targetY = targetPoint.y;
           const pulse = 0.75 + 0.2 * Math.sin(this.clock * 6 + target.id);
           fx.lineStyle(2.2, targetColor, pulse);
-          fx.strokeCircle(target.x, target.y, target.radius + 9);
+          fx.strokeCircle(targetX, targetY, target.radius + 9);
           fx.lineStyle(1, 0xffffff, pulse * 0.55);
-          fx.strokeCircle(target.x, target.y, target.radius + 13);
+          fx.strokeCircle(targetX, targetY, target.radius + 13);
           const damage = abilityTargets?.damage.find(
             (result) => result.unitId === target.id,
           );
@@ -7284,8 +7301,8 @@ export class ArenaScene extends Phaser.Scene {
             const mark = target.radius + 16;
             fx.lineStyle(1.5, 0x88d5ff, 0.82);
             fx.arc(
-              target.x,
-              target.y,
+              targetX,
+              targetY,
               mark,
               Math.PI * 1.08,
               Math.PI * 1.92,
@@ -7297,16 +7314,16 @@ export class ArenaScene extends Phaser.Scene {
             const mark = target.radius + 16;
             fx.lineStyle(2, CORAL, 0.9);
             fx.lineBetween(
-              target.x - mark * 0.45,
-              target.y - mark * 0.45,
-              target.x + mark * 0.45,
-              target.y + mark * 0.45,
+              targetX - mark * 0.45,
+              targetY - mark * 0.45,
+              targetX + mark * 0.45,
+              targetY + mark * 0.45,
             );
             fx.lineBetween(
-              target.x + mark * 0.45,
-              target.y - mark * 0.45,
-              target.x - mark * 0.45,
-              target.y + mark * 0.45,
+              targetX + mark * 0.45,
+              targetY - mark * 0.45,
+              targetX - mark * 0.45,
+              targetY + mark * 0.45,
             );
           }
           const healing = abilityTargets?.healing.find(
@@ -7315,23 +7332,23 @@ export class ArenaScene extends Phaser.Scene {
           if (healing) {
             const mark = target.radius + 17;
             fx.lineStyle(2, 0x73ff9d, 0.9);
-            fx.lineBetween(target.x - 4, target.y - mark, target.x + 4, target.y - mark);
-            fx.lineBetween(target.x, target.y - mark - 4, target.x, target.y - mark + 4);
+            fx.lineBetween(targetX - 4, targetY - mark, targetX + 4, targetY - mark);
+            fx.lineBetween(targetX, targetY - mark - 4, targetX, targetY - mark + 4);
           }
           if (abilityTargets?.tempoUnitIds.includes(target.id)) {
             const mark = target.radius + 18;
             fx.lineStyle(1.5, 0xffdf6b, 0.78);
             fx.lineBetween(
-              target.x - mark * 0.55,
-              target.y + mark * 0.25,
-              target.x,
-              target.y + mark * 0.55,
+              targetX - mark * 0.55,
+              targetY + mark * 0.25,
+              targetX,
+              targetY + mark * 0.55,
             );
             fx.lineBetween(
-              target.x,
-              target.y + mark * 0.55,
-              target.x + mark * 0.55,
-              target.y + mark * 0.25,
+              targetX,
+              targetY + mark * 0.55,
+              targetX + mark * 0.55,
+              targetY + mark * 0.25,
             );
           }
           const slow = abilityTargets?.slows.find(
@@ -7341,10 +7358,10 @@ export class ArenaScene extends Phaser.Scene {
             const mark = target.radius + 17;
             fx.lineStyle(1.8, NEUTRAL, 0.8);
             fx.lineBetween(
-              target.x - mark * 0.45,
-              target.y,
-              target.x + mark * 0.45,
-              target.y,
+              targetX - mark * 0.45,
+              targetY,
+              targetX + mark * 0.45,
+              targetY,
             );
           }
           const movement = abilityTargets?.movements.find(
@@ -7354,16 +7371,16 @@ export class ArenaScene extends Phaser.Scene {
             const mark = target.radius + 17;
             fx.lineStyle(2, NEUTRAL, 0.9);
             fx.lineBetween(
-              target.x - mark * 0.5,
-              target.y - mark * 0.5,
-              target.x + mark * 0.5,
-              target.y + mark * 0.5,
+              targetX - mark * 0.5,
+              targetY - mark * 0.5,
+              targetX + mark * 0.5,
+              targetY + mark * 0.5,
             );
             fx.lineBetween(
-              target.x + mark * 0.5,
-              target.y - mark * 0.5,
-              target.x - mark * 0.5,
-              target.y + mark * 0.5,
+              targetX + mark * 0.5,
+              targetY - mark * 0.5,
+              targetX - mark * 0.5,
+              targetY + mark * 0.5,
             );
           }
         }
@@ -7392,16 +7409,23 @@ export class ArenaScene extends Phaser.Scene {
         for (const movement of abilityTargets?.movements ?? []) {
           const target = s.units.find((unit) => unit.id === movement.unitId);
           if (!target || !movement.changed) continue;
-          const dx = movement.x - target.x;
-          const dy = movement.y - target.y;
-          const travel = movement.distance;
+          const targetMotion = this.unitMotion.get(target.id);
+          const targetPoint =
+            targetMotion?.renderedFrame === this.renderFrame
+              ? unitRenderPosition(targetMotion.render)
+              : { x: target.x, y: target.y };
+          const targetX = targetPoint.x;
+          const targetY = targetPoint.y;
+          const dx = movement.x - targetX;
+          const dy = movement.y - targetY;
+          const travel = Math.hypot(dx, dy);
           if (travel < 1) continue;
           const ux = dx / travel;
           const uy = dy / travel;
           const px = -uy;
           const py = ux;
-          const startX = target.x + ux * (target.radius + 10);
-          const startY = target.y + uy * (target.radius + 10);
+          const startX = targetX + ux * (target.radius + 10);
+          const startY = targetY + uy * (target.radius + 10);
           const endX = movement.x - ux * 8;
           const endY = movement.y - uy * 8;
           fx.lineStyle(2, targetColor, 0.72);
