@@ -2115,14 +2115,10 @@ export class ArenaScene extends Phaser.Scene {
         firing &&
         fireFeedback &&
         fireFeedback.muzzleRays > 0 &&
-        firing.targetX !== undefined &&
-        firing.targetY !== undefined
+        fireDirection
       ) {
-        const dx = firing.targetX - firing.x;
-        const dy = firing.targetY - firing.y;
-        const d = Math.max(0.01, Math.hypot(dx, dy));
-        const nx = dx / d;
-        const ny = dy / d;
+        const nx = fireDirection.nx;
+        const ny = fireDirection.ny;
         const px = -ny;
         const py = nx;
         const forward = size * 0.34;
