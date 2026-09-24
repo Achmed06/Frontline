@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.09
+## Current v2.10
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2249,3 +2249,13 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies left/right live aim direction, vertical fallback and coincident endpoints
 - recoil strength, attack timing, target selection, damage and deterministic simulation are unchanged
 - release: package 2.9.0 / v2.09 / iOS 2.09 (209)
+
+
+## v2.10 changes
+
+- unit-attached muzzle flashes now use the same live interpolated attack direction as recoil and horizontal facing
+- muzzle cores, rays and electric arcs no longer point toward the older shot snapshot while the target keeps moving
+- the muzzle origin remains attached to the visible interpolated shooter position
+- melee and breach attacks remain unchanged because they intentionally render no muzzle rays
+- shot travel, damage, targeting, recoil strength, attack timing and deterministic simulation are unchanged
+- release: package 2.10.0 / v2.10 / iOS 2.10 (210)
