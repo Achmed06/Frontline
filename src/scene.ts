@@ -4357,6 +4357,16 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "shield-hit" || e.type === "shield-break") {
           const visual = shieldImpactVisual(e);
           if (visual) {
+            const targetMotion =
+              e.targetUnitId !== undefined
+                ? this.unitMotion.get(e.targetUnitId)
+                : undefined;
+            const targetPoint =
+              targetMotion?.renderedFrame === this.renderFrame
+                ? unitRenderPosition(targetMotion.render)
+                : { x: e.x, y: e.y };
+            const shieldX = targetPoint.x;
+            const shieldY = targetPoint.y;
             const shieldColor =
               e.team === "player" ? 0x9bdcff : 0xffb9a5;
             const whiteAlpha =
@@ -4368,10 +4378,10 @@ export class ArenaScene extends Phaser.Scene {
                 ? 0.88 + visual.progress * 0.24
                 : 0.86 + visual.progress * 0.12);
             const impactX =
-              e.x +
+              shieldX +
               (visual.directional ? visual.nx * shellRadius * 0.78 : 0);
             const impactY =
-              e.y +
+              shieldY +
               (visual.directional ? visual.ny * shellRadius * 0.78 : 0);
 
             fx.fillStyle(
@@ -4381,7 +4391,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, shellRadius),
+              this.hex(shieldX, shieldY, shellRadius),
               shieldColor,
               visual.alpha *
                 (visual.mode === "break" ? 0.12 : 0.08),
@@ -4395,7 +4405,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, shellRadius),
+              this.hex(shieldX, shieldY, shellRadius),
               0x000000,
               0,
               shieldColor,
@@ -4436,10 +4446,10 @@ export class ArenaScene extends Phaser.Scene {
               for (let i = 0; i < 6; i++) {
                 const a = i * Math.PI / 3 + e.id * 0.19;
                 fx.lineBetween(
-                  e.x + Math.cos(a) * shellRadius * 0.72,
-                  e.y + Math.sin(a) * shellRadius * 0.72,
-                  e.x + Math.cos(a) * shellRadius * 0.28,
-                  e.y + Math.sin(a) * shellRadius * 0.28,
+                  shieldX + Math.cos(a) * shellRadius * 0.72,
+                  shieldY + Math.sin(a) * shellRadius * 0.72,
+                  shieldX + Math.cos(a) * shellRadius * 0.28,
+                  shieldY + Math.sin(a) * shellRadius * 0.28,
                 );
               }
             }
@@ -4464,10 +4474,10 @@ export class ArenaScene extends Phaser.Scene {
                   shellRadius +
                   visual.fragmentReach *
                     (0.46 + (i % 3) * 0.18);
-                const sx = e.x + Math.cos(a) * inner;
-                const sy = e.y + Math.sin(a) * inner;
-                const ex = e.x + Math.cos(a) * outer;
-                const ey = e.y + Math.sin(a) * outer;
+                const sx = shieldX + Math.cos(a) * inner;
+                const sy = shieldY + Math.sin(a) * inner;
+                const ex = shieldX + Math.cos(a) * outer;
+                const ey = shieldY + Math.sin(a) * outer;
                 fx.lineBetween(sx, sy, ex, ey);
                 fx.fillStyle(
                   i % 2 ? shieldColor : 0xffffff,
@@ -4478,8 +4488,8 @@ export class ArenaScene extends Phaser.Scene {
 
               fx.lineStyle(1.6, shieldColor, visual.alpha * 0.52);
               fx.strokeCircle(
-                e.x,
-                e.y,
+                shieldX,
+                shieldY,
                 shellRadius +
                   visual.progress * visual.fragmentReach * 0.55,
               );
@@ -6250,6 +6260,16 @@ export class ArenaScene extends Phaser.Scene {
         if (e.type === "breaker") {
           const breakerVisual = breakerShieldVisual(e);
           if (breakerVisual) {
+            const targetMotion =
+              e.targetUnitId !== undefined
+                ? this.unitMotion.get(e.targetUnitId)
+                : undefined;
+            const targetPoint =
+              targetMotion?.renderedFrame === this.renderFrame
+                ? unitRenderPosition(targetMotion.render)
+                : { x: e.x, y: e.y };
+            const breakerX = targetPoint.x;
+            const breakerY = targetPoint.y;
             const wave =
               (7 + radius * progress) *
               breakerVisual.waveScale;
@@ -6259,7 +6279,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, wave),
+              this.hex(breakerX, breakerY, wave),
               effectColor,
               alpha * (0.055 + breakerVisual.strength * 0.045),
               effectColor,
@@ -6271,7 +6291,7 @@ export class ArenaScene extends Phaser.Scene {
             );
             this.polygon(
               fx,
-              this.hex(e.x, e.y, wave),
+              this.hex(breakerX, breakerY, wave),
               0x000000,
               0,
               effectColor,
@@ -6279,12 +6299,12 @@ export class ArenaScene extends Phaser.Scene {
 
             if (breakerVisual.directional) {
               const contactX =
-                e.x -
+                breakerX -
                 breakerVisual.nx *
                   wave *
                   0.48;
               const contactY =
-                e.y -
+                breakerY -
                 breakerVisual.ny *
                   wave *
                   0.48;
@@ -6365,13 +6385,13 @@ export class ArenaScene extends Phaser.Scene {
                         (breakerVisual.fragmentCount - 1) -
                       0.5;
                 const sx =
-                  e.x +
+                  breakerX +
                   breakerVisual.px *
                     spread *
                     wave *
                     0.8;
                 const sy =
-                  e.y +
+                  breakerY +
                   breakerVisual.py *
                     spread *
                     wave *
@@ -6403,16 +6423,16 @@ export class ArenaScene extends Phaser.Scene {
               );
               const slash = wave * 0.72;
               fx.lineBetween(
-                e.x - slash,
-                e.y - slash * 0.25,
-                e.x + slash,
-                e.y + slash * 0.25,
+                breakerX - slash,
+                breakerY - slash * 0.25,
+                breakerX + slash,
+                breakerY + slash * 0.25,
               );
               fx.lineBetween(
-                e.x - slash * 0.25,
-                e.y + slash,
-                e.x + slash * 0.25,
-                e.y - slash,
+                breakerX - slash * 0.25,
+                breakerY + slash,
+                breakerX + slash * 0.25,
+                breakerY - slash,
               );
             }
           }
