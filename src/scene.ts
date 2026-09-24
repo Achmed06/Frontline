@@ -1563,8 +1563,10 @@ export class ArenaScene extends Phaser.Scene {
         (effect) =>
           effect.type === "spawn" &&
           effect.team === u.team &&
-          Math.abs(effect.x - u.x) < 0.5 &&
-          Math.abs(effect.y - u.y) < 0.5,
+          (effect.targetUnitId === u.id ||
+            (effect.targetUnitId === undefined &&
+              Math.abs(effect.x - u.x) < 0.5 &&
+              Math.abs(effect.y - u.y) < 0.5)),
       );
       const spawnArrival = deploymentArrivalVisual(spawnEffect);
       const spawnProgress = spawnArrival?.progress ?? 1;
