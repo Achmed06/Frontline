@@ -87,10 +87,16 @@ import {
   strongestKillConfirmation,
   type KillConfirmationCue,
 } from "./kill-confirmation";
+import {
+  coreImpactClimax,
+  strongestCoreImpactClimax,
+  type CoreClimaxCue,
+} from "./core-climax";
 
 const MINT = 0x41ffc1,
   CORAL = 0xff684f,
   NEUTRAL = 0xffda85;
+export type SceneCombatFeedbackCue = KillConfirmationCue | CoreClimaxCue;
 export type SceneBridge = {
   authoritative?: boolean;
   theme: () => ArenaThemeId;
@@ -98,7 +104,7 @@ export type SceneBridge = {
   running: () => boolean;
   selected: () => string | null;
   deploy: (x: number, y: number) => void;
-  combatFeedback?: (cue: KillConfirmationCue) => void;
+  combatFeedback?: (cue: SceneCombatFeedbackCue) => void;
   tick: () => void;
 };
 export class ArenaScene extends Phaser.Scene {
@@ -145,7 +151,7 @@ export class ArenaScene extends Phaser.Scene {
   private frameDeltaSeconds = 1 / 60;
   private renderFrame = 0;
   private reactedEffects = new Set<number>();
-  private lastKillFeedbackAt = Number.NEGATIVE_INFINITY;
+  private lastCombatFeedbackAt = Number.NEGATIVE_INFINITY;
   private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
   private coreTargetAcquisition = new Map<
@@ -354,7 +360,7 @@ export class ArenaScene extends Phaser.Scene {
       this.unitMotion.clear();
       this.unitVitals.clear();
       this.reactedEffects.clear();
-      this.lastKillFeedbackAt = Number.NEGATIVE_INFINITY;
+      this.lastCombatFeedbackAt = Number.NEGATIVE_INFINITY;
       this.battleScars = [];
       this.brokenCores.clear();
       this.coreTargetAcquisition.clear();
@@ -3286,15 +3292,30 @@ export class ArenaScene extends Phaser.Scene {
 
     this.syncCombatText(s.effects, s.units);
     const activeEffectCount = s.effects.length;
-    const pendingKill = strongestKillConfirmation(
-      s.effects.filter((effect) => !this.reactedEffects.has(effect.id)),
+    const newEffects = s.effects.filter(
+      (effect) => !this.reactedEffects.has(effect.id),
     );
+    const enemyCoreFraction = Math.max(
+      0,
+      Math.min(1, s.cores.enemy.hp / s.cores.enemy.maxHp),
+    );
+    const pendingCoreImpact = strongestCoreImpactClimax(
+      newEffects,
+      enemyCoreFraction,
+    );
+    const pendingKill = strongestKillConfirmation(newEffects);
     if (
+      pendingCoreImpact?.cue &&
+      this.clock - this.lastCombatFeedbackAt >= 0.2
+    ) {
+      this.bridge.combatFeedback?.(pendingCoreImpact.cue);
+      this.lastCombatFeedbackAt = this.clock;
+    } else if (
       pendingKill &&
-      this.clock - this.lastKillFeedbackAt >= 0.14
+      this.clock - this.lastCombatFeedbackAt >= 0.14
     ) {
       this.bridge.combatFeedback?.(pendingKill.cue);
-      this.lastKillFeedbackAt = this.clock;
+      this.lastCombatFeedbackAt = this.clock;
     }
     for (const e of s.effects) {
       const presentation = effectPresentationBudget(
@@ -3347,12 +3368,28 @@ export class ArenaScene extends Phaser.Scene {
         if (!this.reducedMotion) {
           if (e.type === "core-hit") {
             const weight = e.radius ?? 18;
+            const targetFraction =
+              e.team === "player"
+                ? Math.max(
+                    0,
+                    Math.min(1, s.cores.enemy.hp / s.cores.enemy.maxHp),
+                  )
+                : Math.max(
+                    0,
+                    Math.min(1, s.cores.player.hp / s.cores.player.maxHp),
+                  );
+            const climax = coreImpactClimax(e, targetFraction);
+            const climaxScale = climax?.cameraScale ?? 1;
             this.cameras.main.shake(
-              80 + Math.round(weight * 2.8),
+              80 + Math.round(weight * 2.8 * climaxScale),
               Math.min(
-                0.0042,
+                climax?.state === "critical" ||
+                  climax?.state === "destroyed"
+                  ? 0.005
+                  : 0.0042,
                 (0.0016 + weight * 0.000075) *
-                  presentation.cameraScale,
+                  presentation.cameraScale *
+                  climaxScale,
               ),
               true,
             );
@@ -7977,8 +8014,16 @@ export class ArenaScene extends Phaser.Scene {
     }
     if (destroyed && !this.brokenCores.has(team)) {
       this.brokenCores.add(team);
+      this.bridge.combatFeedback?.(
+        team === "enemy" ? "coreBreak" : "coreLost",
+      );
+      this.lastCombatFeedbackAt = this.clock;
       if (!this.reducedMotion)
-        this.cameras.main.shake(260, 0.0065, true);
+        this.cameras.main.shake(
+          team === "enemy" ? 310 : 280,
+          team === "enemy" ? 0.0078 : 0.007,
+          true,
+        );
     }
     g.fillStyle(0x07151b, destroyed ? 0.92 : 0.7);
     g.fillEllipse(x, y + 9, 98, 26);
