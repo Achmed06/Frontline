@@ -23,6 +23,20 @@ test("haptic cue mapping keeps routine actions restrained", () => {
     kind: "impact",
     style: "heavy",
   });
+  assert.deepEqual(hapticSpec("coreImpact"), {
+    kind: "impact",
+    style: "medium",
+  });
+  for (const cue of [
+    "coreCriticalImpact",
+    "coreBreak",
+    "coreLost",
+  ] as const) {
+    assert.deepEqual(hapticSpec(cue), {
+      kind: "impact",
+      style: "heavy",
+    });
+  }
   assert.deepEqual(hapticSpec("ability"), {
     kind: "impact",
     style: "heavy",
