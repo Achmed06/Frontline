@@ -682,9 +682,9 @@ function deploy(x: number, y: number) {
     sound.play("ability");
     haptics.play("ability");
   } else if (playedCard) {
-    const feedback = deploymentFeedback(playedCard.id);
-    sound.play(feedback.cue);
-    haptics.play(feedback.cue);
+    const cue = deploymentFeedback(playedCard.id);
+    sound.play(cue);
+    haptics.play(cue);
   }
   selected = null;
   updateSelection();
