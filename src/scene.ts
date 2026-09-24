@@ -66,6 +66,7 @@ import {
   type UnitRenderPositionState,
 } from "./unit-motion";
 import { movementFootprintVisual } from "./movement-footprint-visual";
+import { unitIdentityVisual } from "./unit-identity-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
 import { slowStatusVisual } from "./slow-status-visual";
 import { stasisHitVisual } from "./stasis-hit-visual";
@@ -1697,7 +1698,8 @@ export class ArenaScene extends Phaser.Scene {
         sprite = this.add.image(u.x, u.y, `${u.cardId}-${u.team}`).setDepth(4);
         this.sprites.set(u.id, sprite);
       }
-      const size = u.cardId === "bulwark" ? 45 : u.cardId === "swarm" ? 28 : 36;
+      const identity = unitIdentityVisual(u.cardId);
+      const size = identity.displaySize;
       const spawnEffect = s.effects.find(
         (effect) =>
           effect.type === "spawn" &&
@@ -1804,11 +1806,11 @@ export class ArenaScene extends Phaser.Scene {
         : Math.max(0, Math.min(1, (settleUntil - this.clock) / 0.18));
       const walkBob =
         !this.reducedMotion && motion.moving && !repulsorPoint
-          ? Math.sin(phase) * 1.6
+          ? Math.sin(phase) * identity.bobAmplitude
           : 0;
       const walkScale =
         !this.reducedMotion && motion.moving && !repulsorPoint
-          ? 1 + Math.sin(phase * 2) * 0.018
+          ? 1 + Math.sin(phase * 2) * identity.bobScale
           : 1;
       const hitImpact = s.effects.find(
         (effect) =>
@@ -1876,8 +1878,13 @@ export class ArenaScene extends Phaser.Scene {
             )
           : !this.reducedMotion && motion.moving && motion.moved > 0.001
             ? Math.max(
-                -2.2,
-                Math.min(2.2, (motion.dx / motion.moved) * 2.2),
+                -2.8,
+                Math.min(
+                  2.8,
+                  (motion.dx / motion.moved) *
+                    2.2 *
+                    identity.leanScale,
+                ),
               )
             : 0;
       const settleWidth = 1 + settle * 0.035;
@@ -1889,8 +1896,8 @@ export class ArenaScene extends Phaser.Scene {
           rendered.x +
             recoilX +
             (this.reducedMotion ? 0 : hitReaction.offsetX),
-          rendered.y -
-            3 +
+          rendered.y +
+            identity.verticalOffset +
             spawnYOffset +
             walkBob +
             recoilY +
@@ -1921,7 +1928,9 @@ export class ArenaScene extends Phaser.Scene {
           this.reducedMotion
             ? 0
             : horizontalLean +
-              (motion.moving ? Math.sin(phase) * 1.2 : 0) +
+              (motion.moving
+                ? Math.sin(phase) * identity.swayAmplitude
+                : 0) +
               hitReaction.angle,
         )
         .setAlpha(
@@ -1933,15 +1942,99 @@ export class ArenaScene extends Phaser.Scene {
         );
       if (hitStrength > 0.42) sprite.setTintFill(0xffffff);
       else sprite.clearTint();
+      const identityColor = u.team === "player" ? MINT : CORAL;
+      const facing = (fireDirection?.facing ?? motion.facing) < 0 ? -1 : 1;
       g.fillStyle(0x06171b, 0.55);
-      g.fillEllipse(rendered.x, rendered.y + 6, size * 0.65, size * 0.25);
-      g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
+      g.fillEllipse(
+        rendered.x,
+        rendered.y + 6,
+        size * identity.shadowWidth,
+        size * identity.shadowHeight,
+      );
+      g.lineStyle(2, identityColor, identity.ringAlpha);
       g.strokeEllipse(
         rendered.x,
         rendered.y + 7,
-        size * 0.75,
-        size * 0.32,
+        size * identity.ringWidth,
+        size * identity.ringHeight,
       );
+
+      // Small stance marks reinforce silhouette identity without adding HUD.
+      if (identity.kind === "heavy") {
+        g.lineStyle(1.6, identityColor, 0.4);
+        g.lineBetween(
+          rendered.x - size * 0.34,
+          rendered.y + 9,
+          rendered.x - size * 0.22,
+          rendered.y + 9,
+        );
+        g.lineBetween(
+          rendered.x + size * 0.22,
+          rendered.y + 9,
+          rendered.x + size * 0.34,
+          rendered.y + 9,
+        );
+      } else if (identity.kind === "siege") {
+        g.lineStyle(1.4, identityColor, 0.34);
+        for (const side of [-1, 1]) {
+          g.lineBetween(
+            rendered.x + side * size * 0.24,
+            rendered.y + 5,
+            rendered.x + side * size * 0.34,
+            rendered.y + 12,
+          );
+        }
+      } else if (identity.kind === "skirmisher") {
+        const tipX = rendered.x + facing * size * 0.39;
+        g.lineStyle(1.4, identityColor, 0.38);
+        g.lineBetween(
+          tipX - facing * 6,
+          rendered.y + 3,
+          tipX,
+          rendered.y + 7,
+        );
+        g.lineBetween(
+          tipX - facing * 6,
+          rendered.y + 11,
+          tipX,
+          rendered.y + 7,
+        );
+      } else if (identity.kind === "marksman") {
+        g.lineStyle(1.2, identityColor, 0.34);
+        g.lineBetween(
+          rendered.x + facing * size * 0.28,
+          rendered.y + 7,
+          rendered.x + facing * size * 0.45,
+          rendered.y + 7,
+        );
+      } else if (identity.kind === "support") {
+        g.fillStyle(identityColor, 0.42);
+        for (const [ox, oy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+          g.fillCircle(
+            rendered.x + ox * size * 0.32,
+            rendered.y + 7 + oy * size * 0.15,
+            1.25,
+          );
+        }
+      } else if (identity.kind === "controller") {
+        g.fillStyle(identityColor, 0.36);
+        for (let node = 0; node < 4; node++) {
+          const a = node * Math.PI * 0.5;
+          g.fillCircle(
+            rendered.x + Math.cos(a) * size * 0.34,
+            rendered.y + 7 + Math.sin(a) * size * 0.14,
+            1.1,
+          );
+        }
+      } else if (identity.kind === "swarm") {
+        g.fillStyle(identityColor, 0.34);
+        for (let node = -1; node <= 1; node++)
+          g.fillCircle(
+            rendered.x + node * 4.5,
+            rendered.y + 10 + Math.abs(node) * 1.5,
+            1.15,
+          );
+      }
 
       const weaponCycle = weaponCycleVisual(
         u.cardId,
