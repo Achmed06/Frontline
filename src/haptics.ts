@@ -12,6 +12,7 @@ export type HapticCue =
   | "capture"
   | "warning"
   | "success"
+  | "reward"
   | "error";
 
 export type HapticSpec =
@@ -23,6 +24,7 @@ export function hapticSpec(cue: HapticCue): HapticSpec {
     case "select":
       return { kind: "impact", style: "light" };
     case "deploy":
+    case "reward":
       return { kind: "impact", style: "medium" };
     case "ability":
       return { kind: "impact", style: "heavy" };

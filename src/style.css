@@ -7478,3 +7478,202 @@ a.privacy-link:focus-visible,
   }
 }
 
+/* v1.86: celebrate real progression milestones without adding another screen. */
+.reward-reveal {
+  position: relative;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 11px;
+  align-items: center;
+  overflow: hidden;
+  margin: 10px 0 9px;
+  padding: 10px;
+  border: 1px solid #8a7f4f;
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 10% 20%, #f1e58720, transparent 35%),
+    linear-gradient(145deg, #323226, #1c2822);
+  box-shadow:
+    inset 0 0 0 1px #fff3a40b,
+    0 9px 22px #030e0c30;
+}
+.reward-reveal::after {
+  content: "";
+  position: absolute;
+  inset: -40% -15%;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-38%) rotate(-10deg);
+  background: linear-gradient(
+    90deg,
+    transparent 38%,
+    #fff8c53d 49%,
+    #fffef070 50%,
+    #fff8c53d 51%,
+    transparent 62%
+  );
+}
+.reward-reveal.reveal-live::after {
+  animation: rewardSweep .62s ease-out both;
+}
+.reward-reveal.reward-style {
+  border-color: #799dc2;
+  background:
+    radial-gradient(circle at 10% 20%, #9bdcff26, transparent 36%),
+    linear-gradient(145deg, #233743, #19272d);
+}
+.reward-reveal.reward-base {
+  border-color: #a77d58;
+  background:
+    radial-gradient(circle at 10% 20%, #ffc17f1f, transparent 36%),
+    linear-gradient(145deg, #3a2d25, #202723);
+}
+.reward-reveal.reward-mastery {
+  border-color: #846ca0;
+  background:
+    radial-gradient(circle at 10% 20%, #c39bea22, transparent 36%),
+    linear-gradient(145deg, #30283b, #1c252c);
+}
+.reward-reveal.reward-lesson {
+  border-color: #728f67;
+}
+.reward-reveal-badge {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 66px;
+  height: 66px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #b2a76680;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle, #fff4a31a, transparent 66%),
+    #18251f;
+  box-shadow: inset 0 0 18px #fff7b20c;
+}
+.reward-style .reward-reveal-badge {
+  border-color: #86afd080;
+  background: #182b34;
+}
+.reward-base .reward-reveal-badge {
+  border-color: #bb8b6280;
+  background: #2c241f;
+}
+.reward-mastery .reward-reveal-badge {
+  border-color: #987ab580;
+  background: #251f30;
+}
+.reward-reveal-badge > span {
+  color: #f2df8c;
+  font: 900 17px/1 "Barlow Condensed", Impact, sans-serif;
+  letter-spacing: .4px;
+}
+.reward-style .reward-reveal-badge > span {
+  color: #bce9ff;
+}
+.reward-reveal-badge svg {
+  width: 100%;
+  height: 100%;
+  transform: scale(1.05);
+}
+.reward-reveal-copy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.reward-reveal-copy small {
+  display: block;
+  color: #b7a968;
+  font: 800 6px/1 monospace;
+  letter-spacing: .9px;
+}
+.reward-style .reward-reveal-copy small {
+  color: #91bddd;
+}
+.reward-base .reward-reveal-copy small {
+  color: #c69b76;
+}
+.reward-mastery .reward-reveal-copy small {
+  color: #b291cb;
+}
+.reward-lesson .reward-reveal-copy small {
+  color: #9ab787;
+}
+.reward-reveal-copy b {
+  display: block;
+  margin-top: 4px;
+  color: #f2edd4;
+  font: 800 19px/1 "Barlow Condensed", Impact, sans-serif;
+  letter-spacing: .25px;
+}
+.reward-reveal-copy p {
+  margin: 5px 0 0;
+  color: #aeb9af;
+  font-size: 8px;
+  line-height: 1.4;
+}
+.reward-reveal-copy em {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 5px;
+  border: 1px solid #6e6745;
+  border-radius: 3px;
+  color: #bcae73;
+  font: 700 5.5px/1 monospace;
+  font-style: normal;
+  letter-spacing: .35px;
+}
+.reward-reveal.reveal-live {
+  animation: rewardSettle .34s ease-out both;
+}
+
+@keyframes rewardSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-38%) rotate(-10deg);
+  }
+  28% {
+    opacity: .75;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(42%) rotate(-10deg);
+  }
+}
+@keyframes rewardSettle {
+  from {
+    transform: scale(.985);
+    filter: brightness(1.18);
+  }
+  to {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@media (max-width: 380px) {
+  .reward-reveal {
+    grid-template-columns: 58px 1fr;
+    gap: 8px;
+    padding: 8px;
+  }
+  .reward-reveal-badge {
+    width: 54px;
+    height: 54px;
+  }
+  .reward-reveal-copy b {
+    font-size: 16px;
+  }
+  .reward-reveal-copy p {
+    font-size: 7.2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reward-reveal.reveal-live,
+  .reward-reveal.reveal-live::after {
+    animation: none;
+  }
+}
+

@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.85
+## Current v1.86
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1897,4 +1897,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies first-battle timing, repeat timing, malformed match-count fallback, compressed phase boundaries and compressed progress
 - match duration, starting energy, card costs, bot timing after the match goes live, objectives, progression and combat balance are unchanged
 - release: package 1.85.0 / v1.85 / iOS 1.85 (185)
+
+## v1.86 changes
+
+- real progression milestones now receive one concise earned-reward reveal inside the existing result screen instead of being buried as plain text among several progress cards
+- the reveal is intentionally milestone-only: normal matches without a genuine unlock do not fabricate a reward moment
+- when several things unlock in one match, one high-value milestone is promoted and the remaining gains stay in the existing progression stack
+- Aurora completion has the highest reveal priority, followed by HQ upgrades, new Unit Mastery frames and individual learning-task completions
+- mastery reveals use the actual unit art and canonical mastery rank; HQ and learning/style reveals use compact symbolic badges
+- the reveal sits between result momentum and the existing next-match action, so the reward is felt without forcing another modal, claim screen or delay before replay
+- a dedicated short unlock sound and restrained medium haptic fire after the normal match-end feedback rather than replacing victory/defeat audio
+- Reduced Motion keeps the reveal fully visible while removing the sweep/settle animation
+- a pure rewardReveal helper derives milestone priority and extra-progress count from before/after learning, mastery and HQ state
+- regression coverage verifies Aurora priority, HQ upgrade fallback, mastery-frame detection, lesson completion and the no-milestone case
+- audio/haptic coverage now includes the dedicated unlock cue while routine combat feedback remains unchanged
+- no currency, loot box, claim timer, combat bonus, pay-to-win reward or extra screen was added
+- learning rules, mastery thresholds, HQ progression, cosmetics, campaign, modes and combat balance remain unchanged
+- release: package 1.86.0 / v1.86 / iOS 1.86 (186)
 

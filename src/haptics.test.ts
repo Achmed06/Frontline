@@ -11,6 +11,10 @@ test("haptic cue mapping keeps routine actions restrained", () => {
     kind: "impact",
     style: "medium",
   });
+  assert.deepEqual(hapticSpec("reward"), {
+    kind: "impact",
+    style: "medium",
+  });
   assert.deepEqual(hapticSpec("ability"), {
     kind: "impact",
     style: "heavy",
