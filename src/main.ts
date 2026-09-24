@@ -107,6 +107,7 @@ import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-l
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { firstBattleOpeningCard } from "./first-battle-opening";
 import { unitIdentityVisual } from "./unit-identity-visual";
+import { deploymentFeedback } from "./deployment-feedback";
 import { matchStartTiming } from "./match-start-timing";
 import { quickPlayRotation } from "./quick-play-rotation";
 import { quickPlayBaseline, quickPlaySessionCue } from "./quick-play-session";
@@ -677,8 +678,14 @@ function deploy(x: number, y: number) {
   }
   showEnergySpend(energySpent(beforeEnergy, match.state.energy.player));
   const playedAbility = playedCard?.kind === "ability";
-  sound.play(playedAbility ? "ability" : "deploy");
-  haptics.play(playedAbility ? "ability" : "deploy");
+  if (playedAbility) {
+    sound.play("ability");
+    haptics.play("ability");
+  } else if (playedCard) {
+    const feedback = deploymentFeedback(playedCard.id);
+    sound.play(feedback.cue);
+    haptics.play(feedback.cue);
+  }
   selected = null;
   updateSelection();
   updateHud(true);
