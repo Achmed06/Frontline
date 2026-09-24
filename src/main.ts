@@ -106,6 +106,7 @@ import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { matchStartTiming } from "./match-start-timing";
+import { quickPlayRotation } from "./quick-play-rotation";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import { boardPointFromClient, dragThresholdReached } from "./card-drag";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
@@ -138,7 +139,7 @@ app.innerHTML = `
           <div id="play-now-kicker" class="play-now-kicker">SCHNELLGEFECHT · GEGEN BOT</div>
           <h2>3 MINUTEN.<br><em>EINE FRONT.</em></h2>
           <p id="play-now-copy">Dein Deck. Dein Commander. Sofort ins Gefecht.</p>
-          <div class="play-now-meta"><span id="quick-play-difficulty">TAKTIKER</span><span>CORE-ANGRIFF</span><span>3:00</span></div>
+          <div class="play-now-meta"><span id="quick-play-difficulty">TAKTIKER</span><span>CORE-ANGRIFF</span><span id="quick-play-arena">SMARAGDKÜSTE</span><span>3:00</span></div>
           <section id="play-progress" class="play-progress" aria-label="Nächster Fortschritt">
             <div><small id="play-progress-kicker">NÄCHSTER FORTSCHRITT</small><b id="play-progress-title">Feldausbildung</b><span id="play-progress-detail"></span></div>
             <div class="play-progress-side"><strong id="play-progress-count">0/1</strong><em id="play-progress-reward"></em></div>
@@ -267,8 +268,11 @@ function updateFirstSessionFocus(): void {
   el<HTMLDetailsElement>("advanced-battle").hidden = !focus.showAdvancedBattle;
   el("play-now-kicker").textContent = focus.kicker;
   el("play-now-copy").textContent = focus.copy;
-  el("quick-play-difficulty").textContent =
-    focus.phase === "first-battle" ? "REKRUT" : "TAKTIKER";
+  const rotation = quickPlayRotation(stats.matches);
+  el("quick-play-difficulty").textContent = rotation.difficultyLabel;
+  el("quick-play-arena").textContent = rotation.arenaName.toUpperCase();
+  const hero = el<HTMLElement>("lobby-panel-play").querySelector<HTMLElement>(".play-now-hero");
+  if (hero) hero.dataset.arena = rotation.theme;
   el("quick-play").innerHTML = `${focus.cta} <span>↗</span>`;
 }
 
@@ -300,6 +304,7 @@ let dailyHistory = readDailyHistory();
 let activeSeries = false;
 let activeDraftDeck: CardId[] | null = null;
 let activeDaily: DailyChallenge | null = null;
+let activeQuickPlay = false;
 let commanderId = readCommander();
 let deck: CardId[] = readDeck();
 let deckSlots = readDeckSlots();
@@ -629,6 +634,7 @@ function start(
   inSeries = false,
   draftDeck: readonly CardId[] | null = null,
   daily: DailyChallenge | null = null,
+  quickPlay = false,
 ) {
   if (
     (draftDeck && (!isValidDeck(draftDeck) || inSeries || mission || daily)) ||
@@ -649,13 +655,17 @@ function start(
   activeSeries = inSeries;
   activeDaily = daily;
   activeMission = daily ? null : mission;
+  activeQuickPlay =
+    quickPlay && !mission && !daily && !inSeries && !draftDeck;
   const chosenArena = el<HTMLSelectElement>("arena-theme").value;
   arenaTheme = daily
     ? daily.theme
     : mission
       ? CHAPTERS.reduce((current, chapter) => MISSIONS.findIndex(m => m.id === chapter.firstMission) <= MISSIONS.indexOf(mission) ? chapter.theme : current, "coast" as ArenaThemeId)
-      : isArenaTheme(chosenArena) ? chosenArena : "coast";
-  if (!mission && !daily) setting("arena-theme", arenaTheme);
+      : activeQuickPlay
+        ? quickPlayRotation(stats.matches).theme
+        : isArenaTheme(chosenArena) ? chosenArena : "coast";
+  if (!mission && !daily && !activeQuickPlay) setting("arena-theme", arenaTheme);
   activeDraftDeck = draftDeck ? [...draftDeck] : null;
   renderCards(daily?.playerDeck ?? activeDraftDeck ?? undefined);
   if (rematch) {
@@ -731,7 +741,9 @@ function start(
       ? `SERIE ${seriesRun!.wins + 1}/3 · ${SERIES_LIVES - seriesRun!.losses} VERSUCHE`
       : mission
         ? `EINSATZ ${MISSIONS.indexOf(mission) + 1} · ${mission.name.toUpperCase()}`
-        : `TRAINING · ${difficulty === "rookie" ? "REKRUT" : difficulty === "standard" ? "TAKTIKER" : "VETERAN"}`;
+        : activeQuickPlay
+          ? `SCHNELLGEFECHT · ${ARENA_THEMES[arenaTheme].name.toUpperCase()}`
+          : `TRAINING · ${difficulty === "rookie" ? "REKRUT" : difficulty === "standard" ? "TAKTIKER" : "VETERAN"}`;
   sound.unlock();
   sound.play("start");
   updateSelection();
@@ -789,6 +801,7 @@ function lobby() {
   activeSeries = false;
   activeDraftDeck = null;
   activeDaily = null;
+  activeQuickPlay = false;
   renderCommander(commanderId);
   renderCards();
   activeMission = null;
@@ -871,6 +884,7 @@ function finish() {
   haptics.play(won ? "success" : draw ? "warning" : "error");
   const wasSeries = activeSeries;
   const wasDraft = activeDraftDeck !== null;
+  const wasQuickPlay = activeQuickPlay;
   const daily = activeDaily;
   const wasDaily = daily !== null;
   let seriesResult = "";
@@ -993,6 +1007,8 @@ function finish() {
       openSeries();
     } else if (daily) {
       start(true, null, false, null, daily);
+    } else if (wasQuickPlay) {
+      start(true, null, false, null, null, true);
     } else start(true, mission);
   };
   if (nextMission) el("next-mission").onclick = () => start(false, nextMission);
@@ -2023,10 +2039,10 @@ function openDraft() {
 el("draft").onclick = openDraft;
 el("series").onclick = openSeries;
 el("quick-play").onclick = () => {
-  const firstBattle = firstSessionFocus(stats.matches).phase === "first-battle";
-  el<HTMLSelectElement>("difficulty").value = firstBattle ? "rookie" : "standard";
+  const rotation = quickPlayRotation(stats.matches);
+  el<HTMLSelectElement>("difficulty").value = rotation.difficulty;
   el<HTMLSelectElement>("training-mode").value = "core";
-  start();
+  start(false, null, false, null, null, true);
 };
 el("featured-event-play").onclick = () => {
   const event = featuredEvent(new Date());
