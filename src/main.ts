@@ -107,6 +107,7 @@ import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-l
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { matchStartTiming } from "./match-start-timing";
 import { quickPlayRotation } from "./quick-play-rotation";
+import { quickPlaySessionCue } from "./quick-play-session";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import { boardPointFromClient, dragThresholdReached } from "./card-drag";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
@@ -137,9 +138,9 @@ app.innerHTML = `
         <section class="play-now-hero">
           <div class="play-now-grid" aria-hidden="true"></div>
           <div id="play-now-kicker" class="play-now-kicker">SCHNELLGEFECHT · GEGEN BOT</div>
-          <h2>3 MINUTEN.<br><em>EINE FRONT.</em></h2>
+          <h2 id="play-now-title">3 MINUTEN.<br><em>EINE FRONT.</em></h2>
           <p id="play-now-copy">Dein Deck. Dein Commander. Sofort ins Gefecht.</p>
-          <div class="play-now-meta"><span id="quick-play-difficulty">TAKTIKER</span><span>CORE-ANGRIFF</span><span id="quick-play-arena">SMARAGDKÜSTE</span><span>3:00</span></div>
+          <div class="play-now-meta"><span id="quick-play-difficulty">TAKTIKER</span><span>CORE-ANGRIFF</span><span id="quick-play-arena">SMARAGDKÜSTE</span><span id="quick-play-streak" class="quick-play-streak" hidden>SERIE ×2</span><span>3:00</span></div>
           <section id="play-progress" class="play-progress" aria-label="Nächster Fortschritt">
             <div><small id="play-progress-kicker">NÄCHSTER FORTSCHRITT</small><b id="play-progress-title">Feldausbildung</b><span id="play-progress-detail"></span></div>
             <div class="play-progress-side"><strong id="play-progress-count">0/1</strong><em id="play-progress-reward"></em></div>
@@ -266,14 +267,33 @@ function updateFirstSessionFocus(): void {
   el<HTMLElement>("campaign-quick-card").hidden = !focus.showSecondaryPlay;
   el<HTMLElement>("play-secondary-actions").hidden = !focus.showSecondaryPlay;
   el<HTMLDetailsElement>("advanced-battle").hidden = !focus.showAdvancedBattle;
-  el("play-now-kicker").textContent = focus.kicker;
-  el("play-now-copy").textContent = focus.copy;
   const rotation = quickPlayRotation(stats.matches);
+  const session = quickPlaySessionCue(
+    history,
+    rotation.arenaName,
+    rotation.matchNumber,
+  );
+  const sessionActive = focus.phase === "full" && session.tone !== "neutral";
+  el("play-now-kicker").textContent = sessionActive
+    ? session.heroKicker
+    : focus.kicker;
+  el("play-now-copy").textContent = sessionActive
+    ? session.heroCopy
+    : focus.copy;
+  el("play-now-title").innerHTML = sessionActive
+    ? `${session.heroTitleTop}<br><em>${session.heroTitleBottom}</em>`
+    : `${focus.title.split("\n")[0]}<br><em>${focus.title.split("\n")[1] ?? ""}</em>`;
   el("quick-play-difficulty").textContent = rotation.difficultyLabel;
   el("quick-play-arena").textContent = rotation.arenaName.toUpperCase();
+  const streak = el<HTMLElement>("quick-play-streak");
+  streak.hidden = !sessionActive || session.streak < 2;
+  streak.textContent = `SERIE ×${session.streak}`;
   const hero = el<HTMLElement>("lobby-panel-play").querySelector<HTMLElement>(".play-now-hero");
-  if (hero) hero.dataset.arena = rotation.theme;
-  el("quick-play").innerHTML = `${focus.cta} <span>↗</span>`;
+  if (hero) {
+    hero.dataset.arena = rotation.theme;
+    hero.dataset.sessionTone = sessionActive ? session.tone : "neutral";
+  }
+  el("quick-play").innerHTML = `${sessionActive ? session.heroCta : focus.cta} <span>↗</span>`;
 }
 
 let campaignProgress = readCampaign();
@@ -1046,6 +1066,29 @@ function setCoachFocus(focus: BattleCoachFocus | null) {
   el("commander").classList.toggle("coach-focus", focus === "commander");
 }
 
+function currentMatchStartVisual(remainingMs: number): MatchStartVisual {
+  const visual = matchStartVisual(
+    remainingMs,
+    COMMANDERS[match.commanders.player].name,
+    COMMANDERS[match.commanders.enemy].name,
+    Boolean(match.controlObjective),
+    Boolean(activeDaily),
+    matchStartDurationMs,
+  );
+  if (!activeQuickPlay || visual.phase !== "cores") return visual;
+  const rotation = quickPlayRotation(stats.matches);
+  const session = quickPlaySessionCue(
+    history,
+    ARENA_THEMES[arenaTheme].name,
+    rotation.matchNumber,
+  );
+  return {
+    ...visual,
+    kicker: session.startKicker,
+    detail: session.startDetail,
+  };
+}
+
 function renderMatchStartCountdown(
   countdown: HTMLElement,
   visual: MatchStartVisual,
@@ -1082,27 +1125,13 @@ function updateHud(force = false) {
     countdown.hidden = false;
     renderMatchStartCountdown(
       countdown,
-      matchStartVisual(
-        matchReadyAt - now,
-        COMMANDERS[match.commanders.player].name,
-        COMMANDERS[match.commanders.enemy].name,
-        Boolean(match.controlObjective),
-        Boolean(activeDaily),
-        matchStartDurationMs,
-      ),
+      currentMatchStartVisual(matchReadyAt - now),
     );
   } else if (active && !ended && now < matchGoUntil) {
     countdown.hidden = false;
     renderMatchStartCountdown(
       countdown,
-      matchStartVisual(
-        0,
-        COMMANDERS[match.commanders.player].name,
-        COMMANDERS[match.commanders.enemy].name,
-        Boolean(match.controlObjective),
-        Boolean(activeDaily),
-        matchStartDurationMs,
-      ),
+      currentMatchStartVisual(0),
     );
     if (!startBannerShown) {
       startBannerShown = true;

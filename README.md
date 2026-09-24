@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.89
+## Current v1.90
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1966,4 +1966,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - no new mode, arena asset, combat modifier, random gameplay rule, currency, reward or balance change was added
 - all four environments remain visual-only: territory layout, paths, capture rules, decks, Commander behavior and combat values are unchanged
 - release: package 1.89.0 / v1.89 / iOS 1.89 (189)
+
+## v1.90 changes
+
+- Quick Play now carries real session momentum back into the SPIELEN hero instead of losing the emotional context of the previous result as soon as the player leaves the result screen
+- two or more consecutive wins turn the existing hero into a restrained hot-streak state with the exact streak count, the next battlefield and one stronger Serie halten action
+- a single win deliberately does not trigger a streak treatment, preventing routine victories from becoming constant celebration noise
+- after a loss, the same existing Quick Play entry becomes a focused Revanche state with Sofort zurückschlagen language but no penalty, boost or artificial recovery mechanic
+- draws stay neutral and frame the next match as the deciding front
+- first-battle and early-learning onboarding remain untouched; session momentum only overrides the full returning-player presentation
+- the already existing rotating Quick Play battlefield remains visible in every state and still follows the deterministic v1.89 four-arena playlist
+- the existing launch countdown now uses its first synchronization phase to carry the same arena/session context, such as SERIE ×3 or REVANCHE, without adding any extra countdown time
+- later countdown phases remain unchanged so Core, supply and Commander synchronization stay familiar and readable
+- the session treatment derives only from validated local MatchRecord history and never changes bot strength, energy, deck values, rewards or progression
+- a pure quickPlaySessionCue helper centralizes neutral, hot-streak, loss-rebound and draw presentation
+- regression coverage verifies multi-win streaks, one-win restraint, loss rebound, draw handling and malformed/empty-history fallback
+- no new mode, currency, reward track, gameplay bonus, timer or monetization system was added
+- release: package 1.90.0 / v1.90 / iOS 1.90 (190)
 
