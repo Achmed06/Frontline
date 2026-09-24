@@ -55,6 +55,17 @@ export function quickPlaySessionCue(
         startKicker: `SERIE ×${streak} · ${safeArena.toUpperCase()}`,
         startDetail: `FRONT ${safeMatch} · MOMENTUM HALTEN`,
       };
+    return {
+      tone: "neutral",
+      streak: 0,
+      heroKicker: "SCHNELLGEFECHT · GEGEN BOT",
+      heroTitleTop: "3 MINUTEN.",
+      heroTitleBottom: "EINE FRONT.",
+      heroCopy: "Dein Deck. Dein Commander. Sofort ins Gefecht.",
+      heroCta: "JETZT SPIELEN",
+      startKicker: safeArena.toUpperCase(),
+      startDetail: `FRONT ${safeMatch} · LOADOUT BEREIT`,
+    };
   }
 
   if (latest.outcome === "enemy")
