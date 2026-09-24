@@ -3422,8 +3422,31 @@ export class ArenaScene extends Phaser.Scene {
         } else if (e.type === "heal") {
           const visual = healLinkVisual(e);
           if (visual) {
-            const dx = e.targetX - e.x;
-            const dy = e.targetY - e.y;
+            const sourceMotion =
+              e.sourceUnitId !== undefined
+                ? this.unitMotion.get(e.sourceUnitId)
+                : undefined;
+            const targetMotion =
+              e.targetUnitId !== undefined
+                ? this.unitMotion.get(e.targetUnitId)
+                : undefined;
+            const sourcePoint =
+              sourceMotion?.renderedFrame === this.renderFrame
+                ? unitRenderPosition(sourceMotion.render)
+                : { x: e.x, y: e.y };
+            const targetPoint =
+              targetMotion?.renderedFrame === this.renderFrame
+                ? unitRenderPosition(targetMotion.render)
+                : {
+                    x: e.targetX ?? sourcePoint.x,
+                    y: e.targetY ?? sourcePoint.y,
+                  };
+            const sourceX = sourcePoint.x;
+            const sourceY = sourcePoint.y;
+            const targetX = targetPoint.x;
+            const targetY = targetPoint.y;
+            const dx = targetX - sourceX;
+            const dy = targetY - sourceY;
             const distance = Math.max(0.01, Math.hypot(dx, dy));
             const nx = dx / distance;
             const ny = dy / distance;
@@ -3439,16 +3462,16 @@ export class ArenaScene extends Phaser.Scene {
               healColor,
               visual.alpha * (0.08 + visual.intensity * 0.08),
             );
-            fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
+            fx.lineBetween(sourceX, sourceY, targetX, targetY);
             fx.lineStyle(1.2, 0xd8fff0, visual.alpha * 0.42);
-            fx.lineBetween(e.x, e.y, e.targetX, e.targetY);
+            fx.lineBetween(sourceX, sourceY, targetX, targetY);
 
             fx.lineStyle(1.6, healColor, visual.alpha * 0.72);
-            fx.strokeCircle(e.x, e.y, visual.sourceRadius);
+            fx.strokeCircle(sourceX, sourceY, visual.sourceRadius);
             fx.lineStyle(1, 0xffffff, visual.alpha * 0.36);
-            fx.strokeCircle(e.x, e.y, visual.sourceRadius + 3);
+            fx.strokeCircle(sourceX, sourceY, visual.sourceRadius + 3);
             fx.fillStyle(healColor, visual.alpha * 0.82);
-            fx.fillCircle(e.x, e.y, 2.1);
+            fx.fillCircle(sourceX, sourceY, 2.1);
 
             const targetRadius =
               visual.targetRadius +
@@ -3456,11 +3479,11 @@ export class ArenaScene extends Phaser.Scene {
                 ? 0
                 : Math.sin(progress * Math.PI) * 3);
             fx.lineStyle(2.2, healColor, visual.alpha * (0.55 + pulse * 0.3));
-            fx.strokeCircle(e.targetX, e.targetY, targetRadius);
+            fx.strokeCircle(targetX, targetY, targetRadius);
             fx.lineStyle(1, 0xffffff, visual.alpha * 0.42);
-            fx.strokeCircle(e.targetX, e.targetY, Math.max(4, targetRadius - 4));
+            fx.strokeCircle(targetX, targetY, Math.max(4, targetRadius - 4));
             fx.fillStyle(0xd8ffe8, visual.alpha * pulse);
-            fx.fillCircle(e.targetX, e.targetY, 3.2);
+            fx.fillCircle(targetX, targetY, 3.2);
 
             if (!this.reducedMotion) {
               for (const packet of visual.packets) {
@@ -3469,11 +3492,11 @@ export class ArenaScene extends Phaser.Scene {
                   packet.offset *
                   (4 + visual.intensity * 3);
                 const packetX =
-                  e.x +
+                  sourceX +
                   dx * packet.progress +
                   px * lateral;
                 const packetY =
-                  e.y +
+                  sourceY +
                   dy * packet.progress +
                   py * lateral;
                 const tailX =
