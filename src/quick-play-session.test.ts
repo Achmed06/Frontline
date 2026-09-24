@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { quickPlaySessionCue } from "./quick-play-session";
+import { quickPlayBaseline, quickPlaySessionCue } from "./quick-play-session";
 
 test("two or more Quick Play wins create a hot session cue", () => {
   const cue = quickPlaySessionCue(
@@ -75,4 +75,31 @@ test("win streak is capped by completed Quick Play matches", () => {
     3,
   );
   assert.equal(cue.streak, 2);
+});
+
+
+test("legacy saves preserve their previous Quick Play rotation baseline exactly once", () => {
+  assert.deepEqual(quickPlayBaseline(7), {
+    completedMatches: 7,
+    migrated: true,
+  });
+  assert.deepEqual(quickPlayBaseline(0), {
+    completedMatches: 0,
+    migrated: true,
+  });
+  assert.deepEqual(quickPlayBaseline(Number.NaN), {
+    completedMatches: 0,
+    migrated: true,
+  });
+});
+
+test("dedicated Quick Play progress always wins over the legacy global count", () => {
+  assert.deepEqual(quickPlayBaseline(99, 3), {
+    completedMatches: 3,
+    migrated: false,
+  });
+  assert.deepEqual(quickPlayBaseline(99, 0), {
+    completedMatches: 0,
+    migrated: false,
+  });
 });

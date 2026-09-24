@@ -107,7 +107,7 @@ import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-l
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { matchStartTiming } from "./match-start-timing";
 import { quickPlayRotation } from "./quick-play-rotation";
-import { quickPlaySessionCue } from "./quick-play-session";
+import { quickPlayBaseline, quickPlaySessionCue } from "./quick-play-session";
 import { frontRace } from "./front-race";
 import { timeLimitOutlook } from "./time-limit-outlook";
 import { coreAssault } from "./core-assault";
@@ -260,6 +260,16 @@ for (const key of ["play", "event", "base"] as const)
 const sound = new Sound();
 sound.enabled = setting("sound") === "on";
 const stats = readStats();
+const quickPlayMigration = quickPlayBaseline(
+  stats.matches,
+  stats.quickPlayMatches,
+);
+if (quickPlayMigration.migrated) {
+  stats.quickPlayMatches = quickPlayMigration.completedMatches;
+  stats.quickPlayWinStreak = 0;
+  delete stats.quickPlayLastOutcome;
+  saveStats(stats);
+}
 const history = readHistory();
 
 function updateFirstSessionFocus(): void {
