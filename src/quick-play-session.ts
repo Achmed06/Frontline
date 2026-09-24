@@ -1,3 +1,26 @@
+export type QuickPlayBaseline = {
+  completedMatches: number;
+  migrated: boolean;
+};
+
+export function quickPlayBaseline(
+  totalMatches: number,
+  quickPlayMatches?: number,
+): QuickPlayBaseline {
+  if (
+    typeof quickPlayMatches === "number" &&
+    Number.isSafeInteger(quickPlayMatches) &&
+    quickPlayMatches >= 0
+  )
+    return { completedMatches: quickPlayMatches, migrated: false };
+
+  const legacyMatches =
+    Number.isSafeInteger(totalMatches) && totalMatches > 0
+      ? Math.floor(totalMatches)
+      : 0;
+  return { completedMatches: legacyMatches, migrated: true };
+}
+
 export type QuickPlaySessionState = {
   completedMatches?: number;
   winStreak?: number;
