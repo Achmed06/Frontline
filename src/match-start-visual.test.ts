@@ -49,3 +49,30 @@ test("start progress is clamped and malformed time cannot skip the opening", () 
     matchStartVisual(3000, "ATLAS", "LYRA"),
   );
 });
+
+
+test("compressed openings preserve all three phases across a shorter duration", () => {
+  assert.equal(
+    matchStartVisual(1800, "ATLAS", "LYRA", false, false, 1800).phase,
+    "cores",
+  );
+  assert.equal(
+    matchStartVisual(1200, "ATLAS", "LYRA", false, false, 1800).phase,
+    "supply",
+  );
+  assert.equal(
+    matchStartVisual(600, "ATLAS", "LYRA", false, false, 1800).phase,
+    "commanders",
+  );
+  assert.equal(
+    matchStartVisual(0, "ATLAS", "LYRA", false, false, 1800).phase,
+    "go",
+  );
+});
+
+test("compressed opening progress uses its configured duration", () => {
+  assert.equal(
+    matchStartVisual(900, "ATLAS", "LYRA", false, false, 1800).progress,
+    0.5,
+  );
+});

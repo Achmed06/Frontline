@@ -104,6 +104,7 @@ import { lobbyCommandStatus } from "./lobby-command-status";
 import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
+import { matchStartTiming } from "./match-start-timing";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
@@ -310,6 +311,8 @@ let active = false,
   toastTimer = 0,
   matchReadyAt = 0,
   matchGoUntil = 0,
+  matchStartDurationMs = 3000,
+  allowCountdownPreselect = false,
   pauseBeganAt = 0,
   startBannerShown = false,
   finishReadyAt = 0,
@@ -400,7 +403,13 @@ function matchLive(): boolean {
   return sceneRunning() && match.state.phase !== "ended" && finishReadyAt === 0;
 }
 function selectCard(id: string) {
-  if (!matchLive()) return;
+  const preselecting =
+    active &&
+    !paused &&
+    !ended &&
+    allowCountdownPreselect &&
+    performance.now() < matchReadyAt;
+  if (!matchLive() && !preselecting) return;
   sound.unlock();
   const card = CARDS.find((c) => c.id === id)!;
   selected = selected === id ? null : id;
@@ -538,8 +547,11 @@ function start(
   active = true;
   paused = false;
   selected = null;
-  matchReadyAt = performance.now() + 3000;
-  matchGoUntil = matchReadyAt + 650;
+  const startTiming = matchStartTiming(stats.matches);
+  matchStartDurationMs = startTiming.countdownMs;
+  allowCountdownPreselect = startTiming.allowPreselect;
+  matchReadyAt = performance.now() + startTiming.countdownMs;
+  matchGoUntil = matchReadyAt + startTiming.goMs;
   startBannerShown = false;
   ended = false;
   finishReadyAt = 0;
@@ -641,6 +653,8 @@ function lobby() {
   el("deployment-countdown").hidden = true;
   matchReadyAt = 0;
   matchGoUntil = 0;
+  matchStartDurationMs = 3000;
+  allowCountdownPreselect = false;
   pauseBeganAt = 0;
   startBannerShown = false;
   el("quick-play").focus();
@@ -876,6 +890,7 @@ function updateHud(force = false) {
         COMMANDERS[match.commanders.enemy].name,
         Boolean(match.controlObjective),
         Boolean(activeDaily),
+        matchStartDurationMs,
       ),
     );
   } else if (active && !ended && now < matchGoUntil) {
@@ -888,6 +903,7 @@ function updateHud(force = false) {
         COMMANDERS[match.commanders.enemy].name,
         Boolean(match.controlObjective),
         Boolean(activeDaily),
+        matchStartDurationMs,
       ),
     );
     if (!startBannerShown) {
@@ -1038,7 +1054,20 @@ function updateHud(force = false) {
   const selectedReadiness = selectedCard
     ? energyReadiness(s.energy.player, selectedCard.cost)
     : null;
-  if (live && selectedReadiness && !selectedReadiness.affordable) {
+  const preselecting =
+    active &&
+    !live &&
+    !paused &&
+    !ended &&
+    allowCountdownPreselect &&
+    now < matchReadyAt;
+  el("cards").classList.toggle("preselecting", preselecting);
+  if (preselecting) {
+    selectedHint.textContent = selectedCard
+      ? `BEREIT BEI LOS · ${selectedCard.name}`
+      : "KARTE VORWÄHLEN · BEI LOS DIREKT EINSETZEN";
+    selectedHint.classList.remove("waiting-energy");
+  } else if (live && selectedReadiness && !selectedReadiness.affordable) {
     selectedHint.textContent =
       `ENERGIE IN ${energyWaitLabel(selectedReadiness.waitSeconds)}s · ${Math.round(selectedReadiness.progress * 100)}%`;
     selectedHint.classList.add("waiting-energy");
@@ -1091,7 +1120,7 @@ function updateHud(force = false) {
       window.setTimeout(() => b.classList.remove("ready-flash"), 720);
     }
     cardAffordable.set(card.id, readiness.affordable);
-    b.disabled = !live;
+    b.disabled = !(live || preselecting);
   }
   const commanderButton = el<HTMLButtonElement>("commander");
   const commanderDefinition = COMMANDERS[match.commanders.player];

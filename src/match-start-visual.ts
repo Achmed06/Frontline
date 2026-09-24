@@ -21,13 +21,17 @@ export function matchStartVisual(
   enemyCommander: string,
   controlObjective = false,
   daily = false,
+  totalMs = 3000,
 ): MatchStartVisual {
+  const duration =
+    Number.isFinite(totalMs) && totalMs > 0 ? Math.max(300, totalMs) : 3000;
   const remaining = Number.isFinite(remainingMs)
     ? Math.max(0, remainingMs)
-    : 3000;
-  const progress = clamp01(1 - remaining / 3000);
+    : duration;
+  const progress = clamp01(1 - remaining / duration);
+  const phase = duration / 3;
 
-  if (remaining > 2000)
+  if (remaining > phase * 2)
     return {
       phase: "cores",
       count: 3,
@@ -37,7 +41,7 @@ export function matchStartVisual(
       progress,
     };
 
-  if (remaining > 1000)
+  if (remaining > phase)
     return {
       phase: "supply",
       count: 2,
