@@ -106,6 +106,7 @@ import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { firstBattleOpeningCard } from "./first-battle-opening";
+import { unitIdentityVisual } from "./unit-identity-visual";
 import { matchStartTiming } from "./match-start-timing";
 import { quickPlayRotation } from "./quick-play-rotation";
 import { quickPlayBaseline, quickPlaySessionCue } from "./quick-play-session";
@@ -445,7 +446,9 @@ function showCardDrag(
       haptics.play("select");
     }
     const ghost = el("card-drag-ghost");
-    ghost.className = `card-drag-ghost ${card.kind}`;
+    ghost.className = `card-drag-ghost ${card.kind} identity-${
+      card.kind === "unit" ? unitIdentityVisual(card.id).kind : "ability"
+    }`;
     ghost.innerHTML = `<span>${card.cost}</span><i>${unitSvg(card.id)}</i><b>${card.name}</b>`;
     ghost.hidden = false;
   }
@@ -548,6 +551,8 @@ function renderCards(override?: readonly CardId[]) {
     const button = document.createElement("button");
     button.className = `card ${card.kind}`;
     button.dataset.card = card.id;
+    button.dataset.identity =
+      card.kind === "unit" ? unitIdentityVisual(card.id).kind : "ability";
     button.dataset.mastery = masteryRank(mastery.units[card.id] ?? 0).frame;
     button.setAttribute(
       "aria-label",
@@ -566,7 +571,7 @@ function renderCards(override?: readonly CardId[]) {
   el("deck-portraits").innerHTML = deckCards
     .map(
       (card) =>
-        `<span class="deck-portrait ${card.kind}" data-card="${card.id}" data-mastery="${masteryRank(mastery.units[card.id] ?? 0).frame}">${unitSvg(card.id)}<i>${card.cost}</i></span>`,
+        `<span class="deck-portrait ${card.kind}" data-card="${card.id}" data-identity="${card.kind === "unit" ? unitIdentityVisual(card.id).kind : "ability"}" data-mastery="${masteryRank(mastery.units[card.id] ?? 0).frame}">${unitSvg(card.id)}<i>${card.cost}</i></span>`,
     )
     .join("");
   el("deck-preview").textContent = deckCards
