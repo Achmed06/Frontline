@@ -1664,6 +1664,7 @@ export class Match {
     source: Team,
     sourceCardId?: string,
     sourcePosition?: { x: number; y: number },
+    sourceUnitId?: number,
   ): void {
     if (unit.hp <= 0) return;
     const shieldBefore = unit.shield;
@@ -1685,7 +1686,7 @@ export class Match {
         sourceCardId,
         sourcePosition,
         undefined,
-        undefined,
+        sourceUnitId,
         unit.id,
       );
       if (shieldBefore > 0 && unit.shield <= 0)
@@ -1720,7 +1721,7 @@ export class Match {
         sourceCardId,
         sourcePosition,
         undefined,
-        undefined,
+        sourceUnitId,
         unit.id,
       );
     if (unit.hp <= 0) {
@@ -1736,7 +1737,7 @@ export class Match {
         sourceCardId,
         sourcePosition,
         undefined,
-        undefined,
+        sourceUnitId,
         unit.id,
       );
       if (source === "player") this.state.stats.kills++;
@@ -1920,6 +1921,7 @@ export class Match {
           attack.unit.team,
           attack.unit.cardId,
           attack.unit,
+          attack.unit.id,
         );
         if (card.slowDuration && target.hp > 0) {
           target.slowTime = Math.max(target.slowTime, card.slowDuration);
@@ -1952,6 +1954,7 @@ export class Match {
               attack.unit.team,
               attack.unit.cardId,
               attack.target,
+              attack.unit.id,
             );
           }
         }
