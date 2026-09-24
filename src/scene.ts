@@ -1672,21 +1672,7 @@ export class ArenaScene extends Phaser.Scene {
       const firingTargetPoint =
         firing?.targetX !== undefined && firing.targetY !== undefined
           ? firingTarget
-            ? (() => {
-                const targetMotion = this.unitMotion.get(firingTarget.id);
-                if (
-                  targetMotion &&
-                  targetMotion.renderedFrame === this.renderFrame
-                )
-                  return unitRenderPosition(targetMotion.render);
-                return sampleUnitRenderPosition(
-                  targetMotion?.render,
-                  firingTarget.x,
-                  firingTarget.y,
-                  this.frameDeltaSeconds,
-                  this.reducedMotion,
-                );
-              })()
+            ? this.unitPresentationPoint(firingTarget, s.effects)
             : { x: firing.targetX, y: firing.targetY }
           : undefined;
       const repulsorMove = s.effects.find(
@@ -2017,23 +2003,7 @@ export class ArenaScene extends Phaser.Scene {
           : combatTarget.target.radius;
         const targetPresentation = combatTarget.core
           ? { x: combatTarget.target.x, y: combatTarget.target.y }
-          : (() => {
-              const targetMotion = this.unitMotion.get(
-                combatTarget.target.id,
-              );
-              if (
-                targetMotion &&
-                targetMotion.renderedFrame === this.renderFrame
-              )
-                return unitRenderPosition(targetMotion.render);
-              return sampleUnitRenderPosition(
-                targetMotion?.render,
-                combatTarget.target.x,
-                combatTarget.target.y,
-                this.frameDeltaSeconds,
-                this.reducedMotion,
-              );
-            })();
+          : this.unitPresentationPoint(combatTarget.target, s.effects);
         const targetLock = weaponTargetLockVisual(
           u.cardId,
           u.attackCooldown,
@@ -7463,11 +7433,10 @@ export class ArenaScene extends Phaser.Scene {
         for (const id of abilityTargets?.unitIds ?? []) {
           const target = s.units.find((unit) => unit.id === id);
           if (!target) continue;
-          const targetMotion = this.unitMotion.get(target.id);
-          const targetPoint =
-            targetMotion?.renderedFrame === this.renderFrame
-              ? unitRenderPosition(targetMotion.render)
-              : { x: target.x, y: target.y };
+          const targetPoint = this.unitPresentationPoint(
+            target,
+            s.effects,
+          );
           const targetX = targetPoint.x;
           const targetY = targetPoint.y;
           const pulse = 0.75 + 0.2 * Math.sin(this.clock * 6 + target.id);
@@ -7590,11 +7559,10 @@ export class ArenaScene extends Phaser.Scene {
         for (const movement of abilityTargets?.movements ?? []) {
           const target = s.units.find((unit) => unit.id === movement.unitId);
           if (!target || !movement.changed) continue;
-          const targetMotion = this.unitMotion.get(target.id);
-          const targetPoint =
-            targetMotion?.renderedFrame === this.renderFrame
-              ? unitRenderPosition(targetMotion.render)
-              : { x: target.x, y: target.y };
+          const targetPoint = this.unitPresentationPoint(
+            target,
+            s.effects,
+          );
           const targetX = targetPoint.x;
           const targetY = targetPoint.y;
           const dx = movement.x - targetX;
