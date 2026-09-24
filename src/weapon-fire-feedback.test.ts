@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { weaponFireFeedback } from "./weapon-fire-feedback";
+import { weaponFireDirection, weaponFireFeedback } from "./weapon-fire-feedback";
 
 test("heavy weapons recoil harder than precision weapons", () => {
   const ranger = weaponFireFeedback("ranger", 0.26, 0.26);
@@ -51,4 +51,29 @@ test("malformed timing stays neutral and bounded", () => {
   assert.equal(malformed.scale, 1);
   assert.equal(malformed.widthScale, 1);
   assert.equal(malformed.heightScale, 1);
+});
+
+
+test("live fire direction follows the current visible target and controls facing", () => {
+  const right = weaponFireDirection(100, 100, 140, 120, -1);
+  assert.ok(right.nx > 0);
+  assert.ok(right.ny > 0);
+  assert.equal(right.facing, 1);
+
+  const left = weaponFireDirection(100, 100, 70, 80, 1);
+  assert.ok(left.nx < 0);
+  assert.ok(left.ny < 0);
+  assert.equal(left.facing, -1);
+});
+
+test("near-vertical and coincident fire keep the previous horizontal facing", () => {
+  const vertical = weaponFireDirection(100, 100, 100.4, 60, -1);
+  assert.equal(vertical.facing, -1);
+  assert.ok(vertical.ny < -0.99);
+
+  const coincident = weaponFireDirection(100, 100, 100, 100, -1);
+  assert.equal(coincident.distance, 0);
+  assert.equal(coincident.nx, 0);
+  assert.equal(coincident.ny, 0);
+  assert.equal(coincident.facing, -1);
 });
