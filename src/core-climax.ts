@@ -100,3 +100,15 @@ export function strongestCoreImpactClimax(
   }
   return strongest;
 }
+
+export function coreBreakCue(
+  brokenTeam: "player" | "enemy",
+  playerCoreHp: number,
+  enemyCoreHp: number,
+): "coreBreak" | "coreLost" | null {
+  const playerBroken = Number.isFinite(playerCoreHp) && playerCoreHp <= 0;
+  const enemyBroken = Number.isFinite(enemyCoreHp) && enemyCoreHp <= 0;
+  if (playerBroken && enemyBroken) return null;
+  return brokenTeam === "enemy" ? "coreBreak" : "coreLost";
+}
+
