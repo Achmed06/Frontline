@@ -7864,3 +7864,47 @@ a.privacy-link:focus-visible,
   background: #32211fe6;
 }
 
+/* v1.89: Quick Play battlefield playlist. */
+.play-now-hero[data-arena="coast"] {
+  border-color: #778c54;
+  background:
+    radial-gradient(circle at 80% 22%, #66e1ed1c, transparent 28%),
+    linear-gradient(150deg, #273b2c 0%, #182a26 54%, #101f22 100%);
+}
+.play-now-hero[data-arena="frost"] {
+  border-color: #6f91a3;
+  background:
+    radial-gradient(circle at 80% 22%, #a5ebff22, transparent 30%),
+    linear-gradient(150deg, #294552 0%, #1c3340 54%, #152638 100%);
+}
+.play-now-hero[data-arena="ember"] {
+  border-color: #9a6b4e;
+  background:
+    radial-gradient(circle at 80% 22%, #ffa04f20, transparent 30%),
+    linear-gradient(150deg, #4a3227 0%, #30272a 54%, #251b24 100%);
+}
+.play-now-hero[data-arena="nexus"] {
+  border-color: #77689a;
+  background:
+    radial-gradient(circle at 80% 22%, #b9a0ff22, transparent 30%),
+    linear-gradient(150deg, #352f50 0%, #272b42 54%, #1b2438 100%);
+}
+.play-now-hero[data-arena="frost"] h2 em {
+  color: #c9f4ff;
+}
+.play-now-hero[data-arena="ember"] h2 em {
+  color: #ffc88f;
+}
+.play-now-hero[data-arena="nexus"] h2 em {
+  color: #d4c2ff;
+}
+.play-now-hero[data-arena="frost"] .play-now-meta span {
+  border-color: #648797;
+}
+.play-now-hero[data-arena="ember"] .play-now-meta span {
+  border-color: #8d684f;
+}
+.play-now-hero[data-arena="nexus"] .play-now-meta span {
+  border-color: #72638b;
+}
+
