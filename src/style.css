@@ -7965,3 +7965,132 @@ a.privacy-link:focus-visible,
   }
 }
 
+/* v1.91: compact live territory race in the existing resource row. */
+.territory-count {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 5px;
+  min-width: 92px;
+  padding: 3px 5px;
+  border: 1px solid #40554b;
+  border-radius: 4px;
+  background: #10211dd4;
+  color: #b2c1ad;
+}
+.territory-score {
+  display: grid;
+  grid-template-columns: 12px auto 12px;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  font: 800 7px/1 monospace;
+}
+.territory-score b:first-child {
+  color: #b9f0d4;
+  text-align: right;
+}
+.territory-score b:last-child {
+  color: #efad9c;
+}
+.territory-score i {
+  color: #7f9488;
+  font-size: 5px;
+  font-style: normal;
+  letter-spacing: .45px;
+}
+.territory-segments {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(2px, 1fr));
+  gap: 1px;
+  width: 44px;
+}
+.territory-segments i {
+  height: 5px;
+  border-radius: 1px;
+  background: #59635d;
+  box-shadow: inset 0 0 0 1px #ffffff08;
+  transition:
+    background .16s ease,
+    box-shadow .16s ease,
+    transform .16s ease;
+}
+.territory-segments i[data-owner="player"] {
+  background: #7ccea8;
+  box-shadow: 0 0 4px #64d6a34a;
+}
+.territory-segments i[data-owner="enemy"] {
+  background: #d87867;
+  box-shadow: 0 0 4px #e56f5d3d;
+}
+.territory-segments i[data-owner="neutral"] {
+  background: #66706a;
+}
+.territory-count[data-front-state="player"] {
+  border-color: #537a65;
+  background: #14271fdc;
+}
+.territory-count[data-front-state="enemy"] {
+  border-color: #75544c;
+  background: #2b1f1ddc;
+}
+.territory-count.front-shift {
+  animation: front-race-shift .52s ease-out;
+}
+@keyframes front-race-shift {
+  0% {
+    transform: scale(.97);
+    box-shadow: 0 0 0 #ffffff00;
+  }
+  32% {
+    transform: scale(1.035);
+    box-shadow: 0 0 12px #f0e99b55;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 #ffffff00;
+  }
+}
+
+.device[data-match-layout="tight"] .territory-count {
+  min-width: 82px;
+  gap: 4px;
+  padding-inline: 4px;
+}
+.device[data-match-layout="tight"] .territory-segments {
+  width: 36px;
+}
+.device[data-match-layout="tight"] .territory-score {
+  grid-template-columns: 10px auto 10px;
+  gap: 2px;
+  font-size: 6.5px;
+}
+.device[data-match-layout="tight"] .territory-score i {
+  font-size: 4.5px;
+}
+
+@media (max-width: 370px) {
+  .territory-count {
+    min-width: 76px;
+    gap: 3px;
+  }
+  .territory-segments {
+    width: 31px;
+  }
+  .territory-score {
+    grid-template-columns: 9px auto 9px;
+    gap: 2px;
+    font-size: 6px;
+  }
+  .territory-score i {
+    font-size: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .territory-count.front-shift {
+    animation: none;
+    box-shadow: inset 0 0 0 1px #e8df8a55;
+  }
+}
+
