@@ -13,7 +13,8 @@ export type SoundCue =
   | "ability"
   | "commander"
   | "enemyCommander"
-  | "start";
+  | "start"
+  | "unlock";
 
 export type ToneLayer = {
   wave: "sine" | "triangle" | "square" | "sawtooth";
@@ -118,6 +119,14 @@ const SPECS: Record<SoundCue, SoundCueSpec> = {
       tone("sine", 330, 660, 0.085, 0.2, 0.029),
     ],
     noise: { delay: 0, duration: 0.055, gain: 0.011, lowpass: 1000 },
+  },
+  unlock: {
+    tones: [
+      tone("sine", 392, 392, 0, 0.12, 0.025),
+      tone("sine", 523, 523, 0.06, 0.14, 0.029),
+      tone("triangle", 659, 784, 0.13, 0.2, 0.036),
+    ],
+    noise: { delay: 0.04, duration: 0.08, gain: 0.008, lowpass: 1400 },
   },
   win: {
     tones: [
