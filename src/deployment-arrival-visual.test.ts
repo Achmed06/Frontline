@@ -51,6 +51,7 @@ test("real spawn events carry card identity and unit radius", () => {
   assert.ok(spawn);
   assert.equal(spawn?.sourceCardId, "bulwark");
   assert.equal(spawn?.radius, unit.radius);
+  assert.equal(spawn?.targetUnitId, unit.id);
   assert.equal(deploymentArrivalVisual(spawn)?.kind, "heavy");
 });
 

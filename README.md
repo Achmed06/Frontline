@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.07
+## Current v2.08
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2224,3 +2224,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies combat impacts retain the exact damaged unit ID
 - damage, hit timing, targeting, movement, recoil strength and deterministic combat simulation are unchanged
 - release: package 2.7.0 / v2.07 / iOS 2.07 (207)
+
+
+## v2.08 changes
+
+- deployment spawn effects now retain the exact spawned unit ID
+- the unit arrival scale and vertical landing offset remain active for the full deployment animation even after the unit begins moving away from its spawn coordinate
+- spawn lookup resolves by unit identity first and keeps the previous coordinate fallback for legacy transient effects without IDs
+- the deployment beam, ground ring and other world-space spawn geometry intentionally remain anchored to the original deployment point
+- swarm members each retain their own spawn identity, so concurrent arrivals cannot steal each other's animation
+- regression coverage verifies real spawn effects retain the spawned unit ID
+- unit speed, deployment legality, spawn positions, energy cost, combat timing and deterministic simulation are unchanged
+- release: package 2.8.0 / v2.08 / iOS 2.08 (208)
