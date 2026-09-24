@@ -95,7 +95,7 @@ import {
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { resultDecision, resultSnapshot } from "./result-debrief";
-import { resultMomentum, resultReplayLabel } from "./result-loop";
+import { quickPlayResultMomentum, resultMomentum, resultReplayLabel } from "./result-loop";
 import { nextBattleProgress } from "./battle-progress";
 import { rewardReveal } from "./reward-reveal";
 import { dailyPreparation, seriesPreparation } from "./mode-preparation";
@@ -270,9 +270,13 @@ function updateFirstSessionFocus(): void {
   el<HTMLElement>("campaign-quick-card").hidden = !focus.showSecondaryPlay;
   el<HTMLElement>("play-secondary-actions").hidden = !focus.showSecondaryPlay;
   el<HTMLDetailsElement>("advanced-battle").hidden = !focus.showAdvancedBattle;
-  const rotation = quickPlayRotation(stats.matches);
+  const rotation = quickPlayRotation(stats.quickPlayMatches ?? 0);
   const session = quickPlaySessionCue(
-    history,
+    {
+      completedMatches: stats.quickPlayMatches ?? 0,
+      winStreak: stats.quickPlayWinStreak ?? 0,
+      lastOutcome: stats.quickPlayLastOutcome ?? null,
+    },
     rotation.arenaName,
     rotation.matchNumber,
   );
@@ -685,7 +689,7 @@ function start(
   activeQuickPlay =
     quickPlay && !mission && !daily && !inSeries && !draftDeck;
   const quickPlaySetup = activeQuickPlay
-    ? quickPlayRotation(stats.matches)
+    ? quickPlayRotation(stats.quickPlayMatches ?? 0)
     : null;
   const chosenArena = el<HTMLSelectElement>("arena-theme").value;
   arenaTheme = daily
@@ -916,18 +920,25 @@ function finish() {
   el<HTMLButtonElement>("pause").disabled = true;
   const won = match.state.winner === "player",
     draw = match.state.winner === "draw";
-  const previousMatches = stats.matches;
-  stats.matches++;
-  const unlockedMainLobby = firstMatchUnlock(previousMatches, stats.matches);
-  if (won) stats.wins++;
-  saveStats(stats);
-  updateRecord();
-  sound.play(won ? "win" : draw ? "draw" : "lose");
-  haptics.play(won ? "success" : draw ? "warning" : "error");
   const wasSeries = activeSeries;
   const wasDraft = activeDraftDeck !== null;
   const wasQuickPlay = activeQuickPlay;
   const daily = activeDaily;
+  const previousMatches = stats.matches;
+  stats.matches++;
+  const unlockedMainLobby = firstMatchUnlock(previousMatches, stats.matches);
+  if (won) stats.wins++;
+  if (wasQuickPlay) {
+    stats.quickPlayMatches = (stats.quickPlayMatches ?? 0) + 1;
+    stats.quickPlayLastOutcome = match.state.winner ?? "draw";
+    stats.quickPlayWinStreak = won
+      ? (stats.quickPlayWinStreak ?? 0) + 1
+      : 0;
+  }
+  saveStats(stats);
+  updateRecord();
+  sound.play(won ? "win" : draw ? "draw" : "lose");
+  haptics.play(won ? "success" : draw ? "warning" : "error");
   const wasDaily = daily !== null;
   let seriesResult = "";
   let dailyResult = "";
@@ -1011,7 +1022,12 @@ function finish() {
   history.unshift(report);
   history.length = Math.min(history.length, HISTORY_LIMIT);
   const recorded = saveHistory(history);
-  const momentum = resultMomentum(history);
+  const momentum = wasQuickPlay
+    ? quickPlayResultMomentum(
+        report.outcome,
+        stats.quickPlayWinStreak ?? 0,
+      )
+    : resultMomentum(history);
   const rematchLabel = wasDraft
     ? "NEUES DECK DRAFTEN"
     : wasSeries
@@ -1024,7 +1040,9 @@ function finish() {
           ? "EINSATZ WIEDERHOLEN"
           : resultReplayLabel(report.outcome, {
               quickPlay: wasQuickPlay,
-              streak: momentum.streak,
+              streak: wasQuickPlay
+                ? stats.quickPlayWinStreak ?? 0
+                : momentum.streak,
             });
   const nextAction = nextMission
     ? `<button id="next-mission" class="primary result-next-primary">NÄCHSTER EINSATZ <span>↗</span></button><button id="rematch" class="secondary">${rematchLabel} <span>↗</span></button>`
@@ -1099,9 +1117,13 @@ function currentMatchStartVisual(remainingMs: number): MatchStartVisual {
     matchStartDurationMs,
   );
   if (!activeQuickPlay || visual.phase !== "cores") return visual;
-  const rotation = quickPlayRotation(stats.matches);
+  const rotation = quickPlayRotation(stats.quickPlayMatches ?? 0);
   const session = quickPlaySessionCue(
-    history,
+    {
+      completedMatches: stats.quickPlayMatches ?? 0,
+      winStreak: stats.quickPlayWinStreak ?? 0,
+      lastOutcome: stats.quickPlayLastOutcome ?? null,
+    },
     ARENA_THEMES[arenaTheme].name,
     rotation.matchNumber,
   );
