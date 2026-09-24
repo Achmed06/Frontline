@@ -5329,6 +5329,31 @@ export class ArenaScene extends Phaser.Scene {
               arrival.ringRadius * 0.39,
             );
 
+            if (arrival.landingPunch > 0.04) {
+              const punch = arrival.landingPunch;
+              fx.lineStyle(
+                arrival.kind === "heavy" ? 2.2 : 1.35,
+                0xffffff,
+                arrival.alpha * punch * 0.46,
+              );
+              fx.strokeEllipse(
+                e.x,
+                e.y + 7,
+                arrival.shockRadius * (1.4 + punch * 0.72),
+                arrival.shockRadius * (0.34 + punch * 0.1),
+              );
+              fx.fillStyle(
+                effectColor,
+                arrival.alpha * punch * 0.06,
+              );
+              fx.fillEllipse(
+                e.x,
+                e.y + 8,
+                arrival.shockRadius * (1.1 + punch * 0.38),
+                arrival.shockRadius * 0.24,
+              );
+            }
+
             if (arrival.kind === "heavy") {
               fx.lineStyle(
                 1.7,
