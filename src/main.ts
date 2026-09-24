@@ -106,6 +106,7 @@ import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { matchStartTiming } from "./match-start-timing";
+import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
@@ -324,6 +325,7 @@ let active = false,
     (point) => point.owner,
   );
 const battleNotices = new Set<string>();
+let battleMomentumMemory: BattleMomentumMemory = INITIAL_BATTLE_MOMENTUM;
 let bannerUntil = 0;
 let nextCampaignMission: Mission = MISSIONS[0];
 let difficulty: "rookie" | "standard" | "veteran" = "rookie";
@@ -561,6 +563,7 @@ function start(
   commanderReadyFlashUntil = 0;
   lastCaptured = 0;
   battleNotices.clear();
+  battleMomentumMemory = INITIAL_BATTLE_MOMENTUM;
   bannerUntil = 0;
   el("battle-banner").hidden = true;
   el("deployment-countdown").hidden = false;
@@ -582,10 +585,15 @@ function start(
   updateSelection();
   updateHud(true);
 }
-function announceBattle(label: string, title: string, danger = false) {
+function announceBattle(
+  label: string,
+  title: string,
+  tone: "neutral" | "danger" | "opportunity" = "neutral",
+) {
   el("battle-banner-label").textContent = label;
   el("battle-banner-title").textContent = title;
-  el("battle-banner").classList.toggle("danger", danger);
+  el("battle-banner").classList.toggle("danger", tone === "danger");
+  el("battle-banner").classList.toggle("opportunity", tone === "opportunity");
   el("battle-banner").hidden = false;
   bannerUntil = match.state.time + 2.5;
 }
@@ -1011,8 +1019,39 @@ function updateHud(force = false) {
             : notice === "overtime"
               ? "45 SEKUNDEN · CORE ODER SCHLUSSWERTUNG"
               : "JETZT ENTSCHEIDET’S",
-        notice === "playerCritical",
+        notice === "playerCritical" ? "danger" : notice === "enemyCritical" ? "opportunity" : "neutral",
       );
+    }
+
+    if (!notice && s.time >= bannerUntil) {
+      const playerPoints = s.points.filter(
+        (point) => point.owner === "player",
+      ).length;
+      const enemyPoints = s.points.filter(
+        (point) => point.owner === "enemy",
+      ).length;
+      const momentum = battleMomentum(battleMomentumMemory, {
+        time: s.time,
+        playerPoints,
+        enemyPoints,
+      });
+      battleMomentumMemory = momentum.memory;
+      if (momentum.event) {
+        if (momentum.event.tone === "danger") {
+          sound.play("warning");
+          haptics.play("warning");
+        } else {
+          sound.play("opportunity");
+          haptics.play(
+            momentum.event.id === "comeback" ? "success" : "capture",
+          );
+        }
+        announceBattle(
+          momentum.event.label,
+          momentum.event.title,
+          momentum.event.tone,
+        );
+      }
     }
   }
   const remaining = Math.max(
