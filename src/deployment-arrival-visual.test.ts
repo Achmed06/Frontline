@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Match } from "./engine";
-import { deploymentArrivalVisual } from "./deployment-arrival-visual";
+import {
+  deploymentArrivalVisual,
+  deploymentPresentationPoint,
+} from "./deployment-arrival-visual";
 
 test("deployment styles differentiate heavy, siege, swarm and support units", () => {
   const heavy = deploymentArrivalVisual({
@@ -81,4 +84,59 @@ test("malformed timing stays bounded", () => {
   assert.equal(visual?.alpha, 0);
   assert.ok((visual?.ringRadius ?? 0) > 0);
   assert.ok((visual?.spriteScale ?? 0) > 0);
+});
+
+test("new units stay anchored briefly before catching up to simulation position", () => {
+  const earlyEffect = {
+    type: "spawn" as const,
+    life: 0.58,
+    maxLife: 0.65,
+    radius: 10,
+    sourceCardId: "vanguard",
+    x: 120,
+    y: 430,
+  };
+  const early = deploymentPresentationPoint(earlyEffect, 140, 400);
+  assert.deepEqual(early, { x: 120, y: 430 });
+
+  const lateEffect = { ...earlyEffect, life: 0.13 };
+  const late = deploymentPresentationPoint(lateEffect, 140, 400);
+  assert.ok(late);
+  assert.ok((late?.x ?? 0) > 135);
+  assert.ok((late?.y ?? 999) < 407);
+});
+
+test("reduced motion skips deployment anchoring", () => {
+  const effect = {
+    type: "spawn" as const,
+    life: 0.58,
+    maxLife: 0.65,
+    radius: 10,
+    sourceCardId: "vanguard",
+    x: 120,
+    y: 430,
+  };
+  assert.deepEqual(
+    deploymentPresentationPoint(effect, 140, 400, true),
+    { x: 140, y: 400 },
+  );
+});
+
+test("heavy deployment has more landing punch and less launch stretch than swarm", () => {
+  const heavy = deploymentArrivalVisual({
+    type: "spawn",
+    life: 0.4,
+    maxLife: 0.65,
+    radius: 14,
+    sourceCardId: "bulwark",
+  });
+  const swarm = deploymentArrivalVisual({
+    type: "spawn",
+    life: 0.4,
+    maxLife: 0.65,
+    radius: 7,
+    sourceCardId: "swarm",
+  });
+  assert.ok((heavy?.landingPunch ?? 0) > (swarm?.landingPunch ?? 0));
+  assert.ok((heavy?.launchStretch ?? 2) < (swarm?.launchStretch ?? 0));
 });
