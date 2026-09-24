@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.19
+## Current v2.20
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -21,6 +21,7 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - Kill confirmation layer with restrained player-only audio/haptics, heavier feedback for durable targets and grouped multi-kill throttling
 - Core-climax escalation that strengthens damaged/critical Core impacts and the immediate Core break moment without changing combat rules
 - Dynamic match-rhythm presentation that escalates arena atmosphere and neutral guidance from opening through battle, pressure and climax without changing balance
+- Per-unit identity profiles that separate battlefield silhouette, motion, stance markers and card/drag presentation without changing hitboxes or balance
 
 ### Progression and modes
 
