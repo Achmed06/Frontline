@@ -58,7 +58,7 @@ import {
   type UnitVitalsTrail,
 } from "./unit-vitals";
 import {
-  sampleUnitMotion,
+  sampleUnitMotionFrame,
   sampleUnitRenderPosition,
   unitTrailPoint,
   type UnitFacing,
@@ -1571,21 +1571,18 @@ export class ArenaScene extends Phaser.Scene {
           effect.targetY !== undefined,
       );
       const previous = this.unitMotion.get(u.id);
+      const motion = sampleUnitMotionFrame(
+        previous,
+        u.x,
+        u.y,
+        s.time,
+        firing?.targetX,
+      );
       const simulationAdvanced =
         !previous ||
-        previous.sampledAt !== s.time ||
-        Math.abs(previous.x - u.x) > 1e-6 ||
-        Math.abs(previous.y - u.y) > 1e-6;
-      const motion = simulationAdvanced
-        ? sampleUnitMotion(previous, u.x, u.y, firing?.targetX)
-        : {
-            dx: previous.dx,
-            dy: previous.dy,
-            moved: previous.moved,
-            moving: previous.moving,
-            facing: previous.facing,
-            stopped: false,
-          };
+        previous.sampledAt !== motion.sampledAt ||
+        Math.abs(previous.x - motion.x) > 1e-6 ||
+        Math.abs(previous.y - motion.y) > 1e-6;
       const phaseRate = simulationAdvanced
         ? Math.min(0.9, motion.moved * 0.42) * 30
         : previous?.phaseRate ?? 0;
