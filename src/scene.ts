@@ -392,9 +392,39 @@ export class ArenaScene extends Phaser.Scene {
     ]);
   }
 
+  private unitPresentationPoint(
+    unit: Unit,
+    effects?: readonly Effect[],
+  ): { x: number; y: number } {
+    const repulsorMove = effects?.find(
+      (effect) =>
+        effect.type === "repulsor-move" &&
+        effect.targetUnitId === unit.id &&
+        effect.life > 0,
+    );
+    const repulsorPoint = repulsorDisplacementPoint(
+      repulsorMove,
+      this.reducedMotion,
+    );
+    if (repulsorPoint) return repulsorPoint;
+
+    const motion = this.unitMotion.get(unit.id);
+    if (!motion) return { x: unit.x, y: unit.y };
+    if (motion.renderedFrame === this.renderFrame)
+      return unitRenderPosition(motion.render);
+    return sampleUnitRenderPosition(
+      motion.render,
+      unit.x,
+      unit.y,
+      this.frameDeltaSeconds,
+      this.reducedMotion,
+    );
+  }
+
   private drawCoreTargetAcquisition(
     team: "player" | "enemy",
     target?: Unit,
+    targetPoint?: { x: number; y: number },
   ) {
     if (!target) {
       this.coreTargetAcquisition.delete(team);
@@ -416,13 +446,15 @@ export class ArenaScene extends Phaser.Scene {
     );
     if (!visual.active) return;
 
+    const targetX = targetPoint?.x ?? target.x;
+    const targetY = targetPoint?.y ?? target.y;
     const fx = this.fx;
     const color = team === "player" ? MINT : CORAL;
     const bright = team === "player" ? 0xd9fff1 : 0xffe4d8;
     const coreX = 210;
     const coreY = team === "player" ? 525 : 35;
-    const dx = target.x - coreX;
-    const dy = target.y - coreY;
+    const dx = targetX - coreX;
+    const dy = targetY - coreY;
     const distance = Math.max(0.001, Math.hypot(dx, dy));
     const nx = dx / distance;
     const ny = dy / distance;
@@ -431,14 +463,14 @@ export class ArenaScene extends Phaser.Scene {
 
     fx.lineStyle(1.4, color, visual.alpha * 0.62);
     fx.strokeCircle(
-      target.x,
-      target.y,
+      targetX,
+      targetY,
       visual.ringRadius,
     );
     fx.lineStyle(1, bright, visual.alpha * 0.48);
     fx.strokeCircle(
-      target.x,
-      target.y,
+      targetX,
+      targetY,
       visual.innerRadius,
     );
 
@@ -451,11 +483,11 @@ export class ArenaScene extends Phaser.Scene {
         (sweep * Math.PI * 2) /
           visual.sweepCount;
       const sx =
-        target.x +
+        targetX +
         Math.cos(angle) *
           visual.ringRadius;
       const sy =
-        target.y +
+        targetY +
         Math.sin(angle) *
           visual.ringRadius;
       const tx = -Math.sin(angle);
@@ -479,11 +511,11 @@ export class ArenaScene extends Phaser.Scene {
     for (const forward of [-1, 1]) {
       for (const side of [-1, 1]) {
         const bx =
-          target.x +
+          targetX +
           nx * forward * bracket +
           px * side * bracket;
         const by =
-          target.y +
+          targetY +
           ny * forward * bracket +
           py * side * bracket;
         fx.lineBetween(
@@ -502,7 +534,7 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     fx.lineStyle(1, color, visual.alpha * 0.3);
-    fx.lineBetween(coreX, coreY, target.x, target.y);
+    fx.lineBetween(coreX, coreY, targetX, targetY);
 
     if (!this.reducedMotion) {
       const scanX = coreX + dx * visual.scanT;
