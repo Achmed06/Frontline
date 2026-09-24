@@ -4,6 +4,8 @@ export type SoundCue =
   | "deploy"
   | "deployHeavy"
   | "capture"
+  | "contact"
+  | "heavyContact"
   | "kill"
   | "heavyKill"
   | "coreImpact"
@@ -106,6 +108,20 @@ const SPECS: Record<SoundCue, SoundCueSpec> = {
       tone("sine", 495, 495, 0.055, 0.14, 0.031),
       tone("triangle", 660, 690, 0.11, 0.16, 0.033),
     ],
+  },
+  contact: {
+    tones: [
+      tone("triangle", 210, 104, 0, 0.09, 0.032),
+      tone("sine", 540, 390, 0.012, 0.075, 0.016),
+    ],
+    noise: { delay: 0, duration: 0.042, gain: 0.011, lowpass: 980 },
+  },
+  heavyContact: {
+    tones: [
+      tone("triangle", 132, 54, 0, 0.14, 0.046),
+      tone("sine", 360, 180, 0.01, 0.11, 0.021),
+    ],
+    noise: { delay: 0, duration: 0.07, gain: 0.018, lowpass: 620 },
   },
   kill: {
     tones: [
