@@ -77,12 +77,20 @@ export function frontSurge(
     };
   }
 
-  const count = recent.filter((capture) => capture.team === latest.team).length;
+  const teamsThisTick = new Set(captures.map((capture) => capture.team));
+  const lastOpposingCapture = [...recent]
+    .reverse()
+    .find((capture) => capture.team !== latest.team);
+  const count = recent.filter(
+    (capture) =>
+      capture.team === latest.team &&
+      (!lastOpposingCapture || capture.time > lastOpposingCapture.time),
+  ).length;
   const lastTriggeredAt =
     latest.team === "player" ? memory.lastPlayerAt : memory.lastEnemyAt;
   const cooledDown = time - lastTriggeredAt >= FRONT_SURGE_COOLDOWN_SECONDS;
 
-  if (count < 2 || !cooledDown) {
+  if (teamsThisTick.size > 1 || count < 2 || !cooledDown) {
     return {
       memory: {
         ...memory,
