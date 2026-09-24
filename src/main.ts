@@ -105,6 +105,7 @@ import { lobbyCommandStatus } from "./lobby-command-status";
 import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
+import { firstBattleOpeningCard } from "./first-battle-opening";
 import { matchStartTiming } from "./match-start-timing";
 import { quickPlayRotation } from "./quick-play-rotation";
 import { quickPlayBaseline, quickPlaySessionCue } from "./quick-play-session";
@@ -767,7 +768,11 @@ function start(
     "card-drop-ready",
     "card-drop-invalid",
   );
-  selected = null;
+  selected = firstBattleOpeningCard(
+    stats.matches,
+    match.decks.player,
+    match.state.energy.player,
+  );
   const startTiming = matchStartTiming(stats.matches);
   matchStartDurationMs = startTiming.countdownMs;
   allowCountdownPreselect = startTiming.allowPreselect;
@@ -1128,6 +1133,11 @@ function setCoachFocus(focus: BattleCoachFocus | null) {
 }
 
 function currentMatchStartVisual(remainingMs: number): MatchStartVisual {
+  const firstBattle = stats.matches === 0;
+  const selectedCardName =
+    firstBattle && selected
+      ? CARDS.find((card) => card.id === selected)?.name ?? ""
+      : "";
   const visual = matchStartVisual(
     remainingMs,
     COMMANDERS[match.commanders.player].name,
@@ -1135,8 +1145,10 @@ function currentMatchStartVisual(remainingMs: number): MatchStartVisual {
     Boolean(match.controlObjective),
     Boolean(activeDaily),
     matchStartDurationMs,
+    firstBattle,
+    selectedCardName,
   );
-  if (!activeQuickPlay || visual.phase !== "cores") return visual;
+  if (firstBattle || !activeQuickPlay || visual.phase !== "cores") return visual;
   const rotation = quickPlayRotation(stats.quickPlayMatches ?? 0);
   const session = quickPlaySessionCue(
     {
@@ -1200,9 +1212,24 @@ function updateHud(force = false) {
     );
     if (!startBannerShown) {
       startBannerShown = true;
+      const firstBattle = stats.matches === 0;
+      const openingCard =
+        firstBattle && selected
+          ? CARDS.find((card) => card.id === selected)
+          : undefined;
       announceBattle(
-        activeDaily ? "TAGESFRONT" : "DEIN AUFTRAG",
-        match.controlObjective ? "RELAIS SICHERN" : "FRONT DURCHBRECHEN",
+        firstBattle
+          ? "ERSTER ZUG"
+          : activeDaily
+            ? "TAGESFRONT"
+            : "DEIN AUFTRAG",
+        firstBattle
+          ? openingCard
+            ? `${openingCard.name.toUpperCase()} IM GRÜNEN FELD EINSETZEN`
+            : "TRUPPE IM GRÜNEN FELD EINSETZEN"
+          : match.controlObjective
+            ? "RELAIS SICHERN"
+            : "FRONT DURCHBRECHEN",
       );
     }
   } else {
