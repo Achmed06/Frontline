@@ -38,6 +38,8 @@ const neutral = (): CoreTurretFireFeedback => ({
 
 export function coreTurretFireFeedback(
   effect: ShotEffect | undefined,
+  targetXOverride?: number,
+  targetYOverride?: number,
 ): CoreTurretFireFeedback {
   if (
     !effect ||
@@ -50,8 +52,12 @@ export function coreTurretFireFeedback(
   )
     return neutral();
 
-  const dx = (effect.targetX as number) - effect.x;
-  const dy = (effect.targetY as number) - effect.y;
+  const targetX =
+    Number.isFinite(targetXOverride) ? (targetXOverride as number) : (effect.targetX as number);
+  const targetY =
+    Number.isFinite(targetYOverride) ? (targetYOverride as number) : (effect.targetY as number);
+  const dx = targetX - effect.x;
+  const dy = targetY - effect.y;
   const distance = Math.hypot(dx, dy);
   if (!Number.isFinite(distance) || distance < 0.001) return neutral();
 
