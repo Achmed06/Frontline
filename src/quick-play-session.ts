@@ -1,4 +1,8 @@
-import type { MatchRecord } from "./storage";
+export type QuickPlaySessionState = {
+  completedMatches?: number;
+  winStreak?: number;
+  lastOutcome?: "player" | "enemy" | "draw" | null;
+};
 
 export type QuickPlaySessionCue = {
   tone: "neutral" | "hot" | "rebound";
@@ -13,7 +17,7 @@ export type QuickPlaySessionCue = {
 };
 
 export function quickPlaySessionCue(
-  records: readonly MatchRecord[],
+  session: QuickPlaySessionState,
   arenaName: string,
   matchNumber: number,
 ): QuickPlaySessionCue {
@@ -22,9 +26,25 @@ export function quickPlaySessionCue(
     Number.isFinite(matchNumber) && matchNumber > 0
       ? Math.floor(matchNumber)
       : 1;
-  const latest = records[0];
+  const completedMatches =
+    Number.isFinite(session.completedMatches) &&
+    (session.completedMatches ?? 0) > 0
+      ? Math.floor(session.completedMatches!)
+      : 0;
+  const outcome =
+    session.lastOutcome === "player" ||
+    session.lastOutcome === "enemy" ||
+    session.lastOutcome === "draw"
+      ? session.lastOutcome
+      : null;
+  const streak =
+    outcome === "player" &&
+    Number.isFinite(session.winStreak) &&
+    (session.winStreak ?? 0) > 0
+      ? Math.min(completedMatches, Math.floor(session.winStreak!))
+      : 0;
 
-  if (!latest)
+  if (completedMatches === 0 || !outcome)
     return {
       tone: "neutral",
       streak: 0,
@@ -37,12 +57,7 @@ export function quickPlaySessionCue(
       startDetail: `FRONT ${safeMatch} · LOADOUT BEREIT`,
     };
 
-  if (latest.outcome === "player") {
-    let streak = 0;
-    for (const record of records) {
-      if (record.outcome !== "player") break;
-      streak++;
-    }
+  if (outcome === "player") {
     if (streak >= 2)
       return {
         tone: "hot",
@@ -68,7 +83,7 @@ export function quickPlaySessionCue(
     };
   }
 
-  if (latest.outcome === "enemy")
+  if (outcome === "enemy")
     return {
       tone: "rebound",
       streak: 0,

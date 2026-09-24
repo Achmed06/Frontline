@@ -12,6 +12,7 @@ import {
   HISTORY_LIMIT,
   readCampaign,
   saveCampaign,
+  normalizeStats,
 } from "./storage.ts";
 
 test("deck persistence validates data, preserves old stats and recovers from bad saves", () => {
@@ -163,4 +164,45 @@ test("history preserves feedback and existing saves, caps records and rejects co
     if (original) Object.defineProperty(globalThis, "localStorage", original);
     else Reflect.deleteProperty(globalThis, "localStorage");
   }
+});
+
+
+test("Quick Play stats stay optional for legacy saves and normalize independently", () => {
+  const legacy = {
+    matches: 7,
+    wins: 3,
+    rematches: 2,
+    lastFeedback: "again",
+  };
+  assert.deepEqual(normalizeStats(legacy), legacy);
+
+  assert.deepEqual(
+    normalizeStats({
+      ...legacy,
+      quickPlayMatches: 5,
+      quickPlayWinStreak: 3,
+      quickPlayLastOutcome: "player",
+    }),
+    {
+      ...legacy,
+      quickPlayMatches: 5,
+      quickPlayWinStreak: 3,
+      quickPlayLastOutcome: "player",
+    },
+  );
+
+  assert.deepEqual(
+    normalizeStats({
+      ...legacy,
+      quickPlayMatches: 2,
+      quickPlayWinStreak: 99,
+      quickPlayLastOutcome: "enemy",
+    }),
+    {
+      ...legacy,
+      quickPlayMatches: 2,
+      quickPlayWinStreak: 0,
+      quickPlayLastOutcome: "enemy",
+    },
+  );
 });

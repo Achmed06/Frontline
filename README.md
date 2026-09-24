@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.95
+## Current v1.96
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2064,3 +2064,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies the replay-copy states; the existing rotation suite continues to verify first-match rookie difficulty and later standard difficulty
 - combat stats, cards, energy, bot logic, objectives, rewards, progression and match duration are unchanged
 - release: package 1.95.0 / v1.95 / iOS 1.95 (195)
+
+
+## v1.96 changes
+
+- Quick Play progression is now isolated from campaign, Draft, Tagesfront, Einsatzserie and custom training results
+- arena rotation and the first-match REKRUT onboarding now count completed Quick Play matches only, instead of all matches on the device
+- Quick Play win streak, last outcome and replay momentum are stored separately from the global match record
+- campaign or event wins can no longer create a false Quick Play SERIE ×N state, and losses outside Quick Play no longer break a real Quick Play streak
+- the result screen uses the dedicated Quick Play streak when a Schnellgefecht ends; other modes keep the existing general result momentum
+- old stats saves remain valid because the new Quick Play fields are optional and normalized only when present
+- portable v1/v2 backups therefore remain compatible without a format migration; new backups preserve the additional fields automatically once Quick Play has been played
+- malformed Quick Play counters fail safe, streaks cannot exceed completed Quick Play matches, and non-win outcomes reset the stored streak
+- regression coverage verifies isolated session cues, legacy stats compatibility and Quick Play-only result momentum
+- combat values, bot logic, cards, energy, rewards, campaign progression and match duration are unchanged
+- release: package 1.96.0 / v1.96 / iOS 1.96 (196)

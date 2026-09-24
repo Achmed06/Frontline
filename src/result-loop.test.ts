@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resultMomentum, resultReplayLabel } from "./result-loop";
+import { quickPlayResultMomentum, resultMomentum, resultReplayLabel } from "./result-loop";
 import type { MatchRecord } from "./storage";
 
 const record = (outcome: MatchRecord["outcome"], id: string): MatchRecord => ({
@@ -73,4 +73,20 @@ test("replay label sanitizes malformed streak values", () => {
     resultReplayLabel("player", { quickPlay: true, streak: -4 }),
     "NÄCHSTE FRONT",
   );
+});
+
+
+test("Quick Play result momentum uses only its dedicated streak", () => {
+  const hot = quickPlayResultMomentum("player", 3);
+  assert.equal(hot.streak, 3);
+  assert.equal(hot.label, "3 SIEGE IN FOLGE");
+  assert.match(hot.detail, /Schnellgefecht/i);
+
+  const loss = quickPlayResultMomentum("enemy", 99);
+  assert.equal(loss.streak, 0);
+  assert.equal(loss.label, "REVANCHE BEREIT");
+
+  const draw = quickPlayResultMomentum("draw", 99);
+  assert.equal(draw.streak, 0);
+  assert.equal(draw.tone, "draw");
 });

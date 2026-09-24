@@ -81,3 +81,45 @@ export function resultReplayLabel(
   if (outcome === "draw") return "NOCHMAL";
   return "SOFORT ZURÜCKSCHLAGEN";
 }
+
+
+export function quickPlayResultMomentum(
+  outcome: MatchRecord["outcome"],
+  winStreak: number,
+): ResultMomentum {
+  const streak =
+    outcome === "player" &&
+    Number.isFinite(winStreak) &&
+    winStreak > 0
+      ? Math.floor(winStreak)
+      : 0;
+
+  if (outcome === "player")
+    return {
+      streak,
+      label: streak >= 2 ? `${streak} SIEGE IN FOLGE` : "FRONT GESICHERT",
+      title: streak >= 3 ? "Die Serie läuft." : "Momentum halten.",
+      detail:
+        streak >= 2
+          ? "Noch ein Schnellgefecht, solange dein Loadout sitzt."
+          : "Direkt zur nächsten Front oder den Bericht ansehen.",
+      tone: "win",
+    };
+
+  if (outcome === "draw")
+    return {
+      streak: 0,
+      label: "UNENTSCHIEDEN",
+      title: "Die nächste Front entscheidet.",
+      detail: "Gleiches Loadout. Neuer Versuch.",
+      tone: "draw",
+    };
+
+  return {
+    streak: 0,
+    label: "REVANCHE BEREIT",
+    title: "Sofort zurückschlagen.",
+    detail: "Gleiches Loadout. Nächste Quick-Play-Front.",
+    tone: "loss",
+  };
+}
