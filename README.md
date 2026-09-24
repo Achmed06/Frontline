@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.06
+## Current v2.07
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2211,3 +2211,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies live target identity, shared travel progress and Reduced Motion snapping
 - push distance, collision bounds, capture logic, targeting, damage and deterministic simulation are unchanged
 - release: package 2.6.0 / v2.06 / iOS 2.06 (206)
+
+
+## v2.07 changes
+
+- unit firing feedback now resolves the active shot primarily by source unit ID instead of relying on the unit still being near the shot snapshot coordinate
+- moving shooters therefore keep recoil, fire squash/stretch and attack pose reliably while advancing between simulation ticks
+- generic impact effects now retain the exact affected unit ID while preserving their original world-space impact coordinates for sparks and burst geometry
+- unit hit reaction now resolves by target unit ID first, so moving targets keep their shake, squash and directional reaction even after leaving the original impact point
+- legacy or malformed transient effects without unit IDs still use the existing spatial fallback
+- world-space impact and death particles remain snapshot-based and do not get dragged with moving units
+- regression coverage verifies combat impacts retain the exact damaged unit ID
+- damage, hit timing, targeting, movement, recoil strength and deterministic combat simulation are unchanged
+- release: package 2.7.0 / v2.07 / iOS 2.07 (207)
