@@ -71,13 +71,18 @@ export function combatContactVisual(
   if (!key || !effect) return null;
 
   const profile = impactProfile(effect.sourceCardId);
+  const rawMaxLife = effect.maxLife;
   const maxLife =
-    Number.isFinite(effect.maxLife) && effect.maxLife > 0
-      ? effect.maxLife
+    typeof rawMaxLife === "number" &&
+    Number.isFinite(rawMaxLife) &&
+    rawMaxLife > 0
+      ? rawMaxLife
       : 1;
-  const life = Number.isFinite(effect.life)
-    ? Math.max(0, Math.min(maxLife, effect.life))
-    : 0;
+  const rawLife = effect.life;
+  const life =
+    typeof rawLife === "number" && Number.isFinite(rawLife)
+      ? Math.max(0, Math.min(maxLife, rawLife))
+      : 0;
   const alpha = clamp01(life / maxLife);
   const radius =
     Number.isFinite(effect.radius) && (effect.radius ?? 0) > 0
