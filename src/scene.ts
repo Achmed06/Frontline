@@ -3541,7 +3541,7 @@ export class ArenaScene extends Phaser.Scene {
       this.lastCombatFeedbackAt = this.clock;
     } else if (
       pendingContact &&
-      this.clock - this.lastCombatFeedbackAt >= 0.22
+      this.clock - this.lastCombatFeedbackAt >= 0.42
     ) {
       this.bridge.combatFeedback?.(pendingContact.cue);
       this.lastCombatFeedbackAt = this.clock;
