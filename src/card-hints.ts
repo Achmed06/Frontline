@@ -9,7 +9,7 @@ const percentReduction = (factor: number | undefined): number =>
 export function selectedCardHint(
   card: CardDefinition | undefined,
 ): string {
-  if (!card) return "Karte wählen → halten, zielen, loslassen";
+  if (!card) return "ANTIPPEN ODER DIREKT INS FELD ZIEHEN";
 
   if (card.kind === "unit") {
     if (card.id === "pioneer")
