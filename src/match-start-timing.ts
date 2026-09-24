@@ -14,7 +14,7 @@ export function matchStartTiming(completedMatches: number): MatchStartTiming {
     return {
       countdownMs: 3000,
       goMs: 650,
-      allowPreselect: false,
+      allowPreselect: true,
     };
 
   return {
