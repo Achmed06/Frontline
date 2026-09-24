@@ -4,7 +4,9 @@ import { Sound, soundCueSpec, type SoundCue } from "./audio";
 
 const cues: SoundCue[] = [
   "select",
+  "deployFast",
   "deploy",
+  "deployHeavy",
   "capture",
   "kill",
   "heavyKill",
@@ -53,6 +55,8 @@ test("high-value battlefield states have distinct cue signatures", () => {
   assert.notDeepEqual(soundCueSpec("win"), soundCueSpec("lose"));
   assert.notDeepEqual(soundCueSpec("draw"), soundCueSpec("lose"));
   assert.notDeepEqual(soundCueSpec("start"), soundCueSpec("deploy"));
+  assert.notDeepEqual(soundCueSpec("deployFast"), soundCueSpec("deploy"));
+  assert.notDeepEqual(soundCueSpec("deployHeavy"), soundCueSpec("deploy"));
   assert.notDeepEqual(soundCueSpec("unlock"), soundCueSpec("win"));
   assert.notDeepEqual(soundCueSpec("kill"), soundCueSpec("deploy"));
   assert.notDeepEqual(soundCueSpec("heavyKill"), soundCueSpec("kill"));
