@@ -110,6 +110,7 @@ import { quickPlayRotation } from "./quick-play-rotation";
 import { quickPlaySessionCue } from "./quick-play-session";
 import { frontRace } from "./front-race";
 import { timeLimitOutlook } from "./time-limit-outlook";
+import { coreAssault } from "./core-assault";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import { boardPointFromClient, dragThresholdReached } from "./card-drag";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
@@ -1320,11 +1321,17 @@ function updateHud(force = false) {
       s.cores[team].hp,
       s.cores[team].maxHp,
     );
-    const status = corePressureLabel(pressure.state, team);
+    const assault = coreAssault(s, team);
+    const pressureStatus = corePressureLabel(pressure.state, team);
+    const status =
+      pressure.state !== "destroyed" && assault.active
+        ? assault.label
+        : pressureStatus;
     el(`${team}-hp`).textContent = `${pressure.percent}%`;
     el(`${team}-health`).style.width = `${pressure.percent}%`;
     const info = el<HTMLElement>(`${team}-core-info`);
     info.dataset.coreState = pressure.state;
+    info.dataset.coreAssault = String(assault.active);
     info.dataset.coreStatus = status;
     info.setAttribute(
       "aria-label",
