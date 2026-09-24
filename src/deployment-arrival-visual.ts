@@ -25,8 +25,9 @@ export type DeploymentArrivalVisual = {
 
 type SpawnEffect = Pick<
   Effect,
-  "type" | "life" | "maxLife" | "radius" | "sourceCardId" | "x" | "y"
->;
+  "type" | "life" | "maxLife" | "radius" | "sourceCardId"
+> &
+  Partial<Pick<Effect, "x" | "y">>;
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
@@ -155,10 +156,18 @@ export function deploymentPresentationPoint(
   reducedMotion = false,
 ): { x: number; y: number } | null {
   const visual = deploymentArrivalVisual(effect);
-  if (!visual || !effect) return null;
+  if (
+    !visual ||
+    !effect ||
+    !Number.isFinite(effect.x) ||
+    !Number.isFinite(effect.y)
+  )
+    return null;
+  const startX = effect.x as number;
+  const startY = effect.y as number;
   const blend = reducedMotion ? 1 : visual.releaseBlend;
   return {
-    x: effect.x + (targetX - effect.x) * blend,
-    y: effect.y + (targetY - effect.y) * blend,
+    x: startX + (targetX - startX) * blend,
+    y: startY + (targetY - startY) * blend,
   };
 }
