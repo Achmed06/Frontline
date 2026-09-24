@@ -15,7 +15,8 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - ATLAS, LYRA and NOVA commanders with separate active abilities
 - Deterministic renderer-independent match engine
 - Rookie, standard and veteran bot difficulty
-- Campaign-specific decks, commanders, objectives and seeded scenarios\n- Front-surge feedback that turns fast multi-point swings into concise match moments without changing combat rules
+- Campaign-specific decks, commanders, objectives and seeded scenarios
+- Front-surge feedback that turns fast multi-point swings into concise match moments without changing combat rules
 
 ### Progression and modes
 
