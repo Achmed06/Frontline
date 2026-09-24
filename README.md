@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.88
+## Current v1.89
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1948,4 +1948,22 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies tap-jitter rejection, malformed-coordinate safety, scaled coordinate mapping, off-canvas rejection and invalid canvas geometry
 - card costs, energy gain, deployment rules, ability targets, deck contents, bot behavior, progression, rewards and combat balance are unchanged
 - release: package 1.88.0 / v1.88 / iOS 1.88 (188)
+
+## v1.89 changes
+
+- Quick Play now behaves like a simple battlefield playlist instead of repeatedly opening the same visual arena unless the player manually changes settings
+- the existing four visual environments rotate deterministically after completed matches: Smaragdküste, Frostrelais, Glutbruch and Nexuskern, then repeat
+- the very first Quick Play still opens on Smaragdküste with the existing Rekrut onboarding difficulty; returning Quick Play keeps the standard Taktiker baseline
+- the next Quick Play arena is shown directly in the main Play hero before the player taps the one primary action
+- the Play hero subtly adopts the palette of the upcoming battlefield so repeat sessions feel visually fresh without adding another menu or decision
+- Quick Play rematches advance to the next battlefield automatically, strengthening the one-more-match loop
+- campaign missions and Tagesfront continue using their authored themes, while manually customized free battles keep the player's selected arena exactly as before
+- automatic Quick Play rotation never overwrites the saved custom arena preference
+- the in-match mode label identifies the active Quick Play battlefield instead of presenting it as generic training
+- the v1.88 direct drag-to-deploy input remains unchanged and works identically across every rotated battlefield
+- a pure quickPlayRotation helper owns the four-arena sequence, first-match Rekrut fallback and returning-player Taktiker baseline
+- regression coverage verifies first-battle behavior, full four-arena rotation, standard returning difficulty and malformed match-count safety
+- no new mode, arena asset, combat modifier, random gameplay rule, currency, reward or balance change was added
+- all four environments remain visual-only: territory layout, paths, capture rules, decks, Commander behavior and combat values are unchanged
+- release: package 1.89.0 / v1.89 / iOS 1.89 (189)
 
