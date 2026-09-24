@@ -4953,6 +4953,145 @@ export class ArenaScene extends Phaser.Scene {
             (direction.active
               ? direction.ny * direction.contactOffset
               : 0);
+          const engagementContact =
+            this.contactEffectIds.has(e.id)
+              ? combatContactVisual(e)
+              : null;
+
+          if (engagementContact) {
+            const densityScale =
+              presentation.density === "saturated"
+                ? 0.78
+                : presentation.density === "dense"
+                  ? 0.86
+                  : presentation.density === "busy"
+                    ? 0.94
+                    : 1;
+            const contactAlpha =
+              engagementContact.alpha *
+              densityScale *
+              (0.82 + engagementContact.strength * 0.18);
+            const burstProgress = Math.min(1, progress / 0.74);
+            const burstRadius =
+              engagementContact.radius *
+              (0.46 + burstProgress * 0.66);
+
+            fx.fillStyle(
+              0xffffff,
+              contactAlpha *
+                (engagementContact.kind === "heavy" ? 0.22 : 0.14),
+            );
+            fx.fillCircle(
+              contactX,
+              contactY,
+              4.2 + engagementContact.strength * 3.4,
+            );
+
+            for (
+              let ring = 0;
+              ring < engagementContact.ringCount;
+              ring++
+            ) {
+              fx.lineStyle(
+                engagementContact.kind === "heavy" && ring === 0
+                  ? 2.35
+                  : 1.35,
+                ring === 0 ? 0xffffff : profileColor,
+                contactAlpha * (ring === 0 ? 0.68 : 0.42),
+              );
+              fx.strokeCircle(
+                contactX,
+                contactY,
+                burstRadius + ring * 7,
+              );
+            }
+
+            const incomingAngle = direction.active
+              ? Math.atan2(direction.ny, direction.nx)
+              : e.id * 0.37;
+            for (
+              let ray = 0;
+              ray < engagementContact.rayCount;
+              ray++
+            ) {
+              const spread =
+                engagementContact.kind === "clash"
+                  ? 0.95
+                  : engagementContact.kind === "heavy"
+                    ? Math.PI * 1.45
+                    : Math.PI * 1.8;
+              const centered =
+                engagementContact.rayCount <= 1
+                  ? 0
+                  : ray / (engagementContact.rayCount - 1) - 0.5;
+              const angle =
+                incomingAngle +
+                Math.PI +
+                centered * spread +
+                Math.sin(e.id * 0.31 + ray * 1.7) * 0.08;
+              const length =
+                (engagementContact.kind === "heavy" ? 11 : 7) *
+                (0.72 + engagementContact.strength * 0.44) *
+                (1 - burstProgress * 0.22);
+              const inner = burstRadius * 0.42;
+              fx.lineStyle(
+                ray % 3 === 0 ? 1.8 : 1.1,
+                ray % 3 === 0 ? 0xffffff : profileColor,
+                contactAlpha * (ray % 3 === 0 ? 0.64 : 0.42),
+              );
+              fx.lineBetween(
+                contactX + Math.cos(angle) * inner,
+                contactY + Math.sin(angle) * inner,
+                contactX + Math.cos(angle) * (inner + length),
+                contactY + Math.sin(angle) * (inner + length),
+              );
+            }
+
+            if (
+              engagementContact.kind === "clash" &&
+              direction.active
+            ) {
+              const slash = 8 + engagementContact.strength * 5;
+              fx.lineStyle(
+                2.25,
+                profileColor,
+                contactAlpha * 0.72,
+              );
+              fx.lineBetween(
+                contactX -
+                  direction.px * slash -
+                  direction.nx * 3,
+                contactY -
+                  direction.py * slash -
+                  direction.ny * 3,
+                contactX +
+                  direction.px * slash +
+                  direction.nx * 4,
+                contactY +
+                  direction.py * slash +
+                  direction.ny * 4,
+              );
+              fx.lineStyle(
+                1.25,
+                0xffffff,
+                contactAlpha * 0.56,
+              );
+              fx.lineBetween(
+                contactX -
+                  direction.nx * slash * 0.7 +
+                  direction.px * 2,
+                contactY -
+                  direction.ny * slash * 0.7 +
+                  direction.py * 2,
+                contactX +
+                  direction.nx * slash * 0.9 -
+                  direction.px * 2,
+                contactY +
+                  direction.ny * slash * 0.9 -
+                  direction.py * 2,
+              );
+            }
+          }
 
           fx.fillStyle(
             0xffffff,
