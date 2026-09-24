@@ -107,6 +107,7 @@ import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-l
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
 import { matchStartTiming } from "./match-start-timing";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
+import { boardPointFromClient, dragThresholdReached } from "./card-drag";
 import { MATCH_END_SEQUENCE_MS, matchEndVisual } from "./match-end-visual";
 import { renderDeckBuilder } from "./deck-builder";
 import "./style.css";
@@ -122,7 +123,7 @@ app.innerHTML = `
   <main class="device" aria-label="Project Frontline Spiel">
     <header class="game-top"><div class="mini-brand">F<span>∕</span></div><div><b>FRONTLINE</b><small id="mode-label">EINSATZBASIS</small></div><div class="top-actions"><button id="sound" class="icon-btn" aria-label="Ton einschalten" title="Ton umschalten">♪</button><button id="help" class="icon-btn" aria-label="Spielanleitung">?</button><button id="pause" class="icon-btn" aria-label="Spiel pausieren" disabled>Ⅱ</button></div></header>
     <section class="match-hud" aria-label="Matchstatus"><div id="player-core-info" class="core-info" data-core-state="stable" data-core-status=""><span><i class="team-dot player"></i> DEIN CORE</span><strong id="player-hp">100%</strong><div class="health-track"><i id="player-health"></i></div></div><div class="clock"><strong id="timer">3:00</strong><span id="phase-label">TRAINING</span></div><div id="enemy-core-info" class="core-info enemy" data-core-state="stable" data-core-status=""><span><span class="enemy-command"><b id="enemy-commander-label">BOT</b><small id="enemy-commander-status">BEREIT</small><i id="enemy-commander-cooldown-progress" aria-hidden="true"></i></span><i class="team-dot enemy"></i></span><strong id="enemy-hp">100%</strong><div class="health-track"><i id="enemy-health"></i></div></div></section>
-    <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div>
+    <div id="control-hud" class="control-hud" hidden><b id="control-label"></b><div><span id="control-player"></span><span id="control-enemy"></span></div><div class="control-tracks"><i id="control-player-bar"></i><i id="control-enemy-bar"></i></div></div><div class="arena-wrap"><div id="arena" role="application" aria-label="Arena. Karte auswählen, im grünen Gebiet halten, zielen und loslassen."></div><div id="deployment-countdown" class="deployment-countdown" hidden aria-live="assertive"></div><div id="battle-banner" class="battle-banner" hidden role="status" aria-live="polite"><small id="battle-banner-label"></small><b id="battle-banner-title"></b></div><div id="learning-hud" class="learning-hud" hidden></div><div id="arena-tip" class="arena-tip">EROBERE DIE MITTE</div><div id="toast" class="toast" role="status" aria-live="polite"></div></div><div id="card-drag-ghost" class="card-drag-ghost" hidden aria-hidden="true"></div>
     <section class="command-deck" aria-label="Karten und Fähigkeiten"><div class="resource-row"><div class="energy-caption"><span class="energy-symbol">ϟ</span><strong id="energy">6</strong><span id="energy-spend" class="energy-spend" aria-hidden="true"></span><span>/ 10</span></div><div class="energy-track"><i id="energy-fill"></i></div><span id="territory-count" class="territory-count">3 / 9 PUNKTE</span></div><div class="selection-info"><b id="selected-name">DEIN EINSATZDECK</b><span id="selected-hint">Karte wählen → halten, zielen, loslassen</span></div><div id="cards" class="cards"></div><button id="commander" class="commander-btn" disabled><i id="commander-cooldown-progress" aria-hidden="true"></i><span class="commander-icon">◇</span><b id="commander-name">ATLAS <span>AEGIS-SCHILD</span></b><span id="commander-status">BEREIT</span><kbd>Q</kbd></button></section>
     <div id="lobby" class="overlay lobby base-lobby"><div class="lobby-scroll base-scroll">
       <div class="base-status"><span><i></i> FRONTLINE</span><b id="base-stars">0 ★</b></div>
@@ -340,6 +341,134 @@ el<HTMLSelectElement>("difficulty").value = difficulty;
 const cardButtons = new Map<string, HTMLButtonElement>();
 const cardAffordable = new Map<string, boolean>();
 let energySpendTimer = 0;
+type CardDragState = {
+  pointerId: number;
+  cardId: CardId;
+  startX: number;
+  startY: number;
+  active: boolean;
+  previousSelected: CardId | null;
+  button: HTMLButtonElement;
+};
+let cardDragState: CardDragState | null = null;
+
+function dragBoardPoint(clientX: number, clientY: number) {
+  const canvas = el("arena").querySelector<HTMLCanvasElement>("canvas");
+  if (!canvas) return null;
+  const rect = canvas.getBoundingClientRect();
+  return boardPointFromClient(
+    clientX,
+    clientY,
+    rect,
+    BOARD_WIDTH,
+    BOARD_HEIGHT,
+  );
+}
+
+function showCardDrag(
+  state: CardDragState,
+  card: (typeof CARDS)[number],
+  event: PointerEvent,
+): void {
+  if (!state.active) {
+    if (
+      !matchLive() ||
+      !dragThresholdReached(
+        state.startX,
+        state.startY,
+        event.clientX,
+        event.clientY,
+      )
+    )
+      return;
+    state.active = true;
+    state.button.classList.add("dragging");
+    if (selected !== card.id) {
+      selected = card.id;
+      updateSelection();
+      sound.play("select");
+      haptics.play("select");
+    }
+    const ghost = el("card-drag-ghost");
+    ghost.className = `card-drag-ghost ${card.kind}`;
+    ghost.innerHTML = `<span>${card.cost}</span><i>${unitSvg(card.id)}</i><b>${card.name}</b>`;
+    ghost.hidden = false;
+  }
+
+  event.preventDefault();
+  const point = dragBoardPoint(event.clientX, event.clientY);
+  const ghost = el<HTMLElement>("card-drag-ghost");
+  ghost.style.left = `${event.clientX}px`;
+  ghost.style.top = `${event.clientY}px`;
+  ghost.classList.toggle("over-arena", Boolean(point));
+  el("arena").parentElement?.classList.toggle("card-drop-ready", Boolean(point));
+  el("arena-tip").textContent = point
+    ? card.kind === "ability"
+      ? "LOSLASSEN · FÄHIGKEIT AUSLÖSEN"
+      : "LOSLASSEN · EINHEIT EINSETZEN"
+    : "INS SPIELFELD ZIEHEN";
+  el("arena-tip").classList.add("dragging-card");
+}
+
+function finishCardDrag(event: PointerEvent, cancelled = false): void {
+  const state = cardDragState;
+  if (!state || state.pointerId !== event.pointerId) return;
+  cardDragState = null;
+  try {
+    state.button.releasePointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture may already be released by the browser.
+  }
+  if (!state.active) return;
+
+  state.button.dataset.dragConsumed = "1";
+  window.setTimeout(() => delete state.button.dataset.dragConsumed, 0);
+  state.button.classList.remove("dragging");
+  el("card-drag-ghost").hidden = true;
+  el("arena").parentElement?.classList.remove("card-drop-ready");
+  el("arena-tip").classList.remove("dragging-card");
+
+  const point = cancelled ? null : dragBoardPoint(event.clientX, event.clientY);
+  if (point) {
+    deploy(point.x, point.y);
+  } else {
+    selected = state.previousSelected;
+    updateSelection();
+  }
+}
+
+function bindCardDrag(
+  button: HTMLButtonElement,
+  card: (typeof CARDS)[number],
+): void {
+  button.addEventListener("pointerdown", (event) => {
+    if (
+      cardDragState ||
+      (event.pointerType === "mouse" && event.button !== 0)
+    )
+      return;
+    cardDragState = {
+      pointerId: event.pointerId,
+      cardId: card.id,
+      startX: event.clientX,
+      startY: event.clientY,
+      active: false,
+      previousSelected: selected as CardId | null,
+      button,
+    };
+    button.setPointerCapture(event.pointerId);
+  });
+  button.addEventListener("pointermove", (event) => {
+    const state = cardDragState;
+    if (!state || state.pointerId !== event.pointerId || state.cardId !== card.id)
+      return;
+    showCardDrag(state, card, event);
+  });
+  button.addEventListener("pointerup", (event) => finishCardDrag(event));
+  button.addEventListener("pointercancel", (event) =>
+    finishCardDrag(event, true),
+  );
+}
 function renderCards(override?: readonly CardId[]) {
   cardButtons.clear();
   cardAffordable.clear();
@@ -358,7 +487,11 @@ function renderCards(override?: readonly CardId[]) {
     );
     button.title = `${card.name} · ${card.role}\n${card.description}`;
     button.innerHTML = `<span class="card-cost">${card.cost}</span><span class="card-art">${unitSvg(card.id)}</span><span class="card-name">${card.name}</span><kbd>${index + 1}</kbd>`;
-    button.addEventListener("click", () => selectCard(card.id));
+    button.addEventListener("click", () => {
+      if (button.dataset.dragConsumed === "1") return;
+      selectCard(card.id);
+    });
+    bindCardDrag(button, card);
     el("cards").append(button);
     cardButtons.set(card.id, button);
   }
@@ -549,6 +682,9 @@ function start(
   el("enemy-commander-status").textContent = "BEREIT";
   active = true;
   paused = false;
+  cardDragState = null;
+  el("card-drag-ghost").hidden = true;
+  el("arena").parentElement?.classList.remove("card-drop-ready");
   selected = null;
   const startTiming = matchStartTiming(stats.matches);
   matchStartDurationMs = startTiming.countdownMs;
