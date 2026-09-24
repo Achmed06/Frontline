@@ -19,16 +19,18 @@ export type CombatContactVisual = {
   alpha: number;
 };
 
-type ContactEffect = Pick<
-  Effect,
-  | "type"
-  | "sourceCardId"
-  | "sourceUnitId"
-  | "targetUnitId"
-  | "radius"
-  | "life"
-  | "maxLife"
->;
+type ContactEffect = Pick<Effect, "type"> &
+  Partial<
+    Pick<
+      Effect,
+      | "sourceCardId"
+      | "sourceUnitId"
+      | "targetUnitId"
+      | "radius"
+      | "life"
+      | "maxLife"
+    >
+  >;
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
