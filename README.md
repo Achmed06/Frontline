@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.97
+## Current v1.98
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2094,3 +2094,16 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies old-save migration, fresh-install behavior and precedence of dedicated Quick Play progress
 - combat balance, cards, bots, rewards, objectives and match duration are unchanged
 - release: package 1.97.0 / v1.97 / iOS 1.97 (197)
+
+
+## v1.98 changes
+
+- the live battlefield renderer now targets 60 FPS instead of 30 FPS
+- card dragging, deployment aiming, unit animation, combat flashes, camera shake and arena atmosphere therefore update at twice the previous visual cadence on capable devices
+- the deterministic Match simulation remains at 30 Hz, so movement speed, energy generation, attack intervals, bot timing, objectives and match duration are unchanged
+- the renderer no longer explicitly requests the browser's low-power GPU path and instead uses the default platform power preference
+- DOM HUD updates remain throttled independently, avoiding unnecessary extra layout work while the Phaser battlefield renders more smoothly
+- a dedicated render-profile helper documents the separation between 60 FPS presentation and 30 Hz simulation
+- regression coverage verifies the intended render target and guards against accidentally coupling render frequency to gameplay timing
+- no cards, damage values, cooldowns, rewards or progression rules were changed
+- release: package 1.98.0 / v1.98 / iOS 1.98 (198)
