@@ -4,6 +4,10 @@ export type SoundCue =
   | "capture"
   | "kill"
   | "heavyKill"
+  | "coreImpact"
+  | "coreCriticalImpact"
+  | "coreBreak"
+  | "coreLost"
   | "warning"
   | "opportunity"
   | "overtime"
@@ -101,6 +105,36 @@ const SPECS: Record<SoundCue, SoundCueSpec> = {
       tone("triangle", 760, 980, 0.06, 0.12, 0.02),
     ],
     noise: { delay: 0, duration: 0.09, gain: 0.021, lowpass: 680 },
+  },
+  coreImpact: {
+    tones: [
+      tone("triangle", 170, 82, 0, 0.14, 0.043),
+      tone("sine", 360, 520, 0.02, 0.1, 0.018),
+    ],
+    noise: { delay: 0, duration: 0.06, gain: 0.013, lowpass: 720 },
+  },
+  coreCriticalImpact: {
+    tones: [
+      tone("triangle", 145, 58, 0, 0.18, 0.054),
+      tone("sine", 340, 660, 0.018, 0.14, 0.025),
+      tone("square", 760, 620, 0.07, 0.065, 0.009),
+    ],
+    noise: { delay: 0, duration: 0.085, gain: 0.019, lowpass: 620 },
+  },
+  coreBreak: {
+    tones: [
+      tone("triangle", 115, 42, 0, 0.3, 0.068),
+      tone("sine", 300, 760, 0.025, 0.22, 0.03),
+      tone("triangle", 760, 1120, 0.13, 0.18, 0.022),
+    ],
+    noise: { delay: 0, duration: 0.16, gain: 0.03, lowpass: 540 },
+  },
+  coreLost: {
+    tones: [
+      tone("sawtooth", 230, 72, 0, 0.28, 0.04),
+      tone("triangle", 150, 48, 0.06, 0.24, 0.052),
+    ],
+    noise: { delay: 0, duration: 0.14, gain: 0.026, lowpass: 500 },
   },
   warning: {
     tones: [
