@@ -61,3 +61,96 @@ export function unitTrailPoint(
     y: y - (dy / length) * distance,
   };
 }
+
+
+export type UnitRenderPositionState = {
+  fromX: number;
+  fromY: number;
+  targetX: number;
+  targetY: number;
+  progress: number;
+};
+
+export type UnitRenderPositionSample = {
+  x: number;
+  y: number;
+  state: UnitRenderPositionState;
+};
+
+const PRESENTATION_STEP_SECONDS = 1 / 30;
+const TELEPORT_SNAP_DISTANCE = 18;
+
+export function sampleUnitRenderPosition(
+  previous: UnitRenderPositionState | undefined,
+  targetX: number,
+  targetY: number,
+  deltaSeconds: number,
+  snap = false,
+): UnitRenderPositionSample {
+  const safeX = Number.isFinite(targetX) ? targetX : previous?.targetX ?? 0;
+  const safeY = Number.isFinite(targetY) ? targetY : previous?.targetY ?? 0;
+  const safeDelta =
+    Number.isFinite(deltaSeconds) && deltaSeconds > 0
+      ? Math.min(deltaSeconds, 0.1)
+      : 0;
+
+  if (!previous || snap)
+    return {
+      x: safeX,
+      y: safeY,
+      state: {
+        fromX: safeX,
+        fromY: safeY,
+        targetX: safeX,
+        targetY: safeY,
+        progress: 1,
+      },
+    };
+
+  const targetChanged =
+    Math.abs(safeX - previous.targetX) > 1e-6 ||
+    Math.abs(safeY - previous.targetY) > 1e-6;
+  const targetJump = Math.hypot(
+    safeX - previous.targetX,
+    safeY - previous.targetY,
+  );
+
+  let fromX = previous.fromX;
+  let fromY = previous.fromY;
+  let progress = previous.progress;
+
+  if (targetChanged) {
+    if (targetJump >= TELEPORT_SNAP_DISTANCE)
+      return {
+        x: safeX,
+        y: safeY,
+        state: {
+          fromX: safeX,
+          fromY: safeY,
+          targetX: safeX,
+          targetY: safeY,
+          progress: 1,
+        },
+      };
+
+    fromX = previous.targetX;
+    fromY = previous.targetY;
+    progress = 0;
+  }
+
+  progress = Math.min(1, progress + safeDelta / PRESENTATION_STEP_SECONDS);
+  const x = fromX + (safeX - fromX) * progress;
+  const y = fromY + (safeY - fromY) * progress;
+
+  return {
+    x,
+    y,
+    state: {
+      fromX,
+      fromY,
+      targetX: safeX,
+      targetY: safeY,
+      progress,
+    },
+  };
+}
