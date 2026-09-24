@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.96
+## Current v1.97
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2079,3 +2079,18 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies isolated session cues, legacy stats compatibility and Quick Play-only result momentum
 - combat values, bot logic, cards, energy, rewards, campaign progression and match duration are unchanged
 - release: package 1.96.0 / v1.96 / iOS 1.96 (196)
+
+
+## v1.97 changes
+
+- legacy players no longer get treated as brand-new Quick Play users after the v1.96 state split
+- on the first v1.97 launch, an old save without dedicated Quick Play progress preserves its previous global match count as a one-time Quick Play rotation baseline
+- this keeps the existing battlefield sequence and prevents experienced players from being dropped back to the REKRUT first-match difficulty after updating
+- the migrated baseline is persisted immediately; campaign, Draft, Tagesfront, Einsatzserie and custom training results after migration no longer affect Quick Play progression
+- Quick Play streak and last-outcome state intentionally start neutral during migration because older saves did not contain enough mode metadata to reconstruct those values reliably
+- fresh installs still start at Quick Play match zero and receive the intended REKRUT onboarding
+- saves that already contain v1.96 Quick Play progress are left untouched
+- portable legacy backups remain accepted without a backup-format bump; restored legacy data is migrated by the normal startup path
+- regression coverage verifies old-save migration, fresh-install behavior and precedence of dedicated Quick Play progress
+- combat balance, cards, bots, rewards, objectives and match duration are unchanged
+- release: package 1.97.0 / v1.97 / iOS 1.97 (197)
