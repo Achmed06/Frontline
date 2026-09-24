@@ -94,7 +94,13 @@ export function repulsorDisplacementPoint(
   snap = false,
 ): { x: number; y: number; progress: number } | null {
   const visual = repulsorDisplacementVisual(effect);
-  if (!visual || !effect?.targetX || !effect?.targetY) return null;
+  if (
+    !visual ||
+    !effect ||
+    !Number.isFinite(effect.targetX) ||
+    !Number.isFinite(effect.targetY)
+  )
+    return null;
   const progress = snap ? 1 : visual.travelProgress;
   return {
     x: effect.x + (effect.targetX - effect.x) * progress,
