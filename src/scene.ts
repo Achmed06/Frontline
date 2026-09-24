@@ -5533,12 +5533,38 @@ export class ArenaScene extends Phaser.Scene {
         }
         if (e.type === "core-hit") {
           const weight = e.radius ?? 18;
-          const impactRadius = 7 + weight * (0.35 + progress * 0.75);
-          fx.fillStyle(effectColor, alpha * (0.17 + weight / 190));
+          const targetFraction =
+            e.team === "player"
+              ? Math.max(
+                  0,
+                  Math.min(1, s.cores.enemy.hp / s.cores.enemy.maxHp),
+                )
+              : Math.max(
+                  0,
+                  Math.min(1, s.cores.player.hp / s.cores.player.maxHp),
+                );
+          const climax = coreImpactClimax(e, targetFraction);
+          const visualScale = climax?.visualScale ?? 1;
+          const impactRadius =
+            (7 + weight * (0.35 + progress * 0.75)) * visualScale;
+          fx.fillStyle(
+            effectColor,
+            alpha *
+              (0.17 + weight / 190) *
+              (1 + (visualScale - 1) * 0.55),
+          );
           fx.fillCircle(e.x, e.y, impactRadius);
-          fx.lineStyle(2.2 + weight * 0.025, 0xfff4cf, alpha);
+          fx.lineStyle(
+            (2.2 + weight * 0.025) * Math.min(1.18, visualScale),
+            0xfff4cf,
+            alpha,
+          );
           fx.strokeCircle(e.x, e.y, impactRadius * 0.58);
-          const rays = weight >= 24 ? 12 : weight >= 18 ? 10 : 8;
+          const rays =
+            (weight >= 24 ? 12 : weight >= 18 ? 10 : 8) +
+            (climax?.state === "critical" || climax?.state === "destroyed"
+              ? 4
+              : 0);
           for (let i = 0; i < rays; i++) {
             const angle = (i * Math.PI * 2) / rays + e.id * 0.11;
             fx.lineBetween(
@@ -5548,12 +5574,41 @@ export class ArenaScene extends Phaser.Scene {
               e.y + Math.sin(angle) * impactRadius,
             );
           }
-          if (weight >= 22) {
-            fx.lineStyle(1.4, effectColor, alpha * 0.62);
+          if (weight >= 22 || (climax?.ringAlpha ?? 0) > 0) {
+            fx.lineStyle(
+              climax?.state === "critical" ||
+                climax?.state === "destroyed"
+                ? 2
+                : 1.4,
+              effectColor,
+              alpha * Math.max(0.62, climax?.ringAlpha ?? 0),
+            );
             fx.strokeCircle(
               e.x,
               e.y,
-              impactRadius + 7 + progress * weight * 0.35,
+              impactRadius +
+                7 +
+                progress *
+                  weight *
+                  (climax?.state === "critical" ||
+                  climax?.state === "destroyed"
+                    ? 0.62
+                    : 0.35),
+            );
+          }
+          if (
+            climax?.state === "critical" ||
+            climax?.state === "destroyed"
+          ) {
+            fx.lineStyle(
+              1.1,
+              0xffffff,
+              alpha * climax.ringAlpha * (1 - progress * 0.45),
+            );
+            fx.strokeCircle(
+              e.x,
+              e.y,
+              impactRadius + 15 + progress * 22,
             );
           }
         }
