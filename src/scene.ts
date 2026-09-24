@@ -3544,8 +3544,28 @@ export class ArenaScene extends Phaser.Scene {
           }
         } else {
           const source = e.sourceCardId ?? "generic";
-          const dx = e.targetX - e.x;
-          const dy = e.targetY - e.y;
+          const sourceMotion =
+            e.sourceUnitId !== undefined
+              ? this.unitMotion.get(e.sourceUnitId)
+              : undefined;
+          const targetMotion =
+            e.targetUnitId !== undefined
+              ? this.unitMotion.get(e.targetUnitId)
+              : undefined;
+          const sourcePoint =
+            sourceMotion?.renderedFrame === this.renderFrame
+              ? unitRenderPosition(sourceMotion.render)
+              : { x: e.x, y: e.y };
+          const targetPoint =
+            targetMotion?.renderedFrame === this.renderFrame
+              ? unitRenderPosition(targetMotion.render)
+              : { x: e.targetX, y: e.targetY };
+          const sourceX = sourcePoint.x;
+          const sourceY = sourcePoint.y;
+          const targetX = targetPoint.x;
+          const targetY = targetPoint.y;
+          const dx = targetX - sourceX;
+          const dy = targetY - sourceY;
           const distance = Math.max(0.01, Math.hypot(dx, dy));
           const nx = dx / distance;
           const ny = dy / distance;
@@ -3561,8 +3581,8 @@ export class ArenaScene extends Phaser.Scene {
 
           if (melee) {
             const slash = Math.min(1, progress * 3.8);
-            const centerX = e.targetX - nx * (8 - slash * 3);
-            const centerY = e.targetY - ny * (8 - slash * 3);
+            const centerX = targetX - nx * (8 - slash * 3);
+            const centerY = targetY - ny * (8 - slash * 3);
             const reach = 6 + slash * 6;
             fx.lineStyle(source === "breaker" ? 3.4 : 2.6, color, alpha * 0.9);
             fx.lineBetween(
@@ -3619,10 +3639,10 @@ export class ArenaScene extends Phaser.Scene {
                 ? Math.sin(Math.PI * tailTravel) *
                   Math.min(38, 18 + distance * 0.12)
                 : 0;
-            const x = e.x + dx * travel;
-            const y = e.y + dy * travel - arc;
-            const tailX = e.x + dx * tailTravel;
-            const tailY = e.y + dy * tailTravel - tailArc;
+            const x = sourceX + dx * travel;
+            const y = sourceY + dy * travel - arc;
+            const tailX = sourceX + dx * tailTravel;
+            const tailY = sourceY + dy * tailTravel - tailArc;
 
             if (source === "lancer") {
               fx.lineStyle(4.4, color, alpha * 0.23);
@@ -3647,8 +3667,8 @@ export class ArenaScene extends Phaser.Scene {
                   Math.min(38, 18 + distance * 0.12);
                 fx.fillStyle(0xd6ddd5, alpha * (0.18 / i));
                 fx.fillCircle(
-                  e.x + dx * smokeTravel,
-                  e.y + dy * smokeTravel - smokeArc,
+                  sourceX + dx * smokeTravel,
+                  sourceY + dy * smokeTravel - smokeArc,
                   2 + i,
                 );
               }
@@ -3659,8 +3679,8 @@ export class ArenaScene extends Phaser.Scene {
               for (let i = 1; i <= segments; i++) {
                 const t = tailTravel + (travel - tailTravel) * (i / segments);
                 const jitter = (i % 2 ? 1 : -1) * 3.2 * alpha;
-                const sx = e.x + dx * t + px * jitter;
-                const sy = e.y + dy * t + py * jitter;
+                const sx = sourceX + dx * t + px * jitter;
+                const sy = sourceY + dy * t + py * jitter;
                 fx.lineStyle(1.5, 0x88d5ff, alpha * 0.82);
                 fx.lineBetween(lastX, lastY, sx, sy);
                 lastX = sx;
@@ -3699,18 +3719,18 @@ export class ArenaScene extends Phaser.Scene {
               const muzzle = 1 - travel / 0.42;
               fx.fillStyle(0xffffff, alpha * muzzle * 0.72);
               fx.fillCircle(
-                e.x,
-                e.y,
+                sourceX,
+                sourceY,
                 2.5 + muzzle * (source === "lancer" ? 3.8 : 2.2),
               );
               fx.lineStyle(1.4, color, alpha * muzzle * 0.8);
               for (let i = 0; i < 4; i++) {
                 const angle = i * Math.PI * 0.5 + e.id * 0.31;
                 fx.lineBetween(
-                  e.x + Math.cos(angle) * 3,
-                  e.y + Math.sin(angle) * 3,
-                  e.x + Math.cos(angle) * (6 + muzzle * 4),
-                  e.y + Math.sin(angle) * (6 + muzzle * 4),
+                  sourceX + Math.cos(angle) * 3,
+                  sourceY + Math.sin(angle) * 3,
+                  sourceX + Math.cos(angle) * (6 + muzzle * 4),
+                  sourceY + Math.sin(angle) * (6 + muzzle * 4),
                 );
               }
             }
@@ -3720,14 +3740,14 @@ export class ArenaScene extends Phaser.Scene {
               const r = source === "lancer" ? 11 + travel * 3 : 8 + travel * 2;
               const arm = source === "lancer" ? 5 : 4;
               fx.lineStyle(1.2, color, lockAlpha);
-              fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r + arm, e.targetY - r);
-              fx.lineBetween(e.targetX - r, e.targetY - r, e.targetX - r, e.targetY - r + arm);
-              fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r - arm, e.targetY - r);
-              fx.lineBetween(e.targetX + r, e.targetY - r, e.targetX + r, e.targetY - r + arm);
-              fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r + arm, e.targetY + r);
-              fx.lineBetween(e.targetX - r, e.targetY + r, e.targetX - r, e.targetY + r - arm);
-              fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r - arm, e.targetY + r);
-              fx.lineBetween(e.targetX + r, e.targetY + r, e.targetX + r, e.targetY + r - arm);
+              fx.lineBetween(targetX - r, targetY - r, targetX - r + arm, targetY - r);
+              fx.lineBetween(targetX - r, targetY - r, targetX - r, targetY - r + arm);
+              fx.lineBetween(targetX + r, targetY - r, targetX + r - arm, targetY - r);
+              fx.lineBetween(targetX + r, targetY - r, targetX + r, targetY - r + arm);
+              fx.lineBetween(targetX - r, targetY + r, targetX - r + arm, targetY + r);
+              fx.lineBetween(targetX - r, targetY + r, targetX - r, targetY + r - arm);
+              fx.lineBetween(targetX + r, targetY + r, targetX + r - arm, targetY + r);
+              fx.lineBetween(targetX + r, targetY + r, targetX + r, targetY + r - arm);
             }
 
             if (travel > 0.86) {
@@ -3744,8 +3764,8 @@ export class ArenaScene extends Phaser.Scene {
                 alpha * (1 - impact),
               );
               fx.strokeCircle(
-                e.targetX,
-                e.targetY,
+                targetX,
+                targetY,
                 3 + impact * (source === "mortar" ? 13 : 9),
               );
             }
