@@ -1700,6 +1700,9 @@ export class Match {
         hpDamage,
         sourceCardId,
         sourcePosition,
+        undefined,
+        undefined,
+        unit.id,
       );
     if (unit.hp <= 0) {
       this.effect(
