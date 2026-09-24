@@ -2767,6 +2767,23 @@ h1 em {
     transparent
   );
 }
+.battle-banner.opportunity {
+  color: #efffa8;
+  border-color: #d5ef7a99;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #29422aed 15%,
+    #29422aed 85%,
+    transparent
+  );
+  box-shadow:
+    0 0 24px #c9e96b18,
+    inset 0 0 20px #dffb8310;
+}
+.battle-banner.opportunity small {
+  color: #cde69e;
+}
 .mission-result > b {
   display: inline-block;
   animation: star-arrive 0.4s ease-out;

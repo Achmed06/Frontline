@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.86
+## Current v1.87
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1914,4 +1914,20 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - no currency, loot box, claim timer, combat bonus, pay-to-win reward or extra screen was added
 - learning rules, mastery thresholds, HQ progression, cosmetics, campaign, modes and combat balance remain unchanged
 - release: package 1.86.0 / v1.86 / iOS 1.86 (186)
+
+## v1.87 changes
+
+- the live match now recognizes a small set of genuine territory momentum swings instead of relying only on Core-critical, overtime and final-30-second warnings
+- a player comeback is announced only after the player has genuinely trailed by at least two owned sectors and later moves into the lead
+- a clear player advance is announced only from a strong 5+ versus 2-or-fewer territory position and only once per battle
+- the mirrored 5+ versus 2-or-fewer enemy advance receives a restrained danger callout so the player immediately understands that the front is slipping
+- ordinary captures, early-game movement, ties and minor one-sector leads do not trigger momentum banners, keeping the battle readable instead of turning the HUD into constant commentary
+- comeback takes priority over a simultaneous strong-advance state and suppresses an immediate duplicate follow-up banner
+- opportunity moments reuse the existing opportunity/capture audio and native success/capture haptics; enemy advances reuse the existing warning cue
+- opportunity banners receive a distinct restrained lime treatment while danger keeps the existing red warning treatment
+- all momentum memory resets at the start of every match and derives only from actual current territory ownership and elapsed match time
+- a pure battleMomentum helper centralizes the rare-event thresholds, previous-deficit memory and once-per-match suppression
+- regression coverage verifies early-game silence, one-time own advance, enemy danger, real comeback requirements, duplicate suppression and malformed-time safety
+- no territory rule, capture speed, Core behavior, card value, bot behavior, match duration, reward, progression or balance changed
+- release: package 1.87.0 / v1.87 / iOS 1.87 (187)
 
