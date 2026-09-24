@@ -85,3 +85,45 @@ test("non turret and malformed shots remain neutral", () => {
     ventSpread: 0,
   });
 });
+
+
+test("core turret fire can follow a live presentation target override", () => {
+  const feedback = coreTurretFireFeedback(
+    {
+      type: "shot",
+      sourceCardId: "core-turret",
+      x: 210,
+      y: 35,
+      targetX: 210,
+      targetY: 120,
+      life: 0.25,
+      maxLife: 0.25,
+    },
+    260,
+    85,
+  );
+
+  assert.equal(feedback.active, true);
+  assert.ok(feedback.nx > 0.7);
+  assert.ok(feedback.ny > 0.7);
+});
+
+test("invalid live target overrides safely fall back to the shot snapshot", () => {
+  const feedback = coreTurretFireFeedback(
+    {
+      type: "shot",
+      sourceCardId: "core-turret",
+      x: 210,
+      y: 35,
+      targetX: 210,
+      targetY: 120,
+      life: 0.25,
+      maxLife: 0.25,
+    },
+    Number.NaN,
+    Number.NaN,
+  );
+
+  assert.ok(Math.abs(feedback.nx) < 1e-12);
+  assert.ok(feedback.ny > 0.99);
+});
