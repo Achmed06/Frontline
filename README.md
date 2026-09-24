@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.10
+## Current v2.11
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2259,3 +2259,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - melee and breach attacks remain unchanged because they intentionally render no muzzle rays
 - shot travel, damage, targeting, recoil strength, attack timing and deterministic simulation are unchanged
 - release: package 2.10.0 / v2.10 / iOS 2.10 (210)
+
+
+## v2.11 changes
+
+- Core turret acquisition rings, scan sweeps, sight lines, lock brackets and barrel aim now use the target unit's live 60 FPS presentation position
+- targets under Repulsor displacement use the same current knockback presentation point as the unit itself
+- targets not yet rendered in the current frame are previewed through the existing interpolation function without mutating their presentation state
+- Core turret post-shot recoil and muzzle direction can now follow the live presentation position of the exact shot target unit
+- if the shot target is gone or no live target identity is available, fire feedback safely falls back to the original shot snapshot
+- Core target selection, turret range, cooldown, damage and deterministic simulation remain authoritative and unchanged
+- regression coverage verifies live fire target overrides and snapshot fallback behavior
+- release: package 2.11.0 / v2.11 / iOS 2.11 (211)
