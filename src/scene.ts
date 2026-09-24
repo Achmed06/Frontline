@@ -104,6 +104,7 @@ export class ArenaScene extends Phaser.Scene {
       phaseRate: number;
       facing: UnitFacing;
       moving: boolean;
+      stopped: boolean;
       dx: number;
       dy: number;
       moved: number;
@@ -1607,6 +1608,7 @@ export class ArenaScene extends Phaser.Scene {
         phaseRate,
         facing: motion.facing,
         moving: motion.moving,
+        stopped: motion.stopped,
         dx: motion.dx,
         dy: motion.dy,
         moved: motion.moved,
