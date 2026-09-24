@@ -18,6 +18,7 @@ const cues: SoundCue[] = [
   "commander",
   "enemyCommander",
   "start",
+  "unlock",
 ];
 
 test("every tactical audio cue has safe finite synthesis layers", () => {
@@ -46,6 +47,7 @@ test("high-value battlefield states have distinct cue signatures", () => {
   assert.notDeepEqual(soundCueSpec("win"), soundCueSpec("lose"));
   assert.notDeepEqual(soundCueSpec("draw"), soundCueSpec("lose"));
   assert.notDeepEqual(soundCueSpec("start"), soundCueSpec("deploy"));
+  assert.notDeepEqual(soundCueSpec("unlock"), soundCueSpec("win"));
 });
 
 test("disabled sound remains safe in non-browser test environments", () => {
