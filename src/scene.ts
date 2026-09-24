@@ -88,6 +88,7 @@ import {
   type KillConfirmationCue,
 } from "./kill-confirmation";
 import {
+  coreBreakCue,
   coreImpactClimax,
   strongestCoreImpactClimax,
   type CoreClimaxCue,
@@ -8069,10 +8070,16 @@ export class ArenaScene extends Phaser.Scene {
     }
     if (destroyed && !this.brokenCores.has(team)) {
       this.brokenCores.add(team);
-      this.bridge.combatFeedback?.(
-        team === "enemy" ? "coreBreak" : "coreLost",
+      const state = this.bridge.match().state;
+      const breakCue = coreBreakCue(
+        team,
+        state.cores.player.hp,
+        state.cores.enemy.hp,
       );
-      this.lastCombatFeedbackAt = this.clock;
+      if (breakCue) {
+        this.bridge.combatFeedback?.(breakCue);
+        this.lastCombatFeedbackAt = this.clock;
+      }
       if (!this.reducedMotion)
         this.cameras.main.shake(
           team === "enemy" ? 310 : 280,
