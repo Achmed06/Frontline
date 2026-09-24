@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.93
+## Current v1.94
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2032,4 +2032,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies multiple attackers, mirrored enemy pressure, defender interception and dead-unit exclusion
 - targeting, unit damage, Core HP, turret behavior, win conditions, bot behavior and combat balance remain unchanged
 - release: package 1.93.0 / v1.93 / iOS 1.93 (193)
+
+## v1.94 changes
+
+- the live energy row now communicates match tempo without adding another HUD widget or new gameplay system
+- below 80% energy the presentation stays exactly as restrained as before
+- at 80% or more, the existing energy bar shifts into a warmer high-energy state so players can feel that they are approaching the cap without reading another number
+- at the real ENERGY_CAP the current resource row becomes ENERGY VOLL and the existing selection hint changes to ENERGIE VOLL · JETZT KARTE SPIELEN when no card is selected
+- crossing into full energy triggers one short visual pulse on the current energy bar and already-affordable cards; it does not loop continuously while energy remains capped
+- spending any energy naturally clears the capped state, allowing a later genuine cap crossing to trigger again
+- selected cards, insufficient-energy countdowns, drag-to-deploy validation and prelaunch card selection retain their existing higher-priority guidance
+- no sound, banner or haptic is added for full energy, preventing the tempo cue from competing with combat, Core and Commander feedback
+- Reduced Motion preserves the high/full-energy distinction while removing the one-shot pulse animation
+- resource accessibility copy now exposes the exact current energy value and cap
+- the existing energy-feedback helper now owns normal, high and capped tempo states and sanitizes malformed capacity values
+- regression coverage verifies the quiet normal range, 80% high-energy threshold, exact cap behavior and malformed-input fallback
+- energy generation rate, ENERGY_CAP, card costs, deployment rules, bot behavior, objectives, rewards and combat balance are unchanged
+- release: package 1.94.0 / v1.94 / iOS 1.94 (194)
 
