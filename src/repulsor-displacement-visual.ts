@@ -102,9 +102,11 @@ export function repulsorDisplacementPoint(
   )
     return null;
   const progress = snap ? 1 : visual.travelProgress;
+  const targetX = effect.targetX as number;
+  const targetY = effect.targetY as number;
   return {
-    x: effect.x + (effect.targetX - effect.x) * progress,
-    y: effect.y + (effect.targetY - effect.y) * progress,
+    x: effect.x + (targetX - effect.x) * progress,
+    y: effect.y + (targetY - effect.y) * progress,
     progress,
   };
 }
