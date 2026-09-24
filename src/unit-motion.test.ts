@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sampleUnitMotion, unitTrailPoint } from "./unit-motion";
+import { sampleUnitMotion, sampleUnitMotionFrame, sampleUnitRenderPosition, unitTrailPoint } from "./unit-motion";
 
 test("movement facing follows meaningful horizontal travel", () => {
   assert.deepEqual(sampleUnitMotion(undefined, 100, 100), {
@@ -57,4 +57,88 @@ test("stopping transition is explicit and trail points stay behind movement", ()
   assert.deepEqual(unitTrailPoint(110, 100, 10, 0), { x: 102, y: 100 });
   assert.deepEqual(unitTrailPoint(100, 110, 0, 10, 6), { x: 100, y: 104 });
   assert.deepEqual(unitTrailPoint(100, 100, 0, 0), { x: 100, y: 100 });
+});
+
+
+test("unit render position fills the visual gap between 30 Hz simulation ticks", () => {
+  const initial = sampleUnitRenderPosition(undefined, 100, 100, 1 / 60);
+  assert.equal(initial.x, 100);
+  assert.equal(initial.y, 100);
+
+  const half = sampleUnitRenderPosition(initial.state, 104, 100, 1 / 60);
+  assert.equal(half.x, 102);
+  assert.equal(half.y, 100);
+  assert.equal(half.state.progress, 0.5);
+
+  const complete = sampleUnitRenderPosition(half.state, 104, 100, 1 / 60);
+  assert.equal(complete.x, 104);
+  assert.equal(complete.y, 100);
+  assert.equal(complete.state.progress, 1);
+});
+
+test("30 FPS rendering keeps legacy unit positions exact", () => {
+  const initial = sampleUnitRenderPosition(undefined, 100, 100, 1 / 30);
+  const next = sampleUnitRenderPosition(initial.state, 104, 102, 1 / 30);
+  assert.equal(next.x, 104);
+  assert.equal(next.y, 102);
+});
+
+test("large displacements and reduced-motion rendering snap immediately", () => {
+  const initial = sampleUnitRenderPosition(undefined, 100, 100, 1 / 60);
+  const teleport = sampleUnitRenderPosition(initial.state, 130, 100, 1 / 60);
+  assert.equal(teleport.x, 130);
+  assert.equal(teleport.state.progress, 1);
+
+  const reduced = sampleUnitRenderPosition(
+    teleport.state,
+    134,
+    104,
+    1 / 60,
+    true,
+  );
+  assert.equal(reduced.x, 134);
+  assert.equal(reduced.y, 104);
+  assert.equal(reduced.state.progress, 1);
+});
+
+
+test("render-only frames preserve movement instead of reporting a false stop", () => {
+  const moving = sampleUnitMotionFrame(
+    {
+      x: 100,
+      y: 100,
+      dx: 2,
+      dy: -1,
+      moved: Math.hypot(2, 1),
+      moving: true,
+      facing: 1,
+      stopped: false,
+      sampledAt: 1,
+    },
+    102,
+    99,
+    2,
+  );
+  assert.equal(moving.moving, true);
+  assert.equal(moving.stopped, false);
+
+  const duplicateRender = sampleUnitMotionFrame(
+    moving,
+    102,
+    99,
+    2,
+  );
+  assert.equal(duplicateRender.moving, true);
+  assert.equal(duplicateRender.stopped, false);
+  assert.equal(duplicateRender.dx, moving.dx);
+  assert.equal(duplicateRender.dy, moving.dy);
+
+  const actualStop = sampleUnitMotionFrame(
+    duplicateRender,
+    102,
+    99,
+    3,
+  );
+  assert.equal(actualStop.moving, false);
+  assert.equal(actualStop.stopped, true);
 });

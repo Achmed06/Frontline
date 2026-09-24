@@ -58,9 +58,11 @@ import {
   type UnitVitalsTrail,
 } from "./unit-vitals";
 import {
-  sampleUnitMotion,
+  sampleUnitMotionFrame,
+  sampleUnitRenderPosition,
   unitTrailPoint,
   type UnitFacing,
+  type UnitRenderPositionState,
 } from "./unit-motion";
 import { movementFootprintVisual } from "./movement-footprint-visual";
 import { unitDamageStateVisual } from "./unit-damage-state-visual";
@@ -99,8 +101,15 @@ export class ArenaScene extends Phaser.Scene {
       x: number;
       y: number;
       phase: number;
+      phaseRate: number;
       facing: UnitFacing;
       moving: boolean;
+      stopped: boolean;
+      dx: number;
+      dy: number;
+      moved: number;
+      sampledAt: number;
+      render: UnitRenderPositionState;
       settleUntil: number;
     }
   >();
@@ -122,6 +131,7 @@ export class ArenaScene extends Phaser.Scene {
   private overtimeSubtitle!: Phaser.GameObjects.Text;
   private endSequenceStartedAt: number | null = null;
   private clock = 0;
+  private frameDeltaSeconds = 1 / 60;
   private reactedEffects = new Set<number>();
   private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
@@ -339,8 +349,9 @@ export class ArenaScene extends Phaser.Scene {
       this.endSubtitle.setVisible(false);
     }
     if (running) {
-      this.clock += Math.min(delta, 100) / 1000;
-      if (!this.bridge.authoritative) match.update(Math.min(delta, 100) / 1000);
+      this.frameDeltaSeconds = Math.min(delta, 100) / 1000;
+      this.clock += this.frameDeltaSeconds;
+      if (!this.bridge.authoritative) match.update(this.frameDeltaSeconds);
     }
     // Lobby and pause screens do not need continuously rebuilt graphics.
     if (running || match !== this.lastMatch || this.wasRunning) this.draw();
@@ -1561,24 +1572,48 @@ export class ArenaScene extends Phaser.Scene {
           effect.targetY !== undefined,
       );
       const previous = this.unitMotion.get(u.id);
-      const motion = sampleUnitMotion(
+      const motion = sampleUnitMotionFrame(
         previous,
         u.x,
         u.y,
+        s.time,
         firing?.targetX,
       );
+      const simulationAdvanced =
+        !previous ||
+        previous.sampledAt !== motion.sampledAt ||
+        Math.abs(previous.x - motion.x) > 1e-6 ||
+        Math.abs(previous.y - motion.y) > 1e-6;
+      const phaseRate = simulationAdvanced
+        ? Math.min(0.9, motion.moved * 0.42) * 30
+        : previous?.phaseRate ?? 0;
       const phase =
         (previous?.phase ?? u.id * 0.71) +
-        Math.min(0.9, motion.moved * 0.42);
-      const settleUntil = motion.stopped
-        ? this.clock + 0.18
-        : previous?.settleUntil ?? 0;
+        (motion.moving ? phaseRate * this.frameDeltaSeconds : 0);
+      const settleUntil =
+        simulationAdvanced && motion.stopped
+          ? this.clock + 0.18
+          : previous?.settleUntil ?? 0;
+      const rendered = sampleUnitRenderPosition(
+        previous?.render,
+        u.x,
+        u.y,
+        this.frameDeltaSeconds,
+        this.reducedMotion,
+      );
       this.unitMotion.set(u.id, {
         x: u.x,
         y: u.y,
         phase,
+        phaseRate,
         facing: motion.facing,
         moving: motion.moving,
+        stopped: motion.stopped,
+        dx: motion.dx,
+        dy: motion.dy,
+        moved: motion.moved,
+        sampledAt: s.time,
+        render: rendered.state,
         settleUntil,
       });
       const settle = this.reducedMotion
@@ -1641,10 +1676,10 @@ export class ArenaScene extends Phaser.Scene {
       const attackHeight = 1 - attackPose * 0.014;
       sprite
         .setPosition(
-          u.x +
+          rendered.x +
             recoilX +
             (this.reducedMotion ? 0 : hitReaction.offsetX),
-          u.y -
+          rendered.y -
             3 +
             spawnYOffset +
             walkBob +
@@ -1689,9 +1724,14 @@ export class ArenaScene extends Phaser.Scene {
       if (hitStrength > 0.42) sprite.setTintFill(0xffffff);
       else sprite.clearTint();
       g.fillStyle(0x06171b, 0.55);
-      g.fillEllipse(u.x, u.y + 6, size * 0.65, size * 0.25);
+      g.fillEllipse(rendered.x, rendered.y + 6, size * 0.65, size * 0.25);
       g.lineStyle(2, u.team === "player" ? MINT : CORAL, 0.9);
-      g.strokeEllipse(u.x, u.y + 7, size * 0.75, size * 0.32);
+      g.strokeEllipse(
+        rendered.x,
+        rendered.y + 7,
+        size * 0.75,
+        size * 0.32,
+      );
 
       const weaponCycle = weaponCycleVisual(
         u.cardId,
