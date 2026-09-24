@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.84
+## Current v1.85
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1882,4 +1882,19 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies the first-battle, early-learning and full-lobby phases plus malformed local match counts
 - no new mode, currency, energy gate, forced timer, monetization gate or combat advantage was added
 - release: package 1.84.0 / v1.84 / iOS 1.84 (184)
+
+## v1.85 changes
+
+- repeat matches now enter combat faster: the first-ever battle keeps the full 3.0-second onboarding launch, while every later match compresses the same opening into 1.8 seconds
+- the existing Core, supply and Commander synchronization phases are preserved rather than removed; their timing scales with the configured launch duration
+- the brief LOS state after the countdown is shortened for returning players as well, reducing dead time between tapping play and the first real action
+- after the first completed match, unit and tactic cards become selectable during the launch countdown so players can prepare their first move before the arena is released
+- deployment itself still remains locked until the match is live, so preselection cannot move simulation time, spend energy or change combat state early
+- the selected card receives restrained prelaunch emphasis and the selection hint explains that it is ready for LOS
+- the first battle deliberately keeps card preselection disabled so the existing contextual coaching can introduce card choice at its intended pace
+- a pure matchStartTiming helper centralizes first-battle versus returning-player timing and preselection eligibility
+- matchStartVisual now accepts an explicit duration and deterministically divides any valid start window into the same three presentation phases
+- regression coverage verifies first-battle timing, repeat timing, malformed match-count fallback, compressed phase boundaries and compressed progress
+- match duration, starting energy, card costs, bot timing after the match goes live, objectives, progression and combat balance are unchanged
+- release: package 1.85.0 / v1.85 / iOS 1.85 (185)
 
