@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { matchStartTiming } from "./match-start-timing";
 
-test("first battle keeps the full three-second onboarding window", () => {
+test("first battle keeps the full onboarding window and already allows card choice", () => {
   assert.deepEqual(matchStartTiming(0), {
     countdownMs: 3000,
     goMs: 650,
-    allowPreselect: false,
+    allowPreselect: true,
   });
 });
 
