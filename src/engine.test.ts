@@ -211,6 +211,11 @@ test("Atlas shields absorb damage, expire, and enforce their cooldown", () => {
   const unit = staticUnit(match, "player", 210, 350);
   assert.equal(match.activateCommander().ok, true);
   assert.equal(unit.shield, 70);
+  const atlasEffect = match.state.effects.find(
+    (effect) => effect.type === "shield" && effect.sourceCardId === "atlas",
+  );
+  assert.ok(atlasEffect);
+  assert.equal(atlasEffect.targetUnitId, unit.id);
   assert.equal(match.state.commanderCooldown, COMMANDER_COOLDOWN);
   assert.equal(match.activateCommander().ok, false);
   assert.equal(match.play("enemy", "pulse", 210, 350).ok, true);
@@ -238,9 +243,43 @@ test("Rally heals up to max HP and gives a temporary buff only to nearby allies"
   assert.equal(ally.hp, ally.maxHp - 25);
   assert.equal(distant.hp, distant.maxHp - 80);
   assert.equal(foe.hp, foe.maxHp - 80);
+  const rallyHeal = match.state.effects.find(
+    (effect) => effect.type === "heal" && effect.value === 65,
+  );
+  assert.ok(rallyHeal);
+  assert.equal(rallyHeal.targetUnitId, ally.id);
   assert.equal(ally.rallyTime, 6);
   match.update(6.1);
   assert.equal(ally.rallyTime, 0);
+});
+
+
+test("NOVA and LYRA burst effects retain each affected unit identity", () => {
+  const novaMatch = new Match({
+    playerCommander: "nova",
+    botEnabled: false,
+  });
+  const novaUnit = staticUnit(novaMatch, "player", 180, 350);
+  assert.equal(novaMatch.activateCommander().ok, true);
+  const novaEffect = novaMatch.state.effects.find(
+    (effect) => effect.type === "rally" && effect.sourceCardId === "nova",
+  );
+  assert.ok(novaEffect);
+  assert.equal(novaEffect.targetUnitId, novaUnit.id);
+
+  const lyraMatch = new Match({
+    playerCommander: "lyra",
+    botEnabled: false,
+  });
+  const lyraUnit = staticUnit(lyraMatch, "player", 240, 350);
+  lyraUnit.hp -= 50;
+  lyraUnit.slowTime = 2;
+  assert.equal(lyraMatch.activateCommander().ok, true);
+  const lyraEffect = lyraMatch.state.effects.find(
+    (effect) => effect.type === "heal" && effect.sourceCardId === "lyra",
+  );
+  assert.ok(lyraEffect);
+  assert.equal(lyraEffect.targetUnitId, lyraUnit.id);
 });
 
 test("Medic heals allies and core turret provides light defense", () => {
