@@ -7,7 +7,9 @@ import { nativeApp } from "./mobile";
 
 export type HapticCue =
   | "select"
+  | "deployFast"
   | "deploy"
+  | "deployHeavy"
   | "ability"
   | "capture"
   | "kill"
@@ -28,6 +30,7 @@ export type HapticSpec =
 export function hapticSpec(cue: HapticCue): HapticSpec {
   switch (cue) {
     case "select":
+    case "deployFast":
       return { kind: "impact", style: "light" };
     case "deploy":
     case "reward":
@@ -35,6 +38,7 @@ export function hapticSpec(cue: HapticCue): HapticSpec {
     case "coreImpact":
       return { kind: "impact", style: "medium" };
     case "ability":
+    case "deployHeavy":
     case "heavyKill":
     case "coreCriticalImpact":
     case "coreBreak":

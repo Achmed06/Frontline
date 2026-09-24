@@ -18,12 +18,16 @@ export type DeploymentArrivalVisual = {
   rayCount: number;
   spriteScale: number;
   yOffset: number;
+  releaseBlend: number;
+  launchStretch: number;
+  landingPunch: number;
 };
 
 type SpawnEffect = Pick<
   Effect,
   "type" | "life" | "maxLife" | "radius" | "sourceCardId"
->;
+> &
+  Partial<Pick<Effect, "x" | "y">>;
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
@@ -63,6 +67,26 @@ export function deploymentArrivalVisual(
       ? Math.max(7, Math.min(16, effect.radius ?? 10))
       : 10;
   const kind = kindFor(effect.sourceCardId);
+  const releaseRaw = clamp01((progress - 0.28) / 0.56);
+  const releaseBlend =
+    releaseRaw * releaseRaw * (3 - 2 * releaseRaw);
+  const launchWave = Math.sin(releaseBlend * Math.PI);
+  const landingPunch =
+    kind === "heavy"
+      ? Math.sin(Math.min(1, progress * 1.5) * Math.PI) * 0.95
+      : kind === "siege"
+        ? Math.sin(Math.min(1, progress * 1.65) * Math.PI) * 0.72
+        : kind === "swarm"
+          ? Math.sin(Math.min(1, progress * 2.1) * Math.PI) * 0.34
+          : Math.sin(Math.min(1, progress * 1.8) * Math.PI) * 0.48;
+  const launchStretch =
+    kind === "heavy"
+      ? 1 + launchWave * 0.025
+      : kind === "siege"
+        ? 1 + launchWave * 0.04
+        : kind === "swarm"
+          ? 1 + launchWave * 0.085
+          : 1 + launchWave * 0.055;
 
   let beamHeight = 54;
   let beamWidth = 14;
@@ -119,5 +143,31 @@ export function deploymentArrivalVisual(
     rayCount,
     spriteScale,
     yOffset,
+    releaseBlend,
+    launchStretch,
+    landingPunch,
+  };
+}
+
+export function deploymentPresentationPoint(
+  effect: SpawnEffect | undefined,
+  targetX: number,
+  targetY: number,
+  reducedMotion = false,
+): { x: number; y: number } | null {
+  const visual = deploymentArrivalVisual(effect);
+  if (
+    !visual ||
+    !effect ||
+    !Number.isFinite(effect.x) ||
+    !Number.isFinite(effect.y)
+  )
+    return null;
+  const startX = effect.x as number;
+  const startY = effect.y as number;
+  const blend = reducedMotion ? 1 : visual.releaseBlend;
+  return {
+    x: startX + (targetX - startX) * blend,
+    y: startY + (targetY - startY) * blend,
   };
 }
