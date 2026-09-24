@@ -115,6 +115,15 @@ export type UnitRenderPositionSample = {
   state: UnitRenderPositionState;
 };
 
+export function unitRenderPosition(
+  state: UnitRenderPositionState,
+): { x: number; y: number } {
+  return {
+    x: state.fromX + (state.targetX - state.fromX) * state.progress,
+    y: state.fromY + (state.targetY - state.fromY) * state.progress,
+  };
+}
+
 const PRESENTATION_STEP_SECONDS = 1 / 30;
 const TELEPORT_SNAP_DISTANCE = 18;
 
