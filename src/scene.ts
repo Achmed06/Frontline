@@ -60,6 +60,7 @@ import {
 import {
   sampleUnitMotionFrame,
   sampleUnitRenderPosition,
+  unitRenderPosition,
   unitTrailPoint,
   type UnitFacing,
   type UnitRenderPositionState,
@@ -110,6 +111,7 @@ export class ArenaScene extends Phaser.Scene {
       moved: number;
       sampledAt: number;
       render: UnitRenderPositionState;
+      renderedFrame: number;
       settleUntil: number;
     }
   >();
@@ -132,6 +134,7 @@ export class ArenaScene extends Phaser.Scene {
   private endSequenceStartedAt: number | null = null;
   private clock = 0;
   private frameDeltaSeconds = 1 / 60;
+  private renderFrame = 0;
   private reactedEffects = new Set<number>();
   private battleScars: BattlefieldScar[] = [];
   private brokenCores = new Set<"player" | "enemy">();
@@ -696,6 +699,7 @@ export class ArenaScene extends Phaser.Scene {
     }
   }
   private draw() {
+    this.renderFrame++;
     const m = this.bridge.match(),
       s = m.state,
       g = this.g,
@@ -1614,6 +1618,7 @@ export class ArenaScene extends Phaser.Scene {
         moved: motion.moved,
         sampledAt: s.time,
         render: rendered.state,
+        renderedFrame: this.renderFrame,
         settleUntil,
       });
       const settle = this.reducedMotion
@@ -1849,6 +1854,25 @@ export class ArenaScene extends Phaser.Scene {
         const targetRadius = combatTarget.core
           ? 21
           : combatTarget.target.radius;
+        const targetPresentation = combatTarget.core
+          ? { x: combatTarget.target.x, y: combatTarget.target.y }
+          : (() => {
+              const targetMotion = this.unitMotion.get(
+                combatTarget.target.id,
+              );
+              if (
+                targetMotion &&
+                targetMotion.renderedFrame === this.renderFrame
+              )
+                return unitRenderPosition(targetMotion.render);
+              return sampleUnitRenderPosition(
+                targetMotion?.render,
+                combatTarget.target.x,
+                combatTarget.target.y,
+                this.frameDeltaSeconds,
+                this.reducedMotion,
+              );
+            })();
         const targetLock = weaponTargetLockVisual(
           u.cardId,
           u.attackCooldown,
@@ -1856,8 +1880,8 @@ export class ArenaScene extends Phaser.Scene {
           true,
           renderX,
           renderY,
-          combatTarget.target.x,
-          combatTarget.target.y,
+          targetPresentation.x,
+          targetPresentation.y,
           targetRadius,
         );
         if (targetLock.active) {
@@ -1869,8 +1893,8 @@ export class ArenaScene extends Phaser.Scene {
                 : targetLock.kind === "heavy"
                   ? 0xffd59a
                   : 0x9adfff;
-          const targetX = combatTarget.target.x;
-          const targetY = combatTarget.target.y;
+          const targetX = targetPresentation.x;
+          const targetY = targetPresentation.y;
           const sourceReach = u.radius + 5;
           const targetReach =
             targetLock.bracketRadius + 4;
