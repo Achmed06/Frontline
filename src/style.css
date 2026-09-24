@@ -7556,14 +7556,29 @@ a.privacy-link:focus-visible,
   box-shadow:
     0 0 0 1px #eaf5a72b,
     0 5px 15px #b8d56624;
+  animation: card-preselect-ready .72s ease-out 2;
 }
 .cards.preselecting .card.selected .card-name {
   color: #eef3b9;
+}
+@keyframes card-preselect-ready {
+  0% {
+    box-shadow: 0 0 0 1px #eaf5a72b, 0 5px 15px #b8d56624;
+  }
+  38% {
+    box-shadow: 0 0 0 1px #f4ffb877, 0 4px 22px #d7ed715e;
+  }
+  100% {
+    box-shadow: 0 0 0 1px #eaf5a72b, 0 5px 15px #b8d56624;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cards.preselecting .card:not(:disabled) {
     transition: none;
+  }
+  .cards.preselecting .card.selected {
+    animation: none;
   }
 }
 

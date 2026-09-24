@@ -76,3 +76,73 @@ test("compressed opening progress uses its configured duration", () => {
     0.5,
   );
 });
+
+test("first battle countdown teaches only the next useful actions", () => {
+  const first = matchStartVisual(
+    3000,
+    "ATLAS",
+    "LYRA",
+    false,
+    false,
+    3000,
+    true,
+    "Vanguard",
+  );
+  assert.equal(first.kicker, "DEIN ERSTER ZUG");
+  assert.equal(first.title, "VANGUARD IST BEREIT");
+  assert.match(first.detail, /WECHSELN/);
+
+  const deploy = matchStartVisual(
+    2000,
+    "ATLAS",
+    "LYRA",
+    false,
+    false,
+    3000,
+    true,
+    "Vanguard",
+  );
+  assert.equal(deploy.title, "IM GRÜNEN GEBIET EINSETZEN");
+  assert.equal(deploy.detail, "HALTEN · ZIEHEN · LOSLASSEN");
+
+  const capture = matchStartVisual(
+    1000,
+    "ATLAS",
+    "LYRA",
+    false,
+    false,
+    3000,
+    true,
+    "Vanguard",
+  );
+  assert.equal(capture.title, "PUNKTE EROBERN");
+  assert.equal(capture.detail, "DEINE TRUPPEN KÄMPFEN VON SELBST");
+
+  const go = matchStartVisual(
+    0,
+    "ATLAS",
+    "LYRA",
+    false,
+    false,
+    3000,
+    true,
+    "Vanguard",
+  );
+  assert.equal(go.kicker, "ZIEL · CORE BRECHEN");
+  assert.equal(go.detail, "BODEN GEWINNEN · FRONT VORSCHIEBEN");
+});
+
+test("first battle guidance still explains control-objective wins", () => {
+  const go = matchStartVisual(
+    0,
+    "ATLAS",
+    "LYRA",
+    true,
+    false,
+    3000,
+    true,
+    "Vanguard",
+  );
+  assert.equal(go.kicker, "ZIEL · RELAIS SICHERN");
+  assert.equal(go.detail, "MARKIERTE RELAIS HALTEN");
+});

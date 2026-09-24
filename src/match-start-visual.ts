@@ -22,6 +22,8 @@ export function matchStartVisual(
   controlObjective = false,
   daily = false,
   totalMs = 3000,
+  firstBattle = false,
+  selectedCardName = "",
 ): MatchStartVisual {
   const duration =
     Number.isFinite(totalMs) && totalMs > 0 ? Math.max(300, totalMs) : 3000;
@@ -30,6 +32,53 @@ export function matchStartVisual(
     : duration;
   const progress = clamp01(1 - remaining / duration);
   const phase = duration / 3;
+
+  if (firstBattle) {
+    if (remaining > phase * 2)
+      return {
+        phase: "cores",
+        count: 3,
+        kicker: "DEIN ERSTER ZUG",
+        title: selectedCardName
+          ? `${selectedCardName.toUpperCase()} IST BEREIT`
+          : "TRUPPE UNTEN WÄHLEN",
+        detail: selectedCardName
+          ? "DU KANNST UNTEN WECHSELN · MUSST ABER NICHT"
+          : "TIPPE UNTEN AUF EINE EINHEIT",
+        progress,
+      };
+
+    if (remaining > phase)
+      return {
+        phase: "supply",
+        count: 2,
+        kicker: "SCHRITT 1",
+        title: "IM GRÜNEN GEBIET EINSETZEN",
+        detail: "HALTEN · ZIEHEN · LOSLASSEN",
+        progress,
+      };
+
+    if (remaining > 0)
+      return {
+        phase: "commanders",
+        count: 1,
+        kicker: "SCHRITT 2",
+        title: "PUNKTE EROBERN",
+        detail: "DEINE TRUPPEN KÄMPFEN VON SELBST",
+        progress,
+      };
+
+    return {
+      phase: "go",
+      count: null,
+      kicker: controlObjective ? "ZIEL · RELAIS SICHERN" : "ZIEL · CORE BRECHEN",
+      title: "LOS",
+      detail: controlObjective
+        ? "MARKIERTE RELAIS HALTEN"
+        : "BODEN GEWINNEN · FRONT VORSCHIEBEN",
+      progress: 1,
+    };
+  }
 
   if (remaining > phase * 2)
     return {

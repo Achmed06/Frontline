@@ -9,6 +9,7 @@ test("brand-new players see only the core battle action", () => {
   assert.equal(focus.showSecondaryPlay, false);
   assert.equal(focus.showAdvancedBattle, false);
   assert.equal(focus.cta, "ERSTES GEFECHT STARTEN");
+  assert.match(focus.copy, /^Truppe einsetzen\./);
 });
 
 test("after one match the three-part lobby appears but advanced setup stays hidden", () => {
