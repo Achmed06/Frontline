@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  coreBreakCue,
   coreImpactClimax,
   strongestCoreImpactClimax,
 } from "./core-climax";
@@ -76,4 +77,14 @@ test("non Core-hit effects are ignored", () => {
     ),
     null,
   );
+});
+
+test("single Core destruction maps to the correct immediate climax cue", () => {
+  assert.equal(coreBreakCue("enemy", 900, 0), "coreBreak");
+  assert.equal(coreBreakCue("player", 0, 900), "coreLost");
+});
+
+test("simultaneous Core destruction defers to the draw ending", () => {
+  assert.equal(coreBreakCue("enemy", 0, 0), null);
+  assert.equal(coreBreakCue("player", 0, 0), null);
 });
