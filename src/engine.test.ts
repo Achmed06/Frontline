@@ -719,9 +719,12 @@ test("combat damage emits scaled hit impacts and lethal hits keep size-aware dea
   assert.ok(impact);
   assert.ok((impact.radius ?? 0) >= 12);
   assert.equal(impact.value, 50);
+  assert.equal(impact.sourceUnitId, mortar.id);
   assert.equal(impact.targetUnitId, target.id);
   assert.equal(target.hp, 0);
   assert.ok(death);
+  assert.equal(death.sourceUnitId, mortar.id);
+  assert.equal(death.targetUnitId, target.id);
   assert.equal(death.radius, 22);
   assert.equal(death.maxLife, 0.62);
   assert.equal(m.state.stats.kills, 1);
@@ -1784,7 +1787,11 @@ test("impact, death and Core-hit effects preserve their weapon source", () => {
   assert.ok(mortarImpact);
   assert.ok(mortarDeath);
   assert.equal(mortarImpact.sourceCardId, "mortar");
+  assert.equal(mortarImpact.sourceUnitId, mortar.id);
+  assert.equal(mortarImpact.targetUnitId, mortarTarget.id);
   assert.equal(mortarDeath.sourceCardId, "mortar");
+  assert.equal(mortarDeath.sourceUnitId, mortar.id);
+  assert.equal(mortarDeath.targetUnitId, mortarTarget.id);
 
   const pulseMatch = quietMatch();
   const pulseTarget = staticUnit(pulseMatch, "enemy", 210, 220);
@@ -1795,6 +1802,11 @@ test("impact, death and Core-hit effects preserve their weapon source", () => {
     pulseMatch.state.effects.find((effect) => effect.type === "impact")
       ?.sourceCardId,
     "pulse",
+  );
+  assert.equal(
+    pulseMatch.state.effects.find((effect) => effect.type === "impact")
+      ?.sourceUnitId,
+    undefined,
   );
   assert.equal(
     pulseMatch.state.effects.find((effect) => effect.type === "death")
