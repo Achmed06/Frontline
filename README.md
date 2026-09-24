@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v1.90
+## Current v1.91
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -1983,4 +1983,21 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies multi-win streaks, one-win restraint, loss rebound, draw handling and malformed/empty-history fallback
 - no new mode, currency, reward track, gameplay bonus, timer or monetization system was added
 - release: package 1.90.0 / v1.90 / iOS 1.90 (190)
+
+## v1.91 changes
+
+- the live resource row now shows the actual territory race for both sides instead of only displaying the player's owned-sector count
+- the compact score reads player territory versus enemy territory at a glance while nine tiny segments retain the exact 3x3 ownership state
+- every segment is driven directly from the current MatchState point owners: mint for player, coral for enemy and neutral gray for unclaimed territory
+- the race presentation distinguishes player lead, enemy lead and an even front without inventing percentages, rankings or hidden advantage calculations
+- the accessible label mirrors the same exact counts and neutral-zone total for screen readers
+- only a genuine leadership reversal triggers one restrained front-shift pulse; ordinary captures, ties and the first lead remain quiet
+- the previous non-neutral leader is remembered through temporary ties so an actual comeback/lead flip still reads clearly without double-firing on the tie itself
+- the existing v1.87 rare momentum banners remain unchanged; this is a persistent at-a-glance score, not another banner or commentary system
+- tight and narrow iPhone layouts compress the score and nine segments rather than removing battlefield information
+- Reduced Motion keeps the changed-front emphasis visible without animation
+- a pure frontRace helper centralizes player/enemy/neutral counts, lead state and accessible copy
+- regression coverage verifies the initial 3-3-3 board, player advantage, enemy advantage and empty-state safety
+- territory ownership, capture rules, supply, Core behavior, timers, bot behavior, rewards and combat balance are unchanged
+- release: package 1.91.0 / v1.91 / iOS 1.91 (191)
 
