@@ -2,6 +2,8 @@ export type SoundCue =
   | "select"
   | "deploy"
   | "capture"
+  | "kill"
+  | "heavyKill"
   | "warning"
   | "opportunity"
   | "overtime"
@@ -84,6 +86,21 @@ const SPECS: Record<SoundCue, SoundCueSpec> = {
       tone("sine", 495, 495, 0.055, 0.14, 0.031),
       tone("triangle", 660, 690, 0.11, 0.16, 0.033),
     ],
+  },
+  kill: {
+    tones: [
+      tone("triangle", 190, 92, 0, 0.12, 0.046),
+      tone("sine", 520, 760, 0.018, 0.1, 0.024),
+    ],
+    noise: { delay: 0, duration: 0.055, gain: 0.014, lowpass: 820 },
+  },
+  heavyKill: {
+    tones: [
+      tone("triangle", 138, 56, 0, 0.18, 0.058),
+      tone("sine", 410, 690, 0.018, 0.14, 0.029),
+      tone("triangle", 760, 980, 0.06, 0.12, 0.02),
+    ],
+    noise: { delay: 0, duration: 0.09, gain: 0.021, lowpass: 680 },
   },
   warning: {
     tones: [
