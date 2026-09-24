@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.03
+## Current v2.04
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -2172,3 +2172,15 @@ Gameplay-source changes also trigger the latest iPhone test build; older in-prog
 - regression coverage verifies Unit-to-Unit, Unit-to-Core and Core-turret endpoint identity rules
 - authoritative target selection, hit resolution, damage timing, projectile gameplay, movement and deterministic simulation are unchanged
 - release: package 2.3.0 / v2.03 / iOS 2.03 (203)
+
+
+## v2.04 changes
+
+- shield-hit, shield-break and Breaker specialist effects now retain the live target unit ID while preserving their original impact coordinates and direction
+- shield shells, contact flashes, crack lines, break fragments and Breaker shield waves follow the target's interpolated 60 FPS presentation position while it keeps moving
+- the original source-to-impact vector remains authoritative for visual hit direction, so smoothing does not rotate or rewrite the contact angle
+- if the affected unit dies or disappears, rendering falls back to the original impact snapshot so the effect still completes cleanly
+- generic impact and death effects intentionally remain world-space contact snapshots rather than following the target
+- regression coverage verifies Breaker, absorbed shield hits and shield breaks retain the exact affected unit ID
+- shield damage, shield-break amount, HP damage, movement, targeting and deterministic combat simulation are unchanged
+- release: package 2.4.0 / v2.04 / iOS 2.04 (204)
