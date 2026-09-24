@@ -7908,3 +7908,60 @@ a.privacy-link:focus-visible,
   border-color: #72638b;
 }
 
+/* v1.90: session momentum stays visible without adding another mode. */
+.quick-play-streak {
+  border-color: #a58a4f !important;
+  background: #352d1dd9 !important;
+  color: #f0d77d !important;
+  box-shadow: inset 0 0 0 1px #ffe69914;
+}
+
+.play-now-hero[data-session-tone="hot"] {
+  border-color: #a89457;
+  background:
+    radial-gradient(circle at 80% 20%, #ffe47725, transparent 30%),
+    linear-gradient(150deg, #39402a 0%, #243227 54%, #142322 100%);
+  box-shadow:
+    0 16px 36px #020c1048,
+    inset 0 0 0 1px #fff0a31a,
+    0 0 22px #d9bd4c12;
+}
+.play-now-hero[data-session-tone="hot"] .play-now-kicker {
+  color: #e6d17b;
+}
+.play-now-hero[data-session-tone="hot"] h2 em {
+  color: #ffed9e;
+}
+.play-now-hero[data-session-tone="hot"] .play-now-button {
+  border-color: #fff0a8;
+  box-shadow:
+    0 5px 0 #76632f,
+    0 11px 26px #e9cb552a;
+}
+
+.play-now-hero[data-session-tone="rebound"] {
+  border-color: #8b6957;
+  background:
+    radial-gradient(circle at 80% 22%, #ff9d7820, transparent 30%),
+    linear-gradient(150deg, #3b2d28 0%, #28302a 54%, #142322 100%);
+}
+.play-now-hero[data-session-tone="rebound"] .play-now-kicker {
+  color: #d8a28d;
+}
+.play-now-hero[data-session-tone="rebound"] h2 em {
+  color: #ffc0a9;
+}
+.play-now-hero[data-session-tone="rebound"] .play-now-button {
+  border-color: #f2baa0;
+  box-shadow:
+    0 5px 0 #724b3c,
+    0 11px 23px #d9826221;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-now-hero[data-session-tone="hot"],
+  .play-now-hero[data-session-tone="rebound"] {
+    box-shadow: 0 12px 28px #020c1038;
+  }
+}
+
