@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ENERGY_RATE } from "./engine";
-import { energyReadiness, energySpent } from "./energy-feedback";
+import { energyReadiness, energySpent, energyTempo } from "./energy-feedback";
 
 test("energy readiness exposes exact affordable threshold and progress", () => {
   assert.deepEqual(energyReadiness(0, 4), {
@@ -72,4 +72,45 @@ test("energy spend reports only the actual post-play decrease", () => {
   assert.equal(energySpent(3, 3.5), 0);
   assert.equal(energySpent(Number.NaN, 2), 0);
   assert.equal(energySpent(4, Number.NaN), 4);
+});
+
+
+test("energy tempo stays quiet until the hand approaches the cap", () => {
+  assert.deepEqual(energyTempo(6, 10), {
+    state: "normal",
+    ratio: 0.6,
+    remaining: 4,
+    label: "ENERGIE",
+  });
+  assert.deepEqual(energyTempo(8, 10), {
+    state: "high",
+    ratio: 0.8,
+    remaining: 2,
+    label: "ENERGIE FAST VOLL",
+  });
+});
+
+test("energy tempo marks only the real cap as capped", () => {
+  assert.deepEqual(energyTempo(9.99, 10), {
+    state: "high",
+    ratio: 0.999,
+    remaining: 0.009999999999999787,
+    label: "ENERGIE FAST VOLL",
+  });
+  assert.deepEqual(energyTempo(10, 10), {
+    state: "capped",
+    ratio: 1,
+    remaining: 0,
+    label: "ENERGIE VOLL",
+  });
+  assert.equal(energyTempo(15, 10).state, "capped");
+});
+
+test("energy tempo fails safe for malformed capacity", () => {
+  assert.deepEqual(energyTempo(Number.NaN, Number.NaN), {
+    state: "normal",
+    ratio: 0,
+    remaining: 0,
+    label: "ENERGIE",
+  });
 });
