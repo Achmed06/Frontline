@@ -29,7 +29,10 @@ import { combatValuePresentation } from "./combat-value-label";
 import { weaponFireDirection, weaponFireFeedback } from "./weapon-fire-feedback";
 import { weaponCycleVisual } from "./weapon-cycle-visual";
 import { weaponTargetLockVisual } from "./weapon-target-lock-visual";
-import { deploymentArrivalVisual } from "./deployment-arrival-visual";
+import {
+  deploymentArrivalVisual,
+  deploymentPresentationPoint,
+} from "./deployment-arrival-visual";
 import { corePressure } from "./core-pressure";
 import { coreDamageStateVisual } from "./core-damage-state-visual";
 import { commanderActivationVisual } from "./commander-activation-visual";
@@ -426,15 +429,30 @@ export class ArenaScene extends Phaser.Scene {
     if (repulsorPoint) return repulsorPoint;
 
     const motion = this.unitMotion.get(unit.id);
-    if (!motion) return { x: unit.x, y: unit.y };
-    if (motion.renderedFrame === this.renderFrame)
-      return unitRenderPosition(motion.render);
-    return sampleUnitRenderPosition(
-      motion.render,
-      unit.x,
-      unit.y,
-      this.frameDeltaSeconds,
-      this.reducedMotion,
+    const motionPoint = !motion
+      ? { x: unit.x, y: unit.y }
+      : motion.renderedFrame === this.renderFrame
+        ? unitRenderPosition(motion.render)
+        : sampleUnitRenderPosition(
+            motion.render,
+            unit.x,
+            unit.y,
+            this.frameDeltaSeconds,
+            this.reducedMotion,
+          );
+    const spawnEffect = effects?.find(
+      (effect) =>
+        effect.type === "spawn" &&
+        effect.targetUnitId === unit.id &&
+        effect.life > 0,
+    );
+    return (
+      deploymentPresentationPoint(
+        spawnEffect,
+        motionPoint.x,
+        motionPoint.y,
+        this.reducedMotion,
+      ) ?? motionPoint
     );
   }
 
