@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectedCardHint } from "./card-hints";
+import { openingUnitHint, selectedCardHint } from "./card-hints";
 import { CARDS } from "./engine";
 
 const card = (id: string) => CARDS.find((item) => item.id === id)!;
@@ -58,4 +58,28 @@ test("ordinary unit and empty selection keep their concise fallbacks", () => {
     selectedCardHint(undefined),
     "ANTIPPEN ODER DIREKT INS FELD ZIEHEN",
   );
+});
+
+test("opening unit hints make the first strategic choice explicit", () => {
+  assert.equal(
+    openingUnitHint(card("vanguard")),
+    "OPENING · HALTEN · 2 ENERGIE · 125 HP",
+  );
+  assert.equal(
+    openingUnitHint(card("swarm")),
+    "OPENING · EROBERN · 3 TRUPPEN · PULSE-RISIKO",
+  );
+  assert.equal(
+    openingUnitHint(card("raider")),
+    "OPENING · DRUCK · TEMPO 56 · 85 HP",
+  );
+  assert.equal(
+    openingUnitHint(card("ranger")),
+    "OPENING · DECKUNG · 110 REICHWEITE · HINTER FRONT",
+  );
+});
+
+test("opening hints stay limited to meaningful unit profiles", () => {
+  assert.equal(openingUnitHint(card("pulse")), null);
+  assert.equal(openingUnitHint(undefined), null);
 });
