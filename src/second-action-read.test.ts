@@ -54,13 +54,13 @@ test("pulse distinguishes a real spatial group from separate targets", () => {
     secondActionHint(match.state, card("pulse")),
     "ZWEITER ZUG · GEDULD · EINZELZIEL IST WENIG WERT",
   );
-  assert.equal(match.play("enemy", "swarm", 335, 90).ok, true);
+  assert.equal(match.play("enemy", "ranger", 335, 90).ok, true);
   assert.equal(
     secondActionHint(match.state, card("pulse")),
     "ZWEITER ZUG · GEDULD · EINZELZIEL IST WENIG WERT",
   );
-  const swarm = match.state.units.find((unit) => unit.cardId === "swarm")!;
-  swarm.x = 220;
+  const ranger = match.state.units.find((unit) => unit.cardId === "ranger")!;
+  ranger.x = 220;
   assert.equal(
     secondActionHint(match.state, card("pulse")),
     "ZWEITER ZUG · KONTER · GRUPPE TREFFEN",
