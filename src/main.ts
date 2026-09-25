@@ -1,7 +1,7 @@
 import { renderBaseBuilder } from "./base-builder";
 import { baseMapSvg } from "./base-map";
 import { renderBackupMenu } from "./save-backup-menu";
-import { selectedCardHint } from "./card-hints";
+import { openingUnitHint, selectedCardHint } from "./card-hints";
 import { energyReadiness, energySpent, energyTempo } from "./energy-feedback";
 import { corePressure, corePressureLabel } from "./core-pressure";
 import { initializeStore, renderStore, supporterOwned } from "./store";
@@ -111,7 +111,7 @@ import { lobbyCommandStatus } from "./lobby-command-status";
 import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
-import { firstBattleOpeningCard, openingUnitCard } from "./first-battle-opening";
+import { firstBattleOpeningCard, rematchOpeningCard } from "./first-battle-opening";
 import { unitIdentityVisual } from "./unit-identity-visual";
 import { deploymentFeedback } from "./deployment-feedback";
 import { matchStartTiming } from "./match-start-timing";
@@ -363,6 +363,7 @@ let deck: CardId[] = readDeck();
 let deckSlots = readDeckSlots();
 let deckCards = deck.map((id) => CARDS.find((card) => card.id === id)!);
 let match = new Match({ playerDeck: deck, playerCommander: commanderId });
+let lastOpeningUnitCard: CardId | null = null;
 let active = false,
   paused = false,
   selected: string | null = null,
@@ -658,7 +659,11 @@ function updateSelection() {
     ? `${c.name} · ${c.role}`
     : "DEIN EINSATZDECK";
   const selectedHint = el("selected-hint");
-  selectedHint.textContent = selectedCardHint(c);
+  const firstUnitHint =
+    active && !ended && match.state.stats.deployed === 0
+      ? openingUnitHint(c)
+      : null;
+  selectedHint.textContent = firstUnitHint ?? selectedCardHint(c);
   selectedHint.classList.remove("waiting-energy");
   el("arena-tip").textContent = c
     ? c.kind === "ability"
@@ -675,6 +680,10 @@ function deploy(x: number, y: number) {
     return;
   }
   const playedCard = CARDS.find((card) => card.id === selected);
+  const openingUnit =
+    playedCard?.kind === "unit" && match.state.stats.deployed === 0
+      ? playedCard.id
+      : null;
   const beforeEnergy = match.state.energy.player;
   const result = match.play("player", selected, x, y);
   if (!result.ok) {
@@ -684,6 +693,7 @@ function deploy(x: number, y: number) {
     return;
   }
   showEnergySpend(energySpent(beforeEnergy, match.state.energy.player));
+  if (openingUnit) lastOpeningUnitCard = openingUnit;
   const playedAbility = playedCard?.kind === "ability";
   if (playedAbility) {
     sound.play("ability");
@@ -796,9 +806,10 @@ function start(
       match.state.energy.player,
     ) ??
     (rematchStart
-      ? openingUnitCard(
+      ? rematchOpeningCard(
           match.decks.player,
           match.state.energy.player,
+          lastOpeningUnitCard,
         )
       : null);
   const startTiming = matchStartTiming(stats.matches, rematchStart);
