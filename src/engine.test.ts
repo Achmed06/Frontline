@@ -61,6 +61,46 @@ test("initial map has symmetric resources, six unit cards and two tactical abili
   assert.equal(match.frontline("enemy", 210), 210);
 });
 
+test("bot creates opening pressure before the first neutral capture can finish", () => {
+  const standard = new Match({ seed: 42, difficulty: "standard" });
+  standard.update(2.5);
+  assert.equal(
+    standard.state.units.some((unit) => unit.team === "enemy"),
+    false,
+  );
+  standard.update(0.2);
+  assert.equal(
+    standard.state.units.some((unit) => unit.team === "enemy"),
+    true,
+  );
+});
+
+test("opening bot reaction still respects difficulty", () => {
+  const rookie = new Match({ seed: 42, difficulty: "rookie" });
+  rookie.update(3);
+  assert.equal(
+    rookie.state.units.some((unit) => unit.team === "enemy"),
+    false,
+  );
+  rookie.update(0.3);
+  assert.equal(
+    rookie.state.units.some((unit) => unit.team === "enemy"),
+    true,
+  );
+
+  const veteran = new Match({ seed: 42, difficulty: "veteran" });
+  veteran.update(1.9);
+  assert.equal(
+    veteran.state.units.some((unit) => unit.team === "enemy"),
+    false,
+  );
+  veteran.update(0.2);
+  assert.equal(
+    veteran.state.units.some((unit) => unit.team === "enemy"),
+    true,
+  );
+});
+
 test("deployment follows connected supply in its own column and cuts off immediately", () => {
   const match = quietMatch();
   assert.equal(match.canDeploy("player", 210, 349), false);
