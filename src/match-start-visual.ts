@@ -24,6 +24,7 @@ export function matchStartVisual(
   totalMs = 3000,
   firstBattle = false,
   selectedCardName = "",
+  rematch = false,
 ): MatchStartVisual {
   const duration =
     Number.isFinite(totalMs) && totalMs > 0 ? Math.max(300, totalMs) : 3000;
@@ -76,6 +77,55 @@ export function matchStartVisual(
       detail: controlObjective
         ? "MARKIERTE RELAIS HALTEN"
         : "BODEN GEWINNEN · FRONT VORSCHIEBEN",
+      progress: 1,
+    };
+  }
+
+  if (rematch) {
+    if (remaining > phase * 2)
+      return {
+        phase: "cores",
+        count: 3,
+        kicker: "NÄCHSTE FRONT",
+        title: selectedCardName
+          ? `${selectedCardName.toUpperCase()} BEREIT`
+          : "LOADOUT BEREIT",
+        detail: selectedCardName
+          ? "UNTEN WECHSELN · ODER DIREKT PLANEN"
+          : "ERSTE TRUPPE UNTEN WÄHLEN",
+        progress,
+      };
+
+    if (remaining > phase)
+      return {
+        phase: "supply",
+        count: 2,
+        kicker: "KEIN UMWEG",
+        title: "POSITION FESTLEGEN",
+        detail: "GLEICHES LOADOUT · NEUE FRONT",
+        progress,
+      };
+
+    if (remaining > 0)
+      return {
+        phase: "commanders",
+        count: 1,
+        kicker: controlObjective ? "RELAIS IM BLICK" : "CORE IM BLICK",
+        title: `${playerCommander} BEREIT`,
+        detail: "ERSTER ZUG STEHT",
+        progress,
+      };
+
+    return {
+      phase: "go",
+      count: null,
+      kicker: daily ? "TAGESFRONT · WEITER" : "NÄCHSTE FRONT",
+      title: "LOS",
+      detail: selectedCardName
+        ? `${selectedCardName.toUpperCase()} IM GRÜNEN FELD EINSETZEN`
+        : controlObjective
+          ? "RELAIS SICHERN"
+          : "FRONT DURCHBRECHEN",
       progress: 1,
     };
   }
