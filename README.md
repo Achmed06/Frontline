@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.28
+## Current v2.29
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -30,6 +30,7 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - Early deployment lane reads that surface the existing direct-core-versus-safer-flank tradeoff, control objectives and real enemy contact without changing lane geometry or balance
 - Player-owned opening-unit flow that keeps Vanguard for first-battle onboarding, preserves the player's own prior opener on direct rematches, and briefly explains each selected unit's opening role without changing stats
 - Live second-action reads that distinguish reinforcement, lane splitting, counters and premature support after the opener, then disappear after the player's second action without changing balance
+- Opening-to-midgame handoff that replaces stale early `EROBERE DIE MITTE` guidance after two player actions with live rebuild, split, stabilize, expand or advance reads until the normal battle rhythm takes over
 
 ### Progression and modes
 
