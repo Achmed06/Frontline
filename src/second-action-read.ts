@@ -1,6 +1,9 @@
 import type { CardDefinition, MatchState } from "./engine";
 
-const lane = (x: number) => (x < 147.5 ? 0 : x < 272.5 ? 1 : 2);
+const distance = (
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+) => Math.hypot(a.x - b.x, a.y - b.y);
 
 export const playerActionCount = (state: MatchState): number =>
   Object.values(state.stats.unitPlays).reduce(
@@ -29,14 +32,18 @@ export function secondActionHint(
   );
   const damagedAlly = allies.some((unit) => unit.hp < unit.maxHp - 1);
   const shieldedEnemy = enemies.some((unit) => unit.shield > 0);
-  const enemyLaneCounts = [0, 0, 0];
-  for (const unit of enemies) enemyLaneCounts[lane(unit.x)]++;
-  const groupedEnemies = Math.max(...enemyLaneCounts) >= 2;
+  const enemyClusterWithin = (radius: number) =>
+    enemies.some((unit, index) =>
+      enemies.some(
+        (other, otherIndex) =>
+          otherIndex !== index && distance(unit, other) <= radius,
+      ),
+    );
 
   if (card.kind === "ability") {
     if (card.id === "pulse")
       return enemies.length
-        ? groupedEnemies
+        ? enemyClusterWithin(card.range ?? 0)
           ? "ZWEITER ZUG · KONTER · GRUPPE TREFFEN"
           : "ZWEITER ZUG · GEDULD · EINZELZIEL IST WENIG WERT"
         : "ZWEITER ZUG · GEDULD · NOCH KEIN ZIEL";
@@ -65,7 +72,7 @@ export function secondActionHint(
         ? "ZWEITER ZUG · DECKUNG · HINTER OPENER SETZEN"
         : "ZWEITER ZUG · DISTANZ · FRONT ZUERST AUFBAUEN";
     case "mortar":
-      return groupedEnemies
+      return enemyClusterWithin(card.splashRadius ?? 0)
         ? "ZWEITER ZUG · KONTER · GRUPPE UNTER FEUER"
         : "ZWEITER ZUG · FLÄCHENDRUCK · HINTER FRONT";
     case "bulwark":
