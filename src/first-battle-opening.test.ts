@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DEFAULT_DECK } from "./engine";
-import { firstBattleOpeningCard } from "./first-battle-opening";
+import { firstBattleOpeningCard, openingUnitCard } from "./first-battle-opening";
 
 test("prepares Vanguard for the very first battle when it is in the deck", () => {
   assert.equal(firstBattleOpeningCard(0, DEFAULT_DECK, 6), "vanguard");
@@ -28,4 +28,10 @@ test("never preselects an unaffordable card or an ability", () => {
 
 test("malformed match counts safely behave like an unplayed account", () => {
   assert.equal(firstBattleOpeningCard(Number.NaN, DEFAULT_DECK, 6), "vanguard");
+});
+
+test("shared opening selector can prepare a returning rematch without auto-playing it", () => {
+  assert.equal(openingUnitCard(DEFAULT_DECK, 6), "vanguard");
+  assert.equal(openingUnitCard(["pulse", "ranger", "bulwark"], 3), "ranger");
+  assert.equal(openingUnitCard(["pulse", "bulwark", "rally"], 3), null);
 });
