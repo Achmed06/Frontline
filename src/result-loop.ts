@@ -123,3 +123,35 @@ export function quickPlayResultMomentum(
     tone: "loss",
   };
 }
+
+export type ResultActionKind =
+  | "next-mission"
+  | "draft"
+  | "series"
+  | "series-ended"
+  | "daily"
+  | "mission"
+  | "quick-play"
+  | "replay";
+
+export function resultActionDetail(kind: ResultActionKind): string {
+  switch (kind) {
+    case "next-mission":
+      return "NEUER EINSATZ · LOADOUT BLEIBT";
+    case "draft":
+      return "NEUES DECK · DIREKT DRAFTEN";
+    case "series":
+      return "NÄCHSTE SERIENFRONT · DECK BLEIBT";
+    case "series-ended":
+      return "SERIE AUSWERTEN · DANACH NEU STARTEN";
+    case "daily":
+      return "GLEICHES SETUP · SOFORT NOCHMAL";
+    case "mission":
+      return "GLEICHER EINSATZ · GLEICHES LOADOUT";
+    case "quick-play":
+      return "GLEICHES LOADOUT · NEUE FRONT";
+    default:
+      return "GLEICHES LOADOUT · DIREKT WEITER";
+  }
+}
+

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { quickPlayResultMomentum, resultMomentum, resultReplayLabel } from "./result-loop";
+import {
+  quickPlayResultMomentum,
+  resultActionDetail,
+  resultMomentum,
+  resultReplayLabel,
+} from "./result-loop";
 import type { MatchRecord } from "./storage";
 
 const record = (outcome: MatchRecord["outcome"], id: string): MatchRecord => ({
@@ -89,4 +94,13 @@ test("Quick Play result momentum uses only its dedicated streak", () => {
   const draw = quickPlayResultMomentum("draw", 99);
   assert.equal(draw.streak, 0);
   assert.equal(draw.tone, "draw");
+});
+
+test("next-match action context stays concise and mode-specific", () => {
+  assert.equal(resultActionDetail("quick-play"), "GLEICHES LOADOUT · NEUE FRONT");
+  assert.equal(resultActionDetail("daily"), "GLEICHES SETUP · SOFORT NOCHMAL");
+  assert.equal(resultActionDetail("mission"), "GLEICHER EINSATZ · GLEICHES LOADOUT");
+  assert.equal(resultActionDetail("series"), "NÄCHSTE SERIENFRONT · DECK BLEIBT");
+  assert.equal(resultActionDetail("draft"), "NEUES DECK · DIREKT DRAFTEN");
+  assert.equal(resultActionDetail("replay"), "GLEICHES LOADOUT · DIREKT WEITER");
 });

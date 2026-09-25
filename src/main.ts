@@ -95,7 +95,13 @@ import {
 import { resultComparison, renderMatchHistory } from "./match-report";
 import { matchStartVisual, type MatchStartVisual } from "./match-start-visual";
 import { resultDecision, resultSnapshot } from "./result-debrief";
-import { quickPlayResultMomentum, resultMomentum, resultReplayLabel } from "./result-loop";
+import {
+  quickPlayResultMomentum,
+  resultActionDetail,
+  resultMomentum,
+  resultReplayLabel,
+  type ResultActionKind,
+} from "./result-loop";
 import { nextBattleProgress } from "./battle-progress";
 import { rewardReveal } from "./reward-reveal";
 import { dailyPreparation, seriesPreparation } from "./mode-preparation";
@@ -1082,11 +1088,36 @@ function finish() {
                 ? stats.quickPlayWinStreak ?? 0
                 : momentum.streak,
             });
+  const rematchKind: ResultActionKind = wasDraft
+    ? "draft"
+    : wasSeries
+      ? seriesEnded(seriesRun!)
+        ? "series-ended"
+        : "series"
+      : wasDaily
+        ? "daily"
+        : mission
+          ? "mission"
+          : wasQuickPlay
+            ? "quick-play"
+            : "replay";
+  const actionButton = (
+    id: string,
+    label: string,
+    detail: string,
+    kind: "primary" | "secondary",
+  ) =>
+    `<button id="${id}" class="${kind} ${kind === "primary" ? "result-next-primary" : "result-next-secondary"}"><span class="result-action-copy"><b>${label}</b><small>${detail}</small></span><span class="result-action-arrow" aria-hidden="true">↗</span></button>`;
   const nextAction = nextMission
-    ? `<button id="next-mission" class="primary result-next-primary">NÄCHSTER EINSATZ <span>↗</span></button><button id="rematch" class="secondary">${rematchLabel} <span>↗</span></button>`
-    : `<button id="rematch" class="primary result-next-primary">${rematchLabel} <span>↗</span></button>`;
+    ? `${actionButton("next-mission", "NÄCHSTER EINSATZ", resultActionDetail("next-mission"), "primary")}${actionButton("rematch", rematchLabel, resultActionDetail(rematchKind), "secondary")}`
+    : actionButton(
+        "rematch",
+        rematchLabel,
+        resultActionDetail(rematchKind),
+        "primary",
+      );
   showModal(
-    `<section class="result-hero outcome-${snapshot.outcome}"><div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="result-hero-copy"><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p></div><div class="result-snapshot" aria-label="Endstand"><div class="player"><small>DEIN CORE</small><strong>${snapshot.playerCorePercent}%</strong><span>${snapshot.playerPoints}/9 GEBIETE</span></div><i aria-hidden="true">VS</i><div class="enemy"><small>GEGNER CORE</small><strong>${snapshot.enemyCorePercent}%</strong><span>${snapshot.enemyPoints}/9 GEBIETE</span></div></div></section><section class="result-momentum tone-${momentum.tone}"><small>${momentum.label}</small><div><strong>${momentum.streak >= 2 ? momentum.streak : won ? "↗" : draw ? "＝" : "↺"}</strong><span><b>${momentum.title}</b><em>${momentum.detail}</em></span></div></section>${revealResult}<section class="result-actions result-actions-fast" aria-label="Nächste Aktion">${nextAction}<button id="back" class="text-btn result-back">SPIELEN-MENÜ</button></section><section class="result-progress-stack" aria-label="Fortschritt und Belohnungen">${firstSessionResult}${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${nextProgressResult}</section><details class="result-report"><summary><span>GEFECHTSBERICHT</span><small>WERTUNG · KARTE · STATISTIKEN</small><b>＋</b></summary><div class="result-report-body">${decisionResult}${finalFrontMap()}<section class="result-performance" aria-label="Gefechtsleistung"><header><small>GEFECHTSLEISTUNG</small><span>DEINE AKTIONEN</span></header><div class="result-stats"><div><strong>${snapshot.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${snapshot.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${snapshot.kills}</strong><span>ABSCHÜSSE</span></div><div><strong>${snapshot.abilities}</strong><span>FÄHIGKEITEN</span></div></div></section>${resultComparison(report)}<div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div></div></details>`,
+    `<section class="result-hero outcome-${snapshot.outcome}"><div class="result-emblem ${won ? "won" : ""}">${won ? "↗" : draw ? "＝" : "◇"}</div><div class="result-hero-copy"><div class="eyebrow">EINSATZ ABGESCHLOSSEN</div><h2>${won ? "Front gesichert." : draw ? "Front gehalten." : "Neu formieren."}</h2><p>${match.state.reason}</p></div><div class="result-snapshot" aria-label="Endstand"><div class="player"><small>DEIN CORE</small><strong>${snapshot.playerCorePercent}%</strong><span>${snapshot.playerPoints}/9 GEBIETE</span></div><i aria-hidden="true">VS</i><div class="enemy"><small>GEGNER CORE</small><strong>${snapshot.enemyCorePercent}%</strong><span>${snapshot.enemyPoints}/9 GEBIETE</span></div></div></section><section class="result-actions result-actions-fast" aria-label="Nächste Aktion">${nextAction}</section><button id="back" class="text-btn result-back">SPIELEN-MENÜ</button><section class="result-momentum tone-${momentum.tone}"><small>${momentum.label}</small><div><strong>${momentum.streak >= 2 ? momentum.streak : won ? "↗" : draw ? "＝" : "↺"}</strong><span><b>${momentum.title}</b><em>${momentum.detail}</em></span></div></section>${revealResult}<section class="result-progress-stack" aria-label="Fortschritt und Belohnungen">${firstSessionResult}${missionResult}${seriesResult}${dailyResult}${rewardResult}${masteryResult}${nextProgressResult}</section><details class="result-report"><summary><span>GEFECHTSBERICHT</span><small>WERTUNG · KARTE · STATISTIKEN</small><b>＋</b></summary><div class="result-report-body">${decisionResult}${finalFrontMap()}<section class="result-performance" aria-label="Gefechtsleistung"><header><small>GEFECHTSLEISTUNG</small><span>DEINE AKTIONEN</span></header><div class="result-stats"><div><strong>${snapshot.captured}</strong><span>EROBERUNGEN</span></div><div><strong>${snapshot.deployed}</strong><span>EINSÄTZE</span></div><div><strong>${snapshot.kills}</strong><span>ABSCHÜSSE</span></div><div><strong>${snapshot.abilities}</strong><span>FÄHIGKEITEN</span></div></div></section>${resultComparison(report)}<div class="feedback"><span>Wie war das Match?</span><div><button data-feedback="again">Macht Lust auf mehr</button><button data-feedback="unclear">Noch unklar</button><button data-feedback="boring">Zu wenig Spannung</button></div><small id="feedback-note">${recorded ? "Ergebnis und Feedback bleiben auf diesem Gerät." : "Speicher nicht verfügbar: Verlauf nur für diese Sitzung."}</small></div></div></details>`,
   );
   if (reveal) {
     window.setTimeout(() => {
