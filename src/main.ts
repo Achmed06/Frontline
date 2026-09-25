@@ -111,7 +111,7 @@ import { lobbyCommandStatus } from "./lobby-command-status";
 import { privacyPolicyUrl } from "./release-links";
 import { featuredEvent, lobbySectionLabel, type LobbySection } from "./focused-lobby";
 import { firstMatchUnlock, firstSessionFocus } from "./first-session";
-import { firstBattleOpeningCard } from "./first-battle-opening";
+import { firstBattleOpeningCard, openingUnitCard } from "./first-battle-opening";
 import { unitIdentityVisual } from "./unit-identity-visual";
 import { deploymentFeedback } from "./deployment-feedback";
 import { matchStartTiming } from "./match-start-timing";
@@ -374,6 +374,7 @@ let active = false,
   matchGoUntil = 0,
   matchStartDurationMs = 3000,
   allowCountdownPreselect = false,
+  rematchStart = false,
   pauseBeganAt = 0,
   startBannerShown = false,
   finishReadyAt = 0,
@@ -725,6 +726,7 @@ function start(
   activeMission = daily ? null : mission;
   activeQuickPlay =
     quickPlay && !mission && !daily && !inSeries && !draftDeck;
+  rematchStart = rematch && stats.matches > 0;
   const quickPlaySetup = activeQuickPlay
     ? quickPlayRotation(stats.quickPlayMatches ?? 0)
     : null;
@@ -787,12 +789,19 @@ function start(
     "card-drop-ready",
     "card-drop-invalid",
   );
-  selected = firstBattleOpeningCard(
-    stats.matches,
-    match.decks.player,
-    match.state.energy.player,
-  );
-  const startTiming = matchStartTiming(stats.matches);
+  selected =
+    firstBattleOpeningCard(
+      stats.matches,
+      match.decks.player,
+      match.state.energy.player,
+    ) ??
+    (rematchStart
+      ? openingUnitCard(
+          match.decks.player,
+          match.state.energy.player,
+        )
+      : null);
+  const startTiming = matchStartTiming(stats.matches, rematchStart);
   matchStartDurationMs = startTiming.countdownMs;
   allowCountdownPreselect = startTiming.allowPreselect;
   matchReadyAt = performance.now() + startTiming.countdownMs;
@@ -821,6 +830,12 @@ function start(
   el("deployment-countdown").textContent = "3";
   el("lobby").hidden = true;
   el("modal").hidden = true;
+  device.classList.remove("rematch-entry");
+  if (rematchStart) {
+    void device.offsetWidth;
+    device.classList.add("rematch-entry");
+    window.setTimeout(() => device.classList.remove("rematch-entry"), 460);
+  }
   el<HTMLButtonElement>("pause").disabled = false;
   el<HTMLButtonElement>("commander").disabled = false;
   el("mode-label").textContent = daily
@@ -919,6 +934,8 @@ function lobby() {
   matchGoUntil = 0;
   matchStartDurationMs = 3000;
   allowCountdownPreselect = false;
+  rematchStart = false;
+  device.classList.remove("rematch-entry");
   pauseBeganAt = 0;
   startBannerShown = false;
   el("quick-play").focus();
@@ -1179,7 +1196,7 @@ function setCoachFocus(focus: BattleCoachFocus | null) {
 function currentMatchStartVisual(remainingMs: number): MatchStartVisual {
   const firstBattle = stats.matches === 0;
   const selectedCardName =
-    firstBattle && selected
+    (firstBattle || rematchStart) && selected
       ? CARDS.find((card) => card.id === selected)?.name ?? ""
       : "";
   const visual = matchStartVisual(
@@ -1191,8 +1208,15 @@ function currentMatchStartVisual(remainingMs: number): MatchStartVisual {
     matchStartDurationMs,
     firstBattle,
     selectedCardName,
+    rematchStart,
   );
-  if (firstBattle || !activeQuickPlay || visual.phase !== "cores") return visual;
+  if (
+    firstBattle ||
+    rematchStart ||
+    !activeQuickPlay ||
+    visual.phase !== "cores"
+  )
+    return visual;
   const rotation = quickPlayRotation(stats.quickPlayMatches ?? 0);
   const session = quickPlaySessionCue(
     {
@@ -1258,19 +1282,25 @@ function updateHud(force = false) {
       startBannerShown = true;
       const firstBattle = stats.matches === 0;
       const openingCard =
-        firstBattle && selected
+        (firstBattle || rematchStart) && selected
           ? CARDS.find((card) => card.id === selected)
           : undefined;
       announceBattle(
         firstBattle
           ? "ERSTER ZUG"
-          : activeDaily
-            ? "TAGESFRONT"
-            : "DEIN AUFTRAG",
-        firstBattle
+          : rematchStart
+            ? activeDaily
+              ? "TAGESFRONT"
+              : "NÄCHSTE FRONT"
+            : activeDaily
+              ? "TAGESFRONT"
+              : "DEIN AUFTRAG",
+        firstBattle || rematchStart
           ? openingCard
             ? `${openingCard.name.toUpperCase()} IM GRÜNEN FELD EINSETZEN`
-            : "TRUPPE IM GRÜNEN FELD EINSETZEN"
+            : match.controlObjective
+              ? "RELAIS SICHERN"
+              : "FRONT DURCHBRECHEN"
           : match.controlObjective
             ? "RELAIS SICHERN"
             : "FRONT DURCHBRECHEN",

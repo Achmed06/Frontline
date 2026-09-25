@@ -146,3 +146,78 @@ test("first battle guidance still explains control-objective wins", () => {
   assert.equal(go.kicker, "ZIEL · RELAIS SICHERN");
   assert.equal(go.detail, "MARKIERTE RELAIS HALTEN");
 });
+
+test("direct rematch countdown skips technical relinking and keeps the opening card visible", () => {
+  const first = matchStartVisual(
+    1200,
+    "ATLAS",
+    "LYRA",
+    false,
+    false,
+    1200,
+    false,
+    "Vanguard",
+    true,
+  );
+  assert.equal(first.kicker, "NÄCHSTE FRONT");
+  assert.equal(first.title, "VANGUARD BEREIT");
+  assert.match(first.detail, /WECHSELN/);
+
+  const position = matchStartVisual(
+    800,
+    "ATLAS",
+    "LYRA",
+    false,
+    false,
+    1200,
+    false,
+    "Vanguard",
+    true,
+  );
+  assert.equal(position.kicker, "KEIN UMWEG");
+  assert.equal(position.title, "POSITION FESTLEGEN");
+
+  const commander = matchStartVisual(
+    400,
+    "NOVA",
+    "LYRA",
+    true,
+    false,
+    1200,
+    false,
+    "Ranger",
+    true,
+  );
+  assert.equal(commander.kicker, "RELAIS IM BLICK");
+  assert.equal(commander.title, "NOVA BEREIT");
+
+  const go = matchStartVisual(
+    0,
+    "ATLAS",
+    "LYRA",
+    false,
+    false,
+    1200,
+    false,
+    "Vanguard",
+    true,
+  );
+  assert.equal(go.kicker, "NÄCHSTE FRONT");
+  assert.equal(go.title, "LOS");
+  assert.equal(go.detail, "VANGUARD IM GRÜNEN FELD EINSETZEN");
+});
+
+test("daily rematches keep daily context without restoring the full opening", () => {
+  const go = matchStartVisual(
+    0,
+    "ATLAS",
+    "LYRA",
+    false,
+    true,
+    1200,
+    false,
+    "Vanguard",
+    true,
+  );
+  assert.equal(go.kicker, "TAGESFRONT · WEITER");
+});

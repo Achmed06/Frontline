@@ -4,7 +4,10 @@ export type MatchStartTiming = {
   allowPreselect: boolean;
 };
 
-export function matchStartTiming(completedMatches: number): MatchStartTiming {
+export function matchStartTiming(
+  completedMatches: number,
+  rematch = false,
+): MatchStartTiming {
   const safeMatches =
     Number.isFinite(completedMatches) && completedMatches > 0
       ? Math.floor(completedMatches)
@@ -14,6 +17,13 @@ export function matchStartTiming(completedMatches: number): MatchStartTiming {
     return {
       countdownMs: 3000,
       goMs: 650,
+      allowPreselect: true,
+    };
+
+  if (rematch)
+    return {
+      countdownMs: 1200,
+      goMs: 300,
       allowPreselect: true,
     };
 
