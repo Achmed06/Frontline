@@ -905,7 +905,7 @@ export class Match {
   private nextId = 1;
   private ticks = 0;
   private accumulator = 0;
-  private nextBotAction = 4;
+  private nextBotAction: number;
   private nextBotCommander = 17;
   private coreCooldown: Record<Team, number> = { player: 0, enemy: 0 };
 
