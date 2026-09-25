@@ -87,6 +87,7 @@ import { pioneerCaptureVisual } from "./pioneer-capture-visual";
 import { tempoStatusVisual } from "./tempo-status-visual";
 import { effectPresentationBudget } from "./effect-density";
 import { matchRhythm } from "./match-rhythm";
+import { openingLaneReads } from "./opening-lane-read";
 import {
   killConfirmation,
   strongestKillConfirmation,
@@ -962,6 +963,9 @@ export class ArenaScene extends Phaser.Scene {
     );
 
     for (const label of this.deploymentLaneLabels) label.setVisible(false);
+    const openingLanes = unitDeploymentSelected
+      ? openingLaneReads(s, m.controlObjective)
+      : null;
     if (unitDeploymentSelected) {
       for (const zone of playerZones) {
         const zoneHeight = Math.max(0, 495 - zone.edge);
@@ -988,9 +992,21 @@ export class ArenaScene extends Phaser.Scene {
           92,
           Math.min(466, zone.edge + (zone.edge > 445 ? -15 : 17)),
         );
+        const openingLane = openingLanes?.[zone.column];
         this.deploymentLaneLabels[zone.column]
-          ?.setText(`EINSATZ ${zone.column + 1}/3 · FRONT ${zone.depth}/3`)
+          ?.setText(
+            openingLane
+              ? `${openingLane.label} · ${openingLane.detail}`
+              : `EINSATZ ${zone.column + 1}/3 · FRONT ${zone.depth}/3`,
+          )
           .setPosition(zone.centerX, labelY)
+          .setColor(
+            openingLane?.role === "contact"
+              ? "#ffad8f"
+              : openingLane?.role === "objective"
+                ? "#ffe199"
+                : "#83ffcf",
+          )
           .setVisible(true);
       }
     }
