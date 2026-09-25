@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DEFAULT_DECK } from "./engine";
-import { firstBattleOpeningCard, openingUnitCard } from "./first-battle-opening";
+import { firstBattleOpeningCard, openingUnitCard, rematchOpeningCard } from "./first-battle-opening";
 
 test("prepares Vanguard for the very first battle when it is in the deck", () => {
   assert.equal(firstBattleOpeningCard(0, DEFAULT_DECK, 6), "vanguard");
@@ -34,4 +34,25 @@ test("shared opening selector can prepare a returning rematch without auto-playi
   assert.equal(openingUnitCard(DEFAULT_DECK, 6), "vanguard");
   assert.equal(openingUnitCard(["pulse", "ranger", "bulwark"], 3), "ranger");
   assert.equal(openingUnitCard(["pulse", "bulwark", "rally"], 3), null);
+});
+
+test("direct rematches preserve the player's previous affordable opener", () => {
+  assert.equal(rematchOpeningCard(DEFAULT_DECK, 6, "swarm"), "swarm");
+  assert.equal(rematchOpeningCard(DEFAULT_DECK, 6, "ranger"), "ranger");
+  assert.equal(rematchOpeningCard(DEFAULT_DECK, 6, "vanguard"), "vanguard");
+});
+
+test("rematch opener falls back when the previous card is missing or unaffordable", () => {
+  assert.equal(
+    rematchOpeningCard(["vanguard", "ranger", "pulse", "rally", "bulwark", "medic", "lancer", "swarm"], 2, "ranger"),
+    "vanguard",
+  );
+  assert.equal(
+    rematchOpeningCard(["ranger", "bulwark", "pulse", "rally", "medic", "lancer", "sentinel", "swarm"], 3, "raider"),
+    "ranger",
+  );
+});
+
+test("rematch opener never preserves an ability as the opening unit", () => {
+  assert.equal(rematchOpeningCard(DEFAULT_DECK, 6, "pulse"), "vanguard");
 });
