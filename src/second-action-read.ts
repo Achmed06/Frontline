@@ -2,7 +2,7 @@ import type { CardDefinition, MatchState } from "./engine";
 
 const lane = (x: number) => (x < 147.5 ? 0 : x < 272.5 ? 1 : 2);
 
-const playerActionCount = (state: MatchState): number =>
+export const playerActionCount = (state: MatchState): number =>
   Object.values(state.stats.unitPlays).reduce(
     (sum, value) => sum + (value ?? 0),
     0,
