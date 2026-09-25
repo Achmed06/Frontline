@@ -47,3 +47,31 @@ export function selectedCardHint(
 
   return `${card.description} · HALTEN, ZIELEN, LOSLASSEN`;
 }
+
+export function openingUnitHint(
+  card: CardDefinition | undefined,
+): string | null {
+  if (!card || card.kind !== "unit") return null;
+
+  switch (card.id) {
+    case "pioneer":
+      return "OPENING · EROBERN · +50% PUNKT · SCHWACH IM DUELL";
+    case "vanguard":
+      return `OPENING · HALTEN · ${card.cost} ENERGIE · ${card.hp ?? 0} HP`;
+    case "swarm":
+      return "OPENING · EROBERN · 3 TRUPPEN · PULSE-RISIKO";
+    case "raider":
+      return `OPENING · DRUCK · TEMPO ${card.speed ?? 0} · ${card.hp ?? 0} HP`;
+    case "ranger":
+      return `OPENING · DECKUNG · ${card.range ?? 0} REICHWEITE · HINTER FRONT`;
+    case "bulwark":
+      return `OPENING · ABSICHERN · ${card.hp ?? 0} HP · LANGSAM`;
+    case "lancer":
+      return `OPENING · CORE-DRUCK · ${card.range ?? 0} REICHWEITE · LANGSAM`;
+    case "medic":
+      return "OPENING · SUPPORT · BRAUCHT EINE FRONTLINIE";
+    default:
+      return null;
+  }
+}
+
