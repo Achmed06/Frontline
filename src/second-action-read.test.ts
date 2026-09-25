@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CARDS, Match } from "./engine";
-import { secondActionHint } from "./second-action-read";
+import { playerActionCount, secondActionHint } from "./second-action-read";
 
 const card = (id: string) => CARDS.find((item) => item.id === id)!;
 
@@ -46,7 +46,7 @@ test("medic warns when support is premature and flips once healing has value", (
   );
 });
 
-test("pulse distinguishes a real group counter from a low-value single target", () => {
+test("pulse distinguishes a real spatial group from separate targets", () => {
   const match = new Match({ botEnabled: false });
   firstDeploy(match);
   assert.equal(match.play("enemy", "vanguard", 210, 90).ok, true);
@@ -54,7 +54,13 @@ test("pulse distinguishes a real group counter from a low-value single target", 
     secondActionHint(match.state, card("pulse")),
     "ZWEITER ZUG · GEDULD · EINZELZIEL IST WENIG WERT",
   );
-  assert.equal(match.play("enemy", "swarm", 220, 90).ok, true);
+  assert.equal(match.play("enemy", "swarm", 335, 90).ok, true);
+  assert.equal(
+    secondActionHint(match.state, card("pulse")),
+    "ZWEITER ZUG · GEDULD · EINZELZIEL IST WENIG WERT",
+  );
+  const swarm = match.state.units.find((unit) => unit.cardId === "swarm")!;
+  swarm.x = 220;
   assert.equal(
     secondActionHint(match.state, card("pulse")),
     "ZWEITER ZUG · KONTER · GRUPPE TREFFEN",
@@ -81,4 +87,14 @@ test("second action guidance expires with the opening", () => {
   firstDeploy(match);
   match.state.time = 28.01;
   assert.equal(secondActionHint(match.state, card("ranger")), null);
+});
+
+test("ability first plays also enter the second-action window", () => {
+  const match = new Match({ botEnabled: false });
+  assert.equal(match.play("player", "pulse", 210, 280).ok, true);
+  assert.equal(playerActionCount(match.state), 1);
+  assert.equal(
+    secondActionHint(match.state, card("vanguard")),
+    "ZWEITER ZUG · VERSTÄRKEN ODER SPLITTEN · LANE BEWUSST WÄHLEN",
+  );
 });
