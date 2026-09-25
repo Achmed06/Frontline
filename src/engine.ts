@@ -10,6 +10,7 @@ import {
   TEMPO_ATTACK_SPEED_MULTIPLIER,
   TEMPO_MOVE_SPEED_MULTIPLIER,
 } from "./tempo";
+import { openingBotActionDelay } from "./opening-pacing";
 /** Deterministic, renderer-independent simulation for Project Frontline. */
 export type Team = "player" | "enemy";
 export type Difficulty = "rookie" | "standard" | "veteran";
@@ -904,7 +905,7 @@ export class Match {
   private nextId = 1;
   private ticks = 0;
   private accumulator = 0;
-  private nextBotAction = 4;
+  private nextBotAction: number;
   private nextBotCommander = 17;
   private coreCooldown: Record<Team, number> = { player: 0, enemy: 0 };
 
@@ -974,6 +975,7 @@ export class Match {
     });
     this.rngState = (options.seed ?? 2026) >>> 0;
     this.difficulty = options.difficulty ?? "standard";
+    this.nextBotAction = openingBotActionDelay(this.difficulty);
     this.botEnabled = options.botEnabled ?? true;
     this.state = {
       controlTime: { player: 0, enemy: 0 },

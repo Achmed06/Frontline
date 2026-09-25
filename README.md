@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.24
+## Current v2.25
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -26,6 +26,7 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - First-contact combat bursts that distinguish fresh unit engagements from routine follow-up hits with throttled local FX, audio and haptics
 - Faster one-more-match results flow that puts the next battle immediately after the outcome and keeps that action visible while browsing rewards or the report
 - Direct-rematch re-entry that shortens the countdown, prepares an affordable opening unit, replaces technical relinking copy, and adds a subtle reduced-motion-safe arena transition
+- Earlier difficulty-aware opening pressure so the bot enters the first front before neutral territory can be taken almost uncontested, while preserving all ongoing reaction timing
 
 ### Progression and modes
 
