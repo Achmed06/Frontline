@@ -39,3 +39,22 @@ export function firstBattleOpeningCard(
 
   return openingUnitCard(deck, energy);
 }
+
+export function rematchOpeningCard(
+  deck: readonly CardId[],
+  energy: number,
+  previousOpening: CardId | null | undefined,
+): CardId | null {
+  const availableEnergy = Number.isFinite(energy) ? Math.max(0, energy) : 0;
+  if (previousOpening && deck.includes(previousOpening)) {
+    const previous = CARDS.find((item) => item.id === previousOpening);
+    if (
+      previous &&
+      previous.kind === "unit" &&
+      previous.cost <= availableEnergy + 1e-8
+    )
+      return previousOpening;
+  }
+  return openingUnitCard(deck, availableEnergy);
+}
+
