@@ -26,6 +26,7 @@ import {
   type Team,
   type Unit,
 } from "./engine.ts";
+import { openingBotActionDelay } from "./opening-pacing";
 
 const quietMatch = () => new Match({ seed: 42, botEnabled: false });
 function staticUnit(
@@ -432,7 +433,7 @@ test("only update advances time; invalid deltas are harmless; frame chunking is 
 });
 
 for (const difficulty of ["rookie", "standard", "veteran"] as const) {
-  test(`${difficulty} bot respects grace period, deployment bounds and its energy budget`, () => {
+  test(`${difficulty} bot respects opening delay, deployment bounds and its energy budget`, () => {
     const match = new Match({ seed: 190, difficulty });
     let spent = 0;
     const originalPlay = match.play.bind(match);
@@ -447,8 +448,10 @@ for (const difficulty of ["rookie", "standard", "veteran"] as const) {
         spent += CARDS.find((card) => card.id === cardId)!.cost;
       return result;
     };
-    match.update(3.9);
+    match.update(openingBotActionDelay(difficulty) - 0.1);
     assert.equal(match.state.units.length, 0);
+    match.update(0.2);
+    assert.ok(match.state.units.some((unit) => unit.team === "enemy"));
     for (let i = 0; i < 100 && match.state.phase !== "ended"; i++) {
       match.update(1);
       assert.ok(
@@ -473,7 +476,7 @@ for (const difficulty of ["rookie", "standard", "veteran"] as const) {
 test("tactical bot saves enough energy for Pulse against a dense enemy group", () => {
   const match = new Match({ seed: 41, difficulty: "veteran" });
   for (const x of [195, 210, 225]) staticUnit(match, "player", x, 280);
-  match.update(3.9);
+  match.update(openingBotActionDelay("veteran") - 0.1);
   match.state.energy.enemy = 2;
   const actions: string[] = [];
   const originalPlay = match.play.bind(match);
