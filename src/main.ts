@@ -2,6 +2,10 @@ import { renderBaseBuilder } from "./base-builder";
 import { baseMapSvg } from "./base-map";
 import { renderBackupMenu } from "./save-backup-menu";
 import { openingUnitHint, selectedCardHint } from "./card-hints";
+import {
+  playerActionCount,
+  secondActionHint,
+} from "./second-action-read";
 import { energyReadiness, energySpent, energyTempo } from "./energy-feedback";
 import { corePressure, corePressureLabel } from "./core-pressure";
 import { initializeStore, renderStore, supporterOwned } from "./store";
@@ -649,6 +653,22 @@ function energyWaitLabel(seconds: number): string {
   const rounded = Math.max(0.1, Math.ceil(seconds * 10) / 10);
   return rounded.toFixed(1).replace(".", ",");
 }
+function contextualSelectionHint(
+  card: (typeof CARDS)[number] | undefined,
+): string {
+  if (active && !ended) {
+    const actions = playerActionCount(match.state);
+    if (actions === 0) {
+      const opening = openingUnitHint(card);
+      if (opening) return opening;
+    } else if (actions === 1) {
+      const reaction = secondActionHint(match.state, card);
+      if (reaction) return reaction;
+    }
+  }
+  return selectedCardHint(card);
+}
+
 function updateSelection() {
   for (const [id, b] of cardButtons) {
     b.classList.toggle("selected", id === selected);
@@ -659,11 +679,7 @@ function updateSelection() {
     ? `${c.name} · ${c.role}`
     : "DEIN EINSATZDECK";
   const selectedHint = el("selected-hint");
-  const firstUnitHint =
-    active && !ended && match.state.stats.deployed === 0
-      ? openingUnitHint(c)
-      : null;
-  selectedHint.textContent = firstUnitHint ?? selectedCardHint(c);
+  selectedHint.textContent = contextualSelectionHint(c);
   selectedHint.classList.remove("waiting-energy");
   el("arena-tip").textContent = c
     ? c.kind === "ability"
@@ -1574,7 +1590,7 @@ function updateHud(force = false) {
     selectedHint.classList.add("energy-capped");
     selectedHint.classList.remove("waiting-energy");
   } else {
-    selectedHint.textContent = selectedCardHint(selectedCard);
+    selectedHint.textContent = contextualSelectionHint(selectedCard);
     selectedHint.classList.remove("waiting-energy", "energy-capped");
   }
   const race = frontRace(s.points.map((point) => point.owner));
