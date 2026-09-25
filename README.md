@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.26
+## Current v2.27
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -28,6 +28,7 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - Direct-rematch re-entry that shortens the countdown, prepares an affordable opening unit, replaces technical relinking copy, and adds a subtle reduced-motion-safe arena transition
 - Earlier difficulty-aware opening pressure so the bot enters the first front before neutral territory can be taken almost uncontested, while preserving all ongoing reaction timing
 - Early deployment lane reads that surface the existing direct-core-versus-safer-flank tradeoff, control objectives and real enemy contact without changing lane geometry or balance
+- Player-owned opening-unit flow that keeps Vanguard for first-battle onboarding, preserves the player's own prior opener on direct rematches, and briefly explains each selected unit's opening role without changing stats
 
 ### Progression and modes
 
