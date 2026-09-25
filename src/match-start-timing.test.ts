@@ -19,6 +19,16 @@ test("returning players get the compressed opening and card preselection", () =>
   assert.deepEqual(matchStartTiming(25), matchStartTiming(1));
 });
 
+test("direct rematches re-enter faster without skipping card choice", () => {
+  assert.deepEqual(matchStartTiming(1, true), {
+    countdownMs: 1200,
+    goMs: 300,
+    allowPreselect: true,
+  });
+  assert.deepEqual(matchStartTiming(25, true), matchStartTiming(1, true));
+  assert.deepEqual(matchStartTiming(0, true), matchStartTiming(0));
+});
+
 test("malformed match counts fail safely to the first-battle timing", () => {
   assert.deepEqual(matchStartTiming(Number.NaN), matchStartTiming(0));
   assert.deepEqual(matchStartTiming(-4), matchStartTiming(0));
