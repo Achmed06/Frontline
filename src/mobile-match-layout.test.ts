@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { matchViewportProfile } from "./mobile-match-layout";
 
-test("modern tall iPhone keeps standard combat layout", () => {
+test("modern tall iPhone keeps standard height and wider card targets", () => {
   const profile = matchViewportProfile(393, 852);
   assert.equal(profile.density, "standard");
-  assert.equal(profile.narrow, false);
+  assert.equal(profile.narrow, true);
 });
 
 test("short mobile viewport uses compact combat layout", () => {
