@@ -123,8 +123,7 @@ import { quickPlayRotation } from "./quick-play-rotation";
 import { quickPlayBaseline, quickPlaySessionCue } from "./quick-play-session";
 import { frontRace } from "./front-race";
 import { timeLimitOutlook } from "./time-limit-outlook";
-import { matchRhythm } from "./match-rhythm";
-import { midgameHandoff } from "./midgame-handoff";
+import { arenaGuidance } from "./arena-guidance";
 import { coreAssault } from "./core-assault";
 import { battleMomentum, INITIAL_BATTLE_MOMENTUM, type BattleMomentumMemory } from "./battle-momentum";
 import {
@@ -686,7 +685,7 @@ function updateSelection() {
     ? c.kind === "ability"
       ? "FÄHIGKEIT: ZIEL ANTIPPEN"
       : "IM GRÜNEN GEBIET EINSETZEN"
-    : "EROBERE DIE MITTE";
+    : arenaGuidance(match.state, match.controlObjective);
   el("arena-tip").classList.toggle("selected", !!selected);
 }
 function deploy(x: number, y: number) {
@@ -1623,24 +1622,7 @@ function updateHud(force = false) {
   }
   if (leader) lastFrontLeader = leader;
   if (!selected) {
-    const disconnected = s.points.some(
-      (point) => point.owner === "player" && !point.supplied,
-    );
-    const contested = s.points.some((point) => point.contested);
-    const rhythm = matchRhythm(s);
-    const handoff =
-      !control && !disconnected && !contested
-        ? midgameHandoff(s, playerActionCount(s))
-        : null;
-    el("arena-tip").textContent = disconnected
-      ? "VERSORGUNG UNTERBROCHEN"
-      : contested
-        ? "PUNKT UMKÄMPFT"
-        : s.points.filter((point) => point.owner === "player").length >= 6
-          ? "ERREICHE DEN GEGNERISCHEN CORE"
-          : control
-            ? "HALTE DIE MARKIERTEN RELAIS"
-            : handoff?.tip ?? rhythm.neutralTip;
+    el("arena-tip").textContent = arenaGuidance(s, control);
   }
   for (const card of deckCards) {
     const b = cardButtons.get(card.id)!;
