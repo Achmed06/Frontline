@@ -17,7 +17,7 @@ export function matchViewportProfile(
 ): MatchViewportProfile {
   const safeWidth = finiteOr(width, 390);
   const safeHeight = finiteOr(height, 844);
-  const narrow = safeWidth <= 390;
+  const narrow = safeWidth <= 400;
   const density: MatchLayoutDensity =
     safeHeight <= 690
       ? "tight"

@@ -4339,8 +4339,28 @@ h1 em {
     color: #a9bbb0;
   }
 
+  /* Reserve two hint lines so card changes never resize the arena. */
+  .selection-info {
+    height: 48px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 2px 0 4px;
+  }
+
   .selection-info b {
     color: #d0ddd0;
+    font-size: 10px;
+    line-height: 12px;
+  }
+
+  .selection-info span {
+    min-height: 28px;
+    font-size: 12px;
+    line-height: 14px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .card {
@@ -4394,8 +4414,7 @@ h1 em {
     padding-block: 6px;
   }
 
-  .device[data-match-layout="compact"] .resource-row,
-  .device[data-match-layout="compact"] .selection-info {
+  .device[data-match-layout="compact"] .resource-row {
     height: 22px;
   }
 
@@ -4497,8 +4516,7 @@ h1 em {
     padding: 5px 8px 5px;
   }
 
-  .device[data-match-layout="tight"] .resource-row,
-  .device[data-match-layout="tight"] .selection-info {
+  .device[data-match-layout="tight"] .resource-row {
     height: 20px;
   }
 
@@ -4510,8 +4528,6 @@ h1 em {
     font-size: 19px;
   }
 
-  .device[data-match-layout="tight"] .selection-info b,
-  .device[data-match-layout="tight"] .selection-info span,
   .device[data-match-layout="tight"] .territory-count {
     font-size: 7px;
   }
@@ -4547,8 +4563,8 @@ h1 em {
   }
 }
 
-/* Narrow screens keep four cards per row, but reclaim arena height. */
-@media (max-width: 390px) {
+/* Keep four-card rows until eight touch targets fit above 400px. */
+@media (max-width: 400px) {
   .device[data-match-width="narrow"] .cards {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px 5px;

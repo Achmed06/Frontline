@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.31
+## Current v2.32
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -56,6 +56,7 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - Optional signed IPA workflow when Apple signing credentials are configured
 - Native app lifecycle handling and durable friend-duel reconnect state
 - Contextual first-battle coaching that highlights cards, arena or commander without blocking play
+- Mobile card selection separates the card name from larger, wrapping tactical hints and reserves two text lines to keep the arena stable when switching cards; four-card rows extend through 400px-wide viewports for wider touch targets
 
 ## Local development
 
