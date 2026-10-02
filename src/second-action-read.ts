@@ -1,4 +1,4 @@
-import type { CardDefinition, MatchState } from "./engine";
+import { abilityTargetPreview, type CardDefinition, type MatchState } from "./engine";
 
 const distance = (
   a: { x: number; y: number },
@@ -17,6 +17,7 @@ export function secondActionHint(
 ): string | null {
   if (
     !card ||
+    state.phase === "ended" ||
     !Number.isFinite(state.time) ||
     state.time < 0 ||
     state.time > 28 ||
@@ -41,17 +42,57 @@ export function secondActionHint(
     );
 
   if (card.kind === "ability") {
-    if (card.id === "pulse")
+    if (card.id === "pulse") {
+      const core = state.cores.enemy;
+      if (abilityTargetPreview(state, "player", "pulse", core.x, core.y).coreLethal)
+        return "ZWEITER ZUG · ABSCHLUSS · CORE ZERSTÖREN";
+
+      if (enemies.some((unit) =>
+        abilityTargetPreview(state, "player", "pulse", unit.x, unit.y)
+          .lethalUnitIds.length > 0,
+      ))
+        return "ZWEITER ZUG · ABSCHLUSS · GEGNER AUSSCHALTEN";
+
+      // An aimed blast can cover a pair from between them. Unit radius counts
+      // toward Pulse reach, just as in the authoritative target preview.
+      const group = enemies.some((unit, index) => enemies.slice(index + 1).some((other) => {
+        const reach = (card.range ?? 0) + unit.radius;
+        const otherReach = (card.range ?? 0) + other.radius;
+        if (distance(unit, other) > reach + otherReach) return false;
+        const share = reach / (reach + otherReach);
+        const x = unit.x + (other.x - unit.x) * share;
+        const y = unit.y + (other.y - unit.y) * share;
+        return abilityTargetPreview(state, "player", "pulse", x, y).unitIds.length >= 2;
+      }));
       return enemies.length
-        ? enemyClusterWithin(card.range ?? 0)
+        ? group
           ? "ZWEITER ZUG · KONTER · GRUPPE TREFFEN"
-          : "ZWEITER ZUG · GEDULD · EINZELZIEL IST WENIG WERT"
-        : "ZWEITER ZUG · GEDULD · NOCH KEIN ZIEL";
-    if (card.id === "rally")
-      return allies.length
-        ? "ZWEITER ZUG · TEMPO · OPENER BESCHLEUNIGEN"
-        : "ZWEITER ZUG · GEDULD · BRAUCHT EIGENE TRUPPEN";
-    if (card.id === "stasis" || card.id === "repulsor")
+          : "ZWEITER ZUG · ABWÄGEN · EINZELZIEL OHNE ABSCHLUSS"
+        : "ZWEITER ZUG · GEDULD · NOCH KEIN TRUPPENZIEL";
+    }
+    if (card.id === "rally") {
+      if (!allies.length)
+        return "ZWEITER ZUG · GEDULD · BRAUCHT EIGENE TRUPPEN";
+      const previews = allies.map((unit) =>
+        abilityTargetPreview(state, "player", "rally", unit.x, unit.y),
+      );
+      if (previews.some((preview) => preview.healing.length > 0))
+        return "ZWEITER ZUG · HEILUNG · VERLETZTE FRONT STÄRKEN";
+      return previews.some((preview) => preview.tempoUnitIds.length > 0)
+        ? "ZWEITER ZUG · TEMPO · OPENER VERSTÄRKEN"
+        : "ZWEITER ZUG · GEDULD · KEIN ZUSÄTZLICHER EFFEKT";
+    }
+    if (card.id === "stasis") {
+      if (!enemies.length)
+        return "ZWEITER ZUG · GEDULD · NOCH KEIN GEGNER";
+      return enemies.some((unit) =>
+        abilityTargetPreview(state, "player", "stasis", unit.x, unit.y)
+          .slows.some((slow) => slow.changed),
+      )
+        ? "ZWEITER ZUG · KONTROLLE · GEGNERISCHEN PUSH BRECHEN"
+        : "ZWEITER ZUG · GEDULD · KEIN ZUSÄTZLICHER EFFEKT";
+    }
+    if (card.id === "repulsor")
       return enemies.length
         ? "ZWEITER ZUG · KONTROLLE · GEGNERISCHEN PUSH BRECHEN"
         : "ZWEITER ZUG · GEDULD · NOCH KEIN GEGNER";

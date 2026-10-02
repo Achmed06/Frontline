@@ -2,7 +2,7 @@
 
 Mobile-first portrait tactical territory PvP prototype built with Phaser, TypeScript, Vite and Capacitor.
 
-## Current v2.30
+## Current v2.31
 
 The repository contains the current browser runtime and Capacitor iPhone project from the same versioned source.
 
@@ -32,6 +32,7 @@ The repository contains the current browser runtime and Capacitor iPhone project
 - Live second-action reads that distinguish reinforcement, lane splitting, counters and premature support after the opener, then disappear after the player's second action without changing balance
 - Opening-to-midgame handoff that replaces stale early `EROBERE DIE MITTE` guidance after two player actions with live rebuild, split, stabilize, expand or advance reads until the normal battle rhythm takes over
 - Consistent arena guidance on card deselection and live refresh: control missions keep their relay goal, Core pressure ends opening coaching, wiped openers rebuild before advancing, and lane splits require neutral ground outside the occupied lane
+- Second-action ability guidance uses the combat target preview to recognize lethal Pulse hits, blast coverage between units, Rally healing/tempo and effective Stasis refreshes, including advice to wait when no additional effect is available
 
 ### Progression and modes
 
