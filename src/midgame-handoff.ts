@@ -18,15 +18,15 @@ export function midgameHandoff(
   state: Pick<MatchState, "time" | "units" | "points">,
   playerActions: number,
 ): MidgameHandoff | null {
-  const time = Number.isFinite(state.time)
-    ? Math.max(0, state.time)
+  const time = Number.isFinite(state.time) && state.time >= 0
+    ? state.time
     : Number.POSITIVE_INFINITY;
   const actions =
     Number.isFinite(playerActions) && playerActions > 0
       ? Math.floor(playerActions)
       : 0;
 
-  if (actions < 2 || time > 35) return null;
+  if (actions < 2 || time >= 35) return null;
 
   const allies = state.units.filter(
     (unit) => unit.team === "player" && unit.hp > 0,
@@ -52,7 +52,10 @@ export function midgameHandoff(
     };
 
   const occupiedLanes = new Set(allies.map((unit) => lane(unit.x)));
-  if (neutral > 0 && occupiedLanes.size === 1)
+  const neutralOutsideFront = state.points.some(
+    (point) => point.owner === null && !occupiedLanes.has(lane(point.x)),
+  );
+  if (neutralOutsideFront && occupiedLanes.size === 1)
     return {
       kind: "split",
       tip: "ZWEITE LANE ÖFFNEN",
